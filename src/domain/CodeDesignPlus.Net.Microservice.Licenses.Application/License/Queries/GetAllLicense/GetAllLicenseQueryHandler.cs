@@ -1,9 +1,13 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetAllLicense;
 
-public class GetAllLicenseQueryHandler(ILicenseRepository repository, IMapper mapper, IUserContext user) : IRequestHandler<GetAllLicenseQuery, LicenseDto>
+public class GetAllLicenseQueryHandler(ILicenseRepository repository, IMapper mapper) : IRequestHandler<GetAllLicenseQuery, List<LicenseDto>>
 {
-    public Task<LicenseDto> Handle(GetAllLicenseQuery request, CancellationToken cancellationToken)
+    public async Task<List<LicenseDto>> Handle(GetAllLicenseQuery request, CancellationToken cancellationToken)
     {
-        return Task.FromResult<LicenseDto>(default!);
+        ApplicationGuard.IsNull(request, Errors.InvalidRequest);
+
+        var tenants = await repository.MatchingAsync<LicenseAggregate>(request.Criteria, cancellationToken);
+
+        return mapper.Map<List<LicenseDto>>(tenants);
     }
 }

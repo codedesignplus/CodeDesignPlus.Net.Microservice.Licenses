@@ -85,6 +85,7 @@ public class LicenseAggregate(Guid id) : AggregateRoot(id)
         DomainGuard.GuidIsEmpty(id, Errors.IdModuleIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
         DomainGuard.GuidIsEmpty(updatedBy, Errors.CreatedByLicenseIsRequired);
+        DomainGuard.IsTrue(this.Modules.Any(x => x.Id == id), Errors.ModuleAlreadyExists);
 
         var module = new ModuleEntity()
         {
@@ -107,10 +108,7 @@ public class LicenseAggregate(Guid id) : AggregateRoot(id)
 
         var module = this.Modules.FirstOrDefault(x => x.Id == id);
 
-        if (module is null)
-        {
-            return;
-        }
+        DomainGuard.IsNull(module, Errors.ModuleNotFound);
 
         this.Modules.Remove(module);
 

@@ -26,3 +26,5 @@ global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Comman
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.DeleteLicense;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetLicenseById;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetAllLicense;
+global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.AddModule;
+global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.RemoveModule;

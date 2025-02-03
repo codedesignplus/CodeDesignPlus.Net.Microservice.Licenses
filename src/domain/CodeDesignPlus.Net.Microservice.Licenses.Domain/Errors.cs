@@ -14,4 +14,6 @@ public class Errors: IErrorCodes
     public const string CodeCurrencyIsRequired = "108 : The Code of the currency is required.";
     public const string SymbolCurrencyIsRequired = "109 : The Symbol of the currency is required.";
     public const string IdModuleIsRequired = "110 : The Id of the module is required.";
+    public const string ModuleAlreadyExists = "111 : The module already exists in the license.";
+    public const string ModuleNotFound = "112 : The module was not found.";
 }
