@@ -15,8 +15,10 @@ public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper m
 
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
-        await cacheManager.SetAsync(request.Id.ToString(), mapper.Map<LicenseDto>(license));
+        var dto = mapper.Map<LicenseDto>(license);
 
-        return mapper.Map<LicenseDto>(license);
+        await cacheManager.SetAsync(request.Id.ToString(), license);
+
+        return dto;
     }
 }

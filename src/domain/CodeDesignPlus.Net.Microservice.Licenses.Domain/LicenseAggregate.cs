@@ -4,7 +4,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain;
 
-public class LicenseAggregate(Guid id) : AggregateRoot(id)
+public class LicenseAggregate(Guid id) : AggregateRootBase(id)
 {
     public string Name { get; private set; } = null!;
 

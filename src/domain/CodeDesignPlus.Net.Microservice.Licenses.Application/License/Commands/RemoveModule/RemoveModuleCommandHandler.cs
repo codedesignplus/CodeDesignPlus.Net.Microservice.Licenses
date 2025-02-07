@@ -6,7 +6,7 @@ public class RemoveModuleCommandHandler(ILicenseRepository repository, IUserCont
     {        
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
-        var license = await repository.FindAsync<LicenseAggregate>(request.Id, user.Tenant, cancellationToken);
+        var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 

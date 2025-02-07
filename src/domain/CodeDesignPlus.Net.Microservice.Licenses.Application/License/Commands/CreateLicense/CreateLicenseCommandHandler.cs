@@ -8,7 +8,7 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
         
-        var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, user.Tenant, cancellationToken);
+        var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
 
         ApplicationGuard.IsTrue(exist, Errors.LicenseAlreadyExists);
 

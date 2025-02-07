@@ -19,7 +19,23 @@ public static class MapsterConfigLicense
             .NewConfig()
             .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.BillingType, Currency.Create(src.Currency.Name, src.Currency.Code, src.Currency.Symbol), src.Price, src.Attributes));
 
-        TypeAdapterConfig<LicenseAggregate, LicenseDto>.NewConfig();
+        TypeAdapterConfig<LicenseAggregate, LicenseDto>
+            .NewConfig()
+            .MapWith(src => new LicenseDto
+            {
+                Id = src.Id,
+                Name = src.Name,
+                Description = src.Description,
+                Attributes = src.Attributes,
+                BillingType = src.BillingType,
+                Currency = Currency.Create(src.Currency.Name, src.Currency.Code, src.Currency.Symbol),
+                Price = src.Price,
+                Modules = src.Modules.Select(x => new ModuleDto
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                }).ToList()
+            });
 
         //Module
         TypeAdapterConfig<ModuleDto, ModuleEntity>
