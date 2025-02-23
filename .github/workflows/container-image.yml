@@ -1,4 +1,5 @@
-name: Sync Charts
+name: Build and Push Container Image
+
 on:
   push:
     branches:
@@ -14,7 +15,7 @@ permissions:
 
 jobs:
   ci:
-    uses: codedesignplus/workflows/.github/workflows/helm-chart.yaml@main
+    uses: codedesignplus/workflows/.github/workflows/container-image.yaml@main
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
       microservice-name: ms-licenses
