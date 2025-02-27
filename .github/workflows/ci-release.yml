@@ -7,7 +7,6 @@ on:
       - rc
       - dev
       - feature/*
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -43,4 +42,5 @@ jobs:
       enable-rest: true
       enable-grpc: false
       enable-worker: false
+      environment: Dev
     secrets: inherit
