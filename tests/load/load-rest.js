@@ -27,8 +27,7 @@ export const options = {
             // Pre-allocate 2 VUs before starting the test
             preAllocatedVUs: 3,
 
-            // Spin up a maximum of 50 VUs to sustain the defined
-            // constant arrival rate.
+            // Spin up a maximum of 50 VUs to sustain the defined constant arrival rate.
             maxVUs: 5000,
         },
     },
