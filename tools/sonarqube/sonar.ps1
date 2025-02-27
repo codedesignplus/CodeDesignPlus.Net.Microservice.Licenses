@@ -2,7 +2,7 @@
 #echo "Install dotnet-sonarscanner ----------------------------------------------------------------------------------------------------------------------"
 #dotnet tool install --global dotnet-sonarscanner 
 
-Write-Host "Start Sonarscanner -------------------------------------------------------------------------------------------------------------------------------"
+Write-Host "Start Sonarscanner ------------------------------------------------------------------------------------------------------------------------------"
 
 $org = "codedesignplus"
 $key = "CodeDesignPlus.Net.Microservice.Licenses"
