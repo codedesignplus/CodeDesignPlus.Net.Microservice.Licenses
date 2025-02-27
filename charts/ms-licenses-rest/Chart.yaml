@@ -1,10 +1,10 @@
 apiVersion: v2
-name: ms-licenses
-description: This is a Helm chart for the ms-licenses project.
+name: ms-licenses-rest
+description: This is a Helm chart for the ms-licenses REST service
 type: application
-version: 0.1.2
+version: 0.0.1
 appVersion: "0.0.1"
 dependencies:
   - name: ms-base
-    version: "v0.1.0-beta.30"
+    version: 0.0.1
     repository: "https://www.codedesignplus.com/helm-charts/"

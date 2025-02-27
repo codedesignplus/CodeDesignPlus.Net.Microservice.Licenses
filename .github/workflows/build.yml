@@ -1,13 +1,13 @@
-name: Build and Push Container Image
+name: Build .Net
 
 on:
-  workflow_run:
-    workflows: ["Build .Net"]
-    types:
-      - completed
+  push:
     branches:
       - main
       - rc
+      - dev
+      - feature/*
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    uses: codedesignplus/workflows/.github/workflows/container-image.yaml@main
+    uses: codedesignplus/workflows/.github/workflows/build-microservice.yaml@main
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
       microservice-name: ms-licenses

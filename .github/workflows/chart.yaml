@@ -4,8 +4,6 @@ on:
     branches:
       - main
       - rc
-      - dev
-      - feature/*
 
 permissions:
   contents: write
@@ -13,9 +11,12 @@ permissions:
   repository-projects: write
 
 jobs:
-  ci:
+  chart:
     uses: codedesignplus/workflows/.github/workflows/helm-chart.yaml@main
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
       microservice-name: ms-licenses
+      enable-rest: true
+      enable-grpc: true
+      enable-worker: true
     secrets: inherit

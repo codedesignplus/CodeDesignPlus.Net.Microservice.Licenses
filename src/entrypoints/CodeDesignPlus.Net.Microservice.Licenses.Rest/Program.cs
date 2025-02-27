@@ -1,6 +1,8 @@
 using CodeDesignPlus.Net.Microservice.Commons.EntryPoints.Rest.Middlewares;
+using CodeDesignPlus.Net.Microservice.Commons.EntryPoints.Rest.Resources;
 using CodeDesignPlus.Net.Microservice.Commons.EntryPoints.Rest.Swagger;
 using CodeDesignPlus.Net.Microservice.Commons.FluentValidation;
+using CodeDesignPlus.Net.Microservice.Commons.HealthChecks;
 using CodeDesignPlus.Net.Microservice.Commons.MediatR;
 using CodeDesignPlus.Net.Redis.Cache.Extensions;
 using CodeDesignPlus.Net.Vault.Extensions;
@@ -34,14 +36,17 @@ builder.Services.AddMediatR<CodeDesignPlus.Net.Microservice.Licenses.Application
 builder.Services.AddSecurity(builder.Configuration);
 builder.Services.AddCoreSwagger<Program>(builder.Configuration);
 builder.Services.AddCache(builder.Configuration);
+builder.Services.AddResources<Program>(builder.Configuration);
+builder.Services.AddHealthChecksServices();
 
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-app.UseCoreSwagger();
+app.UseExceptionMiddleware();
+app.UseHealthChecks();
+app.UseCodeErrors();
 
-app.UseMiddleware<ExceptionMiddleware>();
+app.UseCoreSwagger();
 
 app.UseHttpsRedirection();
 
