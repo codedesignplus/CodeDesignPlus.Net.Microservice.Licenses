@@ -20,4 +20,7 @@ jobs:
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
       microservice-name: ms-licenses
-    secrets: inherit
+      organization: ${{ vars.ORGANIZATION }}
+      sonar-server: ${{ vars.SONAR_SERVER }}
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
