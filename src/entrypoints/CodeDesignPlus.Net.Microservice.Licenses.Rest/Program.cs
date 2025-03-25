@@ -23,7 +23,7 @@ builder.Services
 
 
 builder.Services.AddEndpointsApiExplorer();
-
+builder.Services.AddCors();
 builder.Services.AddVault(builder.Configuration);
 builder.Services.AddRedis(builder.Configuration);
 builder.Services.AddMongo<CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Startup>(builder.Configuration);
