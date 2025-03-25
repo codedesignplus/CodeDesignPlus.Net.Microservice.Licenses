@@ -42,6 +42,11 @@ builder.Services.AddHealthChecksServices();
 
 var app = builder.Build();
 
+app.UseCors(builder => builder
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+);
 app.UseExceptionMiddleware();
 app.UseHealthChecks();
 app.UseCodeErrors();
