@@ -12,7 +12,7 @@ public sealed partial class Currency
     public string Symbol { get; private set; }
 
     [JsonConstructor]
-    private Currency(string name, string code, string symbol)
+    public Currency(string name, string code, string symbol)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.NameCurrencyIsRequired);
         DomainGuard.IsNullOrEmpty(code, Errors.CodeCurrencyIsRequired);
