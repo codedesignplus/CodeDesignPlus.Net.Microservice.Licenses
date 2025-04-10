@@ -135,9 +135,9 @@ vault write auth/approle/login role_id=$role_id secret_id=$secret_id
 Write-Host $newlines
 Write-Host "6. Writing secrets..." -ForegroundColor Blue
 vault kv put -mount=security-codedesignplus-keyvalue ms-licenses `
-    Security:ClientId=a74cb192-598c-4757-95ae-b315793bbbca `
-    Security:ValidAudiences:0=a74cb192-598c-4757-95ae-b315793bbbca `
-    Security:ValidAudiences:1=api://a74cb192-598c-4757-95ae-b315793bbbca
+    Security:ClientId=40753a27-c84a-4fa6-905e-f09214c9cfcd `
+    Security:ValidAudiences:0=40753a27-c84a-4fa6-905e-f09214c9cfcd `
+    Security:ValidAudiences:1=api://40753a27-c84a-4fa6-905e-f09214c9cfcd
 
 vault kv get -mount=security-codedesignplus-keyvalue ms-licenses
 
