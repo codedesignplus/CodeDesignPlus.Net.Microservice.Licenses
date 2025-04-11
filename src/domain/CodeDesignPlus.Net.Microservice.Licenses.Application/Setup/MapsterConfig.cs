@@ -30,6 +30,7 @@ public static class MapsterConfigLicense
                 BillingType = src.BillingType,
                 Currency = Currency.Create(src.Currency.Name, src.Currency.Code, src.Currency.Symbol),
                 Price = src.Price,
+                IsActive = src.IsActive,
                 Modules = src.Modules.Select(x => new ModuleDto
                 {
                     Id = x.Id,

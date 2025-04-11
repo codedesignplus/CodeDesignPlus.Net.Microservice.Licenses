@@ -13,4 +13,5 @@ public class LicenseDto: IDtoBase
     public Currency Currency { get;  set; } = null!;
     public long Price { get;  set; }
     public Dictionary<string, string> Attributes { get;  set; } = [];
+    public bool IsActive { get;  set; }
 }
