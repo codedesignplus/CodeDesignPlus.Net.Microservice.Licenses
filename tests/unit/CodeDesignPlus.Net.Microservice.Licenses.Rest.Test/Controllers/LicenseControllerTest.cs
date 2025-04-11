@@ -15,6 +15,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
 {
@@ -38,14 +39,14 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
             var criteria = new C.Criteria();
             mediatorMock
                 .Setup(m => m.Send(It.IsAny<GetAllLicenseQuery>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<LicenseDto>());
+                .ReturnsAsync(Pagination<LicenseDto>.Create([], 1, 10, 0));
 
             // Act
             var result = await controller.GetLicenses(criteria, CancellationToken.None);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.IsAssignableFrom<IEnumerable<LicenseDto>>(okResult.Value);
+            Assert.IsType<Pagination<LicenseDto>>(okResult.Value, exactMatch: false);
             mediatorMock.Verify(m => m.Send(It.IsAny<GetAllLicenseQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 

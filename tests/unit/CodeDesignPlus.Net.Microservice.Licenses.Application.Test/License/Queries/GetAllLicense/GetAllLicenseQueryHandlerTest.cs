@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetAllLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
@@ -56,18 +57,19 @@ public class GetAAllLicenseQueryHandlerTest
         };
         var licenses = new List<LicenseAggregate> { license };
         var licenseDtos = new List<LicenseDto> { licenseDto };
+        var pagination = Pagination<LicenseAggregate>.Create(licenses, 1, 10, 0);
 
         repositoryMock
             .Setup(repo => repo.MatchingAsync<LicenseAggregate>(request.Criteria, cancellationToken))
-            .ReturnsAsync(licenses);
+            .ReturnsAsync(pagination);
         mapperMock
-            .Setup(mapper => mapper.Map<List<LicenseDto>>(licenses))
-            .Returns(licenseDtos);
+            .Setup(mapper => mapper.Map<Pagination<LicenseDto>>(pagination))
+            .Returns(Pagination<LicenseDto>.Create(licenseDtos, 1, 10, 0));
 
         // Act
         var result = await handler.Handle(request, cancellationToken);
 
         // Assert
-        Assert.Equal(licenseDtos, result);
+        Assert.Equal(licenseDtos, result.Data);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using NodaTime.Serialization.SystemTextJson;
@@ -46,7 +47,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
 
         var json = await response.Content.ReadAsStringAsync();
 
-        var licenses = System.Text.Json.JsonSerializer.Deserialize<IEnumerable<LicenseDto>>(json, this.options);
+        var pagination = System.Text.Json.JsonSerializer.Deserialize<Pagination<LicenseDto>>(json, this.options);
+        var licenses = pagination?.Data;
 
         Assert.NotNull(licenses);
         Assert.NotEmpty(licenses);
