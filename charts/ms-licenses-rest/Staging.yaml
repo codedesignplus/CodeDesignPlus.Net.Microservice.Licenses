@@ -93,6 +93,7 @@ ms-base:
 
   virtualService: 
     create: true
+    namespace: istio-ingress
     hosts:
       - services.codedesignplus.com
     gateways:
