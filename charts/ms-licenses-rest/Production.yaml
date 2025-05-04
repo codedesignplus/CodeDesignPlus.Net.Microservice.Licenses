@@ -97,7 +97,7 @@ ms-base:
     hosts:
       - services.codedesignplus.com
     gateways:
-      - services-gateway
+      - istio-ingress/services-gateway
     http:
     - name: ms-licenses
       match:
@@ -107,6 +107,6 @@ ms-base:
         uri: /
       route:
       - destination:
-          host: ms-licenses-rest.default.svc.cluster.local
+          host: ms-licenses-rest.urbancore.svc.cluster.local
           port:
             number: 5000
