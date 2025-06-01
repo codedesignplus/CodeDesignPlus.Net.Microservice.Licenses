@@ -13,11 +13,11 @@ public static class MapsterConfigLicense
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new CreateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.BillingType, Currency.Create(src.Currency.Name, src.Currency.Code, src.Currency.Symbol), src.Price, src.Attributes));
+            .ConstructUsing(src => new CreateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.Prices, src.IdLogo, src.TermOfService, src.Attributes, src.IsActive));
 
         TypeAdapterConfig<UpdateLicenseDto, UpdateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.BillingType, Currency.Create(src.Currency.Name, src.Currency.Code, src.Currency.Symbol), src.Price, src.Attributes));
+            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.Prices, src.IdLogo, src.TermOfService, src.Attributes, src.IsActive));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()
@@ -27,9 +27,9 @@ public static class MapsterConfigLicense
                 Name = src.Name,
                 Description = src.Description,
                 Attributes = src.Attributes,
-                BillingType = src.BillingType,
-                Currency = Currency.Create(src.Currency.Name, src.Currency.Code, src.Currency.Symbol),
-                Price = src.Price,
+                Prices = src.Prices,
+                IdLogo = src.IdLogo,
+                TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,
                 Modules = src.Modules.Select(x => new ModuleDto
                 {

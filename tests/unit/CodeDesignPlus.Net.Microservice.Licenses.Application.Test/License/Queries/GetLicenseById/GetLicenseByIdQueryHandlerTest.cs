@@ -17,6 +17,11 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         private readonly Mock<ICacheManager> cacheManagerMock;
         private readonly GetLicenseByIdQueryHandler handler;
 
+
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+
+
         public GetLicenseByIdQueryHandlerTest()
         {
             repositoryMock = new Mock<ILicenseRepository>();
@@ -50,9 +55,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
                 Name = "Test License",
                 Description = "Test Description",
                 Modules = [],
-                BillingType = BillingTypeEnum.Monthly,
-                Currency = Currency.Create("United States Dollar", "USD", "$"),
-                Price = 100,
+                Prices = [PriceMonthly, PriceAnnualy],
             };
             cacheManagerMock.Setup(x => x.ExistsAsync(request.Id.ToString())).ReturnsAsync(true);
             cacheManagerMock.Setup(x => x.GetAsync<LicenseDto>(request.Id.ToString())).ReturnsAsync(licenseDto);
@@ -72,16 +75,18 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         {
             // Arrange
             var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(request.Id, "Test License", "Test Description", [], BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, [], Guid.NewGuid());
+            var license = LicenseAggregate.Create(request.Id, "Test License", "Test Description", [], [PriceAnnualy, PriceMonthly], Guid.NewGuid(), "Term of Service", [], true, Guid.NewGuid());
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,
                 Name = license.Name,
                 Description = license.Description,
                 Modules = [],
-                BillingType = license.BillingType,
-                Currency = license.Currency,
-                Price = license.Price,
+                Prices = license.Prices,
+                IdLogo = license.IdLogo,
+                TermsOfService = license.TermsOfService,
+                Attributes = license.Attributes,
+                IsActive = license.IsActive
             };
             cacheManagerMock.Setup(x => x.ExistsAsync(request.Id.ToString())).ReturnsAsync(false);
             repositoryMock.Setup(x => x.FindAsync<LicenseAggregate>(request.Id, It.IsAny<CancellationToken>())).ReturnsAsync(license);

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using Moq;
 using Xunit;
@@ -18,6 +19,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IPubSub> pubSubMock;
         private readonly Mock<IMapper> mapperMock;
         private readonly UpdateLicenseCommandHandler handler;
+
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
 
         public UpdateLicenseCommandHandlerTest()
         {
@@ -53,7 +57,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseNotFound_ThrowsCodeDesignPlusException()
         {
             // Arrange
-            var request = new UpdateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], Domain.Enums.BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, []);
+            var request = new UpdateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock
@@ -72,8 +76,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_UpdatesLicense()
         {
             // Arrange
-            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Test Description", [], Domain.Enums.BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, [], Guid.NewGuid());
-            var request = new UpdateLicenseCommand(license.Id, "Test New License", "Test New Description", [], Domain.Enums.BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, []);
+            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true, Guid.NewGuid());
+            var request = new UpdateLicenseCommand(license.Id, "Test New License", "Test New Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test New Terms of Service", [], true);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock

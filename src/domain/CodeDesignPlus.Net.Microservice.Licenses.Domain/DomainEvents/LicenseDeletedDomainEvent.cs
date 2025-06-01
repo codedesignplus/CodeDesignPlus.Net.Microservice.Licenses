@@ -10,9 +10,7 @@ public class LicenseDeletedDomainEvent(
     string name, 
     string description, 
     List<ModuleEntity> modules, 
-    BillingTypeEnum billingType, 
-    Currency currency, 
-    long price, 
+    List<Price> prices, 
     Dictionary<string, string> attributes,
     bool isActive,
     Guid? eventId = null,
@@ -21,23 +19,14 @@ public class LicenseDeletedDomainEvent(
 ) : DomainEvent(aggregateId, eventId, occurredAt, metadata)
 {
     public string Name { get; private set; } = name;
-
     public string Description { get; private set; } = description;
-
     public List<ModuleEntity> Modules { get; private set; } = modules;
-
-    public BillingTypeEnum BillingType { get; private set; } = billingType;
-
-    public Currency Currency { get; private set; } = currency;
-
-    public long Price { get; private set; } = price;
-
+    public List<Price> Prices { get; private set; } = prices;
     public Dictionary<string, string> Attributes { get; private set; } = attributes;
-
     public bool IsActive { get; private set; } = isActive;
 
-    public static LicenseDeletedDomainEvent Create(Guid aggregateId, string name, string description, List<ModuleEntity> modules, BillingTypeEnum billingType, Currency currency, long price, Dictionary<string, string> attributes, bool isActive)
+    public static LicenseDeletedDomainEvent Create(Guid aggregateId, string name, string description, List<ModuleEntity> modules, List<Price> prices, Dictionary<string, string> attributes, bool isActive)
     {
-        return new LicenseDeletedDomainEvent(aggregateId, name, description, modules, billingType, currency, price, attributes, isActive);
+        return new LicenseDeletedDomainEvent(aggregateId, name, description, modules, prices, attributes, isActive);
     }
 }

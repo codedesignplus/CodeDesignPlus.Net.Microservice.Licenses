@@ -18,6 +18,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IPubSub> pubSubMock;
         private readonly RemoveModuleCommandHandler handler;
 
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+
         public RemoveModuleCommandHandlerTest()
         {
             repositoryMock = new Mock<ILicenseRepository>();
@@ -74,7 +77,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
                 Name = "Test Module"
             };
 
-            var license = LicenseAggregate.Create(idAggregate, "Test License", "Test Description", [module], BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, [], Guid.NewGuid());
+            var license = LicenseAggregate.Create(idAggregate, "Test License", "Test Description", [module], [PriceAnnualy, PriceMonthly],  Guid.NewGuid(), "Test Terms of Service", [], true, Guid.NewGuid());
 
             repositoryMock
                 .Setup(r => r.FindAsync<LicenseAggregate>(request.Id, cancellationToken))

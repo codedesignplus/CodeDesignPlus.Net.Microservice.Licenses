@@ -18,6 +18,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IMapper> mapperMock;
         private readonly CreateLicenseCommandHandler handler;
 
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+
         public CreateLicenseCommandHandlerTest()
         {
             repositoryMock = new Mock<ILicenseRepository>();
@@ -46,7 +49,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseAlreadyExists_ThrowsCodeDesignPlusException()
         {
             // Arrange
-            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, []);
+            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock.Setup(x => x.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken)).ReturnsAsync(true);
@@ -63,7 +66,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_CreatesLicenseAndPublishesEvents()
         {
             // Arrange
-            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, []);
+            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true);
             var cancellationToken = CancellationToken.None;
             var userId = Guid.NewGuid();
 

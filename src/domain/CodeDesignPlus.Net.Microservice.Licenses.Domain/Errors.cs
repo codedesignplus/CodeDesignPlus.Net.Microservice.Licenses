@@ -16,4 +16,5 @@ public class Errors: IErrorCodes
     public const string IdModuleIsRequired = "110 : The Id of the module is required.";
     public const string ModuleAlreadyExists = "111 : The module already exists in the license.";
     public const string ModuleNotFound = "112 : The module was not found.";
+    public const string PriceLicenseIsRequired = "113 : The Price of the license is required.";
 }

@@ -3,15 +3,17 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 
-public class LicenseDto: IDtoBase
+public class LicenseDto : IDtoBase
 {
     public required Guid Id { get; set; }
-    public string Name { get;  set; } = null!;
-    public string Description { get;  set; } = null!;
-    public List<ModuleDto> Modules { get;  set; } = [];
-    public BillingTypeEnum BillingType { get;  set; }
-    public Currency Currency { get;  set; } = null!;
-    public long Price { get;  set; }
-    public Dictionary<string, string> Attributes { get;  set; } = [];
-    public bool IsActive { get;  set; }
+    public string Name { get; set; } = null!;
+    public string Description { get; set; } = null!;
+    public List<ModuleDto> Modules { get; set; } = [];
+    public BillingTypeEnum BillingType { get; set; }
+    public Currency Currency { get; set; } = null!;
+    public List<Price> Prices { get; set; } = [];
+    public Guid IdLogo { get; set; } = Guid.Empty;
+    public string TermsOfService { get; set; } = null!;
+    public Dictionary<string, string> Attributes { get; set; } = [];
+    public bool IsActive { get; set; }
 }

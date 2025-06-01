@@ -16,6 +16,10 @@ public class GetAAllLicenseQueryHandlerTest
     private readonly Mock<IMapper> mapperMock;
     private readonly GetAllLicenseQueryHandler handler;
 
+    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
+    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+
+
     public GetAAllLicenseQueryHandlerTest()
     {
         repositoryMock = new Mock<ILicenseRepository>();
@@ -44,16 +48,16 @@ public class GetAAllLicenseQueryHandlerTest
         // Arrange
         var request = new GetAllLicenseQuery(null!);
         var cancellationToken = CancellationToken.None;
-        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Test Description", [], BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, [], Guid.NewGuid());
+        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true, Guid.NewGuid());
         var licenseDto = new LicenseDto()
         {
             Id = license.Id,
             Name = license.Name,
             Description = license.Description,
             Modules = [.. license.Modules.Select(module => new ModuleDto() { Id = module.Id, Name = module.Name })],
-            BillingType = license.BillingType,
-            Currency = license.Currency,
-            Price = license.Price,
+            Prices = license.Prices,
+            TermsOfService = license.TermsOfService,
+            IsActive = license.IsActive,
         };
         var licenses = new List<LicenseAggregate> { license };
         var licenseDtos = new List<LicenseDto> { licenseDto };

@@ -14,6 +14,9 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
     }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
+    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
+    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+
     private readonly ModuleDto module = new()
     {
         Id = Guid.NewGuid(),
@@ -56,11 +59,10 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             x.Id == license.Id
             && x.Name == license.Name
             && x.Description == license.Description
-            && x.BillingType == license.BillingType
-            && x.Price == license.Price
-            && x.Currency.Name == license.Currency.Name
-            && x.Currency.Code == license.Currency.Code
-            && x.Currency.Symbol == license.Currency.Symbol
+            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceMonthly.BillingType && o.Currency.Code == this.PriceMonthly.Currency.Code && o.Currency.Name == this.PriceMonthly.Currency.Name && o.Currency.Symbol == this.PriceMonthly.Currency.Symbol) != null
+            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceAnnualy.BillingType && o.Currency.Code == this.PriceAnnualy.Currency.Code && o.Currency.Name == this.PriceAnnualy.Currency.Name && o.Currency.Symbol == this.PriceAnnualy.Currency.Symbol) != null
+            && x.IdLogo != Guid.Empty
+            && x.TermsOfService == license.TermOfService
             && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
         );
     }
@@ -83,11 +85,6 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(licenseCreated.Id, license.Id);
         Assert.Equal(licenseCreated.Name, license.Name);
         Assert.Equal(licenseCreated.Description, license.Description);
-        Assert.Equal(licenseCreated.BillingType, license.BillingType);
-        Assert.Equal(licenseCreated.Price, license.Price);
-        Assert.Equal(licenseCreated.Currency.Name, license.Currency.Name);
-        Assert.Equal(licenseCreated.Currency.Code, license.Currency.Code);
-        Assert.Equal(licenseCreated.Currency.Symbol, license.Currency.Symbol);
         Assert.Contains(licenseCreated.Modules, x =>
             x.Id == module.Id
             && x.Name == module.Name
@@ -107,9 +104,13 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
                 { "UserLimit", "3" },
                 { "InvoiceLimit", "5" }
             },
-            BillingType = BillingTypeEnum.Monthly,
-            Currency = Currency.Create("United States Dollar", "USD", "$"),
-            Price = 100,
+            Prices =
+            [
+                PriceMonthly,
+                PriceAnnualy
+            ],
+            IdLogo = Guid.NewGuid(),
+            TermOfService = "Terms of service for License Test",
             Modules = [module]
         };
 
@@ -127,11 +128,10 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Equal(data.BillingType, license.BillingType);
-        Assert.Equal(data.Price, license.Price);
-        Assert.Equal(data.Currency.Name, license.Currency.Name);
-        Assert.Equal(data.Currency.Code, license.Currency.Code);
-        Assert.Equal(data.Currency.Symbol, license.Currency.Symbol);
+        Assert.Contains(license.Prices, x => x.Pricing == PriceMonthly.Pricing && x.BillingType == PriceMonthly.BillingType && x.Currency.Code == PriceMonthly.Currency.Code && x.Currency.Name == PriceMonthly.Currency.Name && x.Currency.Symbol == PriceMonthly.Currency.Symbol);
+        Assert.Contains(license.Prices, x => x.Pricing == PriceAnnualy.Pricing && x.BillingType == PriceAnnualy.BillingType && x.Currency.Code == PriceAnnualy.Currency.Code && x.Currency.Name == PriceAnnualy.Currency.Name && x.Currency.Symbol == PriceAnnualy.Currency.Symbol);
+        Assert.Equal(data.IdLogo, license.IdLogo);
+        Assert.Equal(data.TermOfService, license.TermsOfService);
         Assert.Contains(data.Modules, x =>
             x.Id == module.Id
             && x.Name == module.Name
@@ -163,11 +163,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Equal(data.BillingType, license.BillingType);
-        Assert.Equal(data.Price, license.Price);
-        Assert.Equal(data.Currency.Name, license.Currency.Name);
-        Assert.Equal(data.Currency.Code, license.Currency.Code);
-        Assert.Equal(data.Currency.Symbol, license.Currency.Symbol);
+
         Assert.Contains(license.Modules, x =>
             x.Id == moduleNew.IdModule
             && x.Name == moduleNew.Name
@@ -184,9 +180,6 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             Id = licenseCreated.Id,
             Name = "License Test Updated",
             Description = "License Test Description Updated",
-            BillingType = BillingTypeEnum.Annualy,
-            Currency = Currency.Create("United States Dollar", "USD", "$"),
-            Price = 200,
             Modules = [module]
         };
 
@@ -204,11 +197,6 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Equal(data.BillingType, license.BillingType);
-        Assert.Equal(data.Price, license.Price);
-        Assert.Equal(data.Currency.Name, license.Currency.Name);
-        Assert.Equal(data.Currency.Code, license.Currency.Code);
-        Assert.Equal(data.Currency.Symbol, license.Currency.Symbol);
         Assert.Contains(data.Modules, x =>
             x.Id == module.Id
             && x.Name == module.Name
@@ -258,11 +246,6 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Equal(data.BillingType, license.BillingType);
-        Assert.Equal(data.Price, license.Price);
-        Assert.Equal(data.Currency.Name, license.Currency.Name);
-        Assert.Equal(data.Currency.Code, license.Currency.Code);
-        Assert.Equal(data.Currency.Symbol, license.Currency.Symbol);
         Assert.DoesNotContain(license.Modules, x =>
             x.Id == moduleNew.IdModule
             && x.Name == moduleNew.Name
@@ -282,9 +265,13 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
                 { "UserLimit", "3" },
                 { "InvoiceLimit", "5" }
             },
-            BillingType = BillingTypeEnum.Monthly,
-            Currency = Currency.Create("United States Dollar", "USD", "$"),
-            Price = 100,
+            Prices =
+            [
+                PriceMonthly,
+                PriceAnnualy
+            ],
+            IdLogo = Guid.NewGuid(),
+            TermOfService = "Terms of service for License Test",
             Modules = [module]
         };
 
