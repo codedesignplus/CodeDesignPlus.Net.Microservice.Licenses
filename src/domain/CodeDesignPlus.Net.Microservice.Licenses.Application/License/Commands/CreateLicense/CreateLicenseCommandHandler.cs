@@ -12,7 +12,7 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         ApplicationGuard.IsTrue(exist, Errors.LicenseAlreadyExists);
 
-        var licensePopularityExist = await repository.LicesePopularityExistsAsync(cancellationToken);
+        var licensePopularityExist = await repository.LicesePopularityExistsAsync(request.Id, cancellationToken);
 
         ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
 
