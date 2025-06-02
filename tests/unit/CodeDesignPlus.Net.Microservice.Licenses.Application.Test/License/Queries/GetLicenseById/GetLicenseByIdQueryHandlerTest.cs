@@ -75,7 +75,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         {
             // Arrange
             var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(request.Id, "Test License", "Test Description", [], [PriceAnnualy, PriceMonthly], Guid.NewGuid(), "Term of Service", [], true, Guid.NewGuid());
+            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description","Test Description", [], [PriceAnnualy, PriceMonthly], "icon", "Term of Service", [], true, false, Guid.NewGuid());
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,
@@ -83,7 +83,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
                 Description = license.Description,
                 Modules = [],
                 Prices = license.Prices,
-                IdLogo = license.IdLogo,
+                Icon = license.Icon,
                 TermsOfService = license.TermsOfService,
                 Attributes = license.Attributes,
                 IsActive = license.IsActive

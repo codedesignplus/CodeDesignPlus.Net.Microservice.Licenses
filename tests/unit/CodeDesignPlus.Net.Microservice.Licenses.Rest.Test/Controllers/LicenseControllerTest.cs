@@ -68,7 +68,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                     Description = "Test Description",
                     Modules = [],
                     Prices = [PriceMonthly, PriceAnnualy],
-                    IdLogo = Guid.NewGuid(),
+                    Icon = "icon",
                     TermsOfService = "Test Terms of Service",
                 });
 
@@ -91,12 +91,12 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                 Description = "Test Description",
                 Modules = [],
                 Prices = [PriceMonthly, PriceAnnualy],
-                IdLogo = Guid.NewGuid(),
+                Icon = "icon",
                 TermsOfService = "Test Terms of Service",
             };
             mapperMock
                 .Setup(m => m.Map<CreateLicenseCommand>(It.IsAny<CreateLicenseDto>()))
-                .Returns(new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceAnnualy, PriceMonthly], Guid.NewGuid(), "Term of service", [], true));
+                .Returns(new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], "icon", "Term of service", [], true, false));
 
             // Act
             var result = await controller.CreateLicense(createLicenseDto, CancellationToken.None);
@@ -113,7 +113,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
             var addModuleDto = new AddModuleDto();
             mapperMock
                 .Setup(m => m.Map<AddModuleCommand>(It.IsAny<AddModuleDto>()))
-                .Returns(new AddModuleCommand(licenseId, Guid.NewGuid(), "Test Module"));
+                .Returns(new AddModuleCommand(licenseId, Guid.NewGuid(), "Test Module", "Description"));
 
             // Act
             var result = await controller.AddModules(licenseId, addModuleDto, CancellationToken.None);
@@ -130,7 +130,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
             var updateLicenseDto = new UpdateLicenseDto();
             mapperMock
                 .Setup(m => m.Map<UpdateLicenseCommand>(It.IsAny<UpdateLicenseDto>()))
-                .Returns(new UpdateLicenseCommand(licenseId, "Test License", "Test Description", [], [PriceAnnualy, PriceMonthly], Guid.NewGuid(), "Term of service", [], true));
+                .Returns(new UpdateLicenseCommand(licenseId, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], "icon", "Term of service", [], true, false));
 
             // Act
             var result = await controller.UpdateLicense(licenseId, updateLicenseDto, CancellationToken.None);

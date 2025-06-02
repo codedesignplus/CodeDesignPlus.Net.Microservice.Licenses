@@ -49,7 +49,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseAlreadyExists_ThrowsCodeDesignPlusException()
         {
             // Arrange
-            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true);
+            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock.Setup(x => x.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken)).ReturnsAsync(true);
@@ -66,7 +66,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_CreatesLicenseAndPublishesEvents()
         {
             // Arrange
-            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true);
+            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false);
             var cancellationToken = CancellationToken.None;
             var userId = Guid.NewGuid();
 

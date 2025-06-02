@@ -11,10 +11,14 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
+        
+        var licensePopularityExist = await repository.LicesePopularityExistsAsync(cancellationToken);
+
+        ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
 
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 
-        license.Update(request.Name, request.Description, modules, request.Prices, request.IdLogo, request.TermsOfService, request.Attributes, request.IsActive, user.IdUser);
+        license.Update(request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, user.IdUser);
 
         await repository.UpdateAsync(license, cancellationToken);
 

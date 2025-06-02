@@ -46,7 +46,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseNotFound_ThrowsLicenseNotFoundException()
         {
             // Arrange
-            var request = new AddModuleCommand(Guid.NewGuid(), Guid.NewGuid(), "TestModule");
+            var request = new AddModuleCommand(Guid.NewGuid(), Guid.NewGuid(), "TestModule", "Description");
             var cancellationToken = CancellationToken.None;
 
             repositoryMock
@@ -65,9 +65,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_UpdatesLicenseAndPublishesEvents()
         {
             // Arrange
-            var request = new AddModuleCommand(Guid.NewGuid(), Guid.NewGuid(), "TestModule");
+            var request = new AddModuleCommand(Guid.NewGuid(), Guid.NewGuid(), "TestModule", "Description");
             var cancellationToken = CancellationToken.None;
-            var license = LicenseAggregate.Create(Guid.NewGuid(), "TestLicense", "TestDescription", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "TestTermsOfService", [], true, Guid.NewGuid());
+            var license = LicenseAggregate.Create(Guid.NewGuid(), "TestLicense", "Short Description", "TestDescription", [], [PriceMonthly, PriceAnnualy], "icon", "TestTermsOfService", [], true, false, Guid.NewGuid());
 
             repositoryMock
                 .Setup(r => r.FindAsync<LicenseAggregate>(request.Id, cancellationToken))

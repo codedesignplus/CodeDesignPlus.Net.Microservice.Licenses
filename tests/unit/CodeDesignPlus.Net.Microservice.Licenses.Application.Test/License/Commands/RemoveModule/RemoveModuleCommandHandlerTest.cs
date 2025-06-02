@@ -74,10 +74,11 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             var module = new ModuleEntity
             {
                 Id = request.IdModule,
-                Name = "Test Module"
+                Name = "Test Module",
+                Description = "Test Module Description"
             };
 
-            var license = LicenseAggregate.Create(idAggregate, "Test License", "Test Description", [module], [PriceAnnualy, PriceMonthly],  Guid.NewGuid(), "Test Terms of Service", [], true, Guid.NewGuid());
+            var license = LicenseAggregate.Create(idAggregate, "Test License", "Short Description", "Test Description", [module], [PriceAnnualy, PriceMonthly],  "logo", "Test Terms of Service", [], true, false, Guid.NewGuid());
 
             repositoryMock
                 .Setup(r => r.FindAsync<LicenseAggregate>(request.Id, cancellationToken))

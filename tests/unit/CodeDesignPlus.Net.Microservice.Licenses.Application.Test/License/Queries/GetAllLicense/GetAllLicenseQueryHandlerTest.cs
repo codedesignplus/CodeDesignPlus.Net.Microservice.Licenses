@@ -48,7 +48,7 @@ public class GetAAllLicenseQueryHandlerTest
         // Arrange
         var request = new GetAllLicenseQuery(null!);
         var cancellationToken = CancellationToken.None;
-        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true, Guid.NewGuid());
+        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false, Guid.NewGuid());
         var licenseDto = new LicenseDto()
         {
             Id = license.Id,

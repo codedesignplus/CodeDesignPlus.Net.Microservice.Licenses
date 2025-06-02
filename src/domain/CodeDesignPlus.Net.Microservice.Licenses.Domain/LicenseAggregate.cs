@@ -8,60 +8,70 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
 {
     public string Name { get; private set; } = null!;
     public string Description { get; private set; } = null!;
+    public string ShortDescription { get; private set; } = null!;
+    public bool IsPopular { get; private set; } = false;
     public List<ModuleEntity> Modules { get; private set; } = [];
     public List<Price> Prices { get; private set; } = [];
     public Dictionary<string, string> Attributes { get; private set; } = [];
-    public Guid IdLogo { get; private set; } = Guid.Empty;
+    public string Icon { get; private set; } = null!;
     public string TermsOfService { get; private set; } = null!;
 
-    private LicenseAggregate(Guid id, string name, string description, List<ModuleEntity> modules, List<Price> price, Guid idLogo, string TermsOfService, Dictionary<string, string> attributes, bool isActive, Guid createdBy) : this(id)
+    private LicenseAggregate(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive,bool isPopular, Guid createdBy) : this(id)
     {
         this.Name = name;
+        this.ShortDescription = shortDescription;
         this.Description = description;
         this.Modules = modules ?? [];
         this.Prices = price;
         this.Attributes = attributes ?? [];
-        this.IdLogo = idLogo;
+        this.Icon = icon;
         this.TermsOfService = TermsOfService;
         this.IsActive = isActive;
+        this.IsPopular = isPopular;
 
         this.CreatedAt = SystemClock.Instance.GetCurrentInstant();
         this.CreatedBy = createdBy;
 
-        AddEvent(LicenseCreatedDomainEvent.Create(Id, Name, Description, Modules, Prices, IdLogo, TermsOfService, Attributes, IsActive));
+        AddEvent(LicenseCreatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular));
     }
 
-    public static LicenseAggregate Create(Guid id, string name, string description, List<ModuleEntity> modules, List<Price> price, Guid idLogo, string TermsOfService, Dictionary<string, string> attributes, bool isActive, Guid createdBy)
+    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdLicenseIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
+        DomainGuard.IsEmpty(shortDescription, Errors.NameLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
         DomainGuard.GuidIsEmpty(createdBy, Errors.CreatedByLicenseIsRequired);
+        DomainGuard.IsNullOrEmpty(icon, Errors.IconLicenseIsRequired);
 
-        return new LicenseAggregate(id, name, description, modules, price, idLogo, TermsOfService, attributes, isActive, createdBy);
+        return new LicenseAggregate(id, name, shortDescription, description, modules, price, icon, TermsOfService, attributes, isActive, isPopular, createdBy);
     }
 
-    public void Update(string name, string description, List<ModuleEntity> modules, List<Price> price, Guid idLogo, string TermsOfService, Dictionary<string, string> attributes, bool isActive, Guid updatedBy)
+    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
+        DomainGuard.IsEmpty(shortDescription, Errors.NameLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
         DomainGuard.GuidIsEmpty(updatedBy, Errors.CreatedByLicenseIsRequired);
+        DomainGuard.IsNullOrEmpty(icon, Errors.IconLicenseIsRequired);
 
         this.Name = name;
         this.Description = description;
+        this.ShortDescription = shortDescription;
         this.Modules = modules;
         this.Prices = price;
         this.Attributes = attributes;
-        this.IdLogo = idLogo;
+        this.Icon = icon;
         this.TermsOfService = TermsOfService;
         this.IsActive = isActive;
+        this.IsPopular = isPopular;
 
         this.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         this.UpdatedBy = updatedBy;
 
-        AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, Description, Modules, Prices, IdLogo, TermsOfService, Attributes, IsActive));
+        AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular));
     }
 
     public void Delete(Guid deletedBy)
@@ -74,17 +84,19 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         AddEvent(LicenseDeletedDomainEvent.Create(Id, Name, Description, Modules, Prices, Attributes, IsActive));
     }
 
-    public void AddModule(Guid id, string name, Guid updatedBy)
+    public void AddModule(Guid id, string name, string description, Guid updatedBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdModuleIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
+        DomainGuard.IsEmpty(description, Errors.DescriptionModuleIsRequired);
         DomainGuard.GuidIsEmpty(updatedBy, Errors.CreatedByLicenseIsRequired);
         DomainGuard.IsTrue(this.Modules.Any(x => x.Id == id), Errors.ModuleAlreadyExists);
 
         var module = new ModuleEntity()
         {
             Id = id,
-            Name = name
+            Name = name,
+            Description = description
         };
 
         this.Modules.Add(module);

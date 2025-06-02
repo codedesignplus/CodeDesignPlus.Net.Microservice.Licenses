@@ -12,9 +12,13 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         ApplicationGuard.IsTrue(exist, Errors.LicenseAlreadyExists);
 
+        var licensePopularityExist = await repository.LicesePopularityExistsAsync(cancellationToken);
+
+        ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
+
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 
-        var license = LicenseAggregate.Create(request.Id, request.Name, request.Description, modules, request.Prices, request.IdLogo, request.TermsOfService, request.Attributes, request.IsActive, user.IdUser);
+        var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, user.IdUser);
 
         await repository.CreateAsync(license, cancellationToken);
 

@@ -57,7 +57,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseNotFound_ThrowsCodeDesignPlusException()
         {
             // Arrange
-            var request = new UpdateLicenseCommand(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true);
+            var request = new UpdateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock
@@ -76,8 +76,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_UpdatesLicense()
         {
             // Arrange
-            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Test Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test Terms of Service", [], true, Guid.NewGuid());
-            var request = new UpdateLicenseCommand(license.Id, "Test New License", "Test New Description", [], [PriceMonthly, PriceAnnualy], Guid.NewGuid(), "Test New Terms of Service", [], true);
+            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false, Guid.NewGuid());
+            var request = new UpdateLicenseCommand(license.Id, "Test New License", "Short Description", "Test New Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test New Terms of Service", [], true, false);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock
