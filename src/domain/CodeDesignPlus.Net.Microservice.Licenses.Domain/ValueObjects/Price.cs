@@ -17,7 +17,9 @@ public sealed partial class Price
     private Price(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel)
     {
         DomainGuard.IsNull(currency, Errors.CurrencyLicenseIsRequired);
-        DomainGuard.IsLessThan(pricing, 0, Errors.PriceLicenseCannotBeLessThanZero);
+
+        if (billingModel != BillingModel.None)
+            DomainGuard.IsLessThan(pricing, 0, Errors.PriceLicenseCannotBeLessThanZero);
 
         this.BillingType = billingType;
         this.Currency = currency;
