@@ -27,7 +27,7 @@ public static class MapsterConfigLicense
                 Name = src.Name,
                 Description = src.Description,
                 Attributes = src.Attributes,
-                Prices = src.Prices,
+                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Currency.Create(x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel)).ToList(),
                 IdLogo = src.IdLogo,
                 TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,

@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+using Newtonsoft.Json;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -13,13 +13,8 @@ public sealed partial class Price
 
     public BillingModel BillingModel { get; set; }
 
-    public Price()
-    {
-        // For deserialization purposes
-    }
-
     [JsonConstructor]
-    public Price(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel)
+    private Price(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel)
     {
         DomainGuard.IsNull(currency, Errors.CurrencyLicenseIsRequired);
         DomainGuard.IsLessThan(pricing, 0, Errors.PriceLicenseCannotBeLessThanZero);

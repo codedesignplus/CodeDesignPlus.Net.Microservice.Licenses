@@ -1,18 +1,15 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 public sealed partial class Currency
 {
-    [GeneratedRegex(@"^0x[0-9]{32}$")]
-    private static partial Regex Regex();
-
-    public string Name { get; private set; }
-    public string Code { get; private set; }
-    public string Symbol { get; private set; }
+    public string Name { get; private set; } = null!;
+    public string Code { get; private set; } = null!;
+    public string Symbol { get; private set; } = null!;
 
     [JsonConstructor]
-    public Currency(string name, string code, string symbol)
+    private Currency(string name, string code, string symbol)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.NameCurrencyIsRequired);
         DomainGuard.IsNullOrEmpty(code, Errors.CodeCurrencyIsRequired);
