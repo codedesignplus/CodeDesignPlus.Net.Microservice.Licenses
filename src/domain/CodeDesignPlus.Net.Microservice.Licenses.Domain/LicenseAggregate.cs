@@ -39,7 +39,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdLicenseIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
-        DomainGuard.IsEmpty(shortDescription, Errors.NameLicenseIsRequired);
+        DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
         DomainGuard.GuidIsEmpty(createdBy, Errors.CreatedByLicenseIsRequired);
@@ -51,7 +51,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
-        DomainGuard.IsEmpty(shortDescription, Errors.NameLicenseIsRequired);
+        DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
         DomainGuard.GuidIsEmpty(updatedBy, Errors.CreatedByLicenseIsRequired);

@@ -19,4 +19,5 @@ public class Errors: IErrorCodes
     public const string PriceLicenseIsRequired = "113 : The Price of the license is required.";
     public const string DescriptionModuleIsRequired = "114 : The Description of the module is required.";
     public const string IconLicenseIsRequired = "115 : The Icon of the license is required.";
+    public const string ShortDescriptionLicenseIsRequired = "116 : The description of license is required.";
 }
