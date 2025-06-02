@@ -9,8 +9,6 @@ public class LicenseDto : IDtoBase
     public string Name { get; set; } = null!;
     public string Description { get; set; } = null!;
     public List<ModuleDto> Modules { get; set; } = [];
-    public BillingTypeEnum BillingType { get; set; }
-    public Currency Currency { get; set; } = null!;
     public List<Price> Prices { get; set; } = [];
     public Guid IdLogo { get; set; } = Guid.Empty;
     public string TermsOfService { get; set; } = null!;
