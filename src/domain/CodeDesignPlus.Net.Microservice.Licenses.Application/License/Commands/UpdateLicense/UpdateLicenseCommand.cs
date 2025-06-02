@@ -15,6 +15,6 @@ public class Validator : AbstractValidator<UpdateLicenseCommand>
         RuleFor(x => x.Description).NotEmpty().NotNull().MaximumLength(512);
         RuleFor(x => x.Prices).NotNull().NotEmpty();
         RuleFor(x => x.IdLogo).NotEmpty().NotNull();
-        RuleFor(x => x.TermsOfService).NotEmpty().NotNull().MaximumLength(2048);
+        RuleFor(x => x.TermsOfService).NotEmpty().NotNull().MaximumLength(4092);
     }
 }
