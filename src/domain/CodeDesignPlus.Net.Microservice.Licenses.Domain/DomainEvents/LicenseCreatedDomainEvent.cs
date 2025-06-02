@@ -12,7 +12,7 @@ public class LicenseCreatedDomainEvent(
     List<ModuleEntity> modules,
     List<Price> prices, 
     Guid idLogo,
-    string termOfService,
+    string TermsOfService,
     Dictionary<string, string> attributes,
     bool isActive,
     Guid? eventId = null,
@@ -25,12 +25,12 @@ public class LicenseCreatedDomainEvent(
     public List<ModuleEntity> Modules { get; private set; } = modules;
     public List<Price> Prices { get; private set; } = prices;
     public Guid IdLogo { get; private set; } = idLogo;
-    public string TermsOfService { get; private set; } = termOfService;
+    public string TermsOfService { get; private set; } = TermsOfService;
     public Dictionary<string, string> Attributes { get; private set; } = attributes;
     public bool IsActive { get; private set; } = isActive;
 
-    public static LicenseCreatedDomainEvent Create(Guid aggregateId, string name, string description, List<ModuleEntity> modules, List<Price> prices, Guid idLogo, string termOfService, Dictionary<string, string> attributes, bool isActive)
+    public static LicenseCreatedDomainEvent Create(Guid aggregateId, string name, string description, List<ModuleEntity> modules, List<Price> prices, Guid idLogo, string TermsOfService, Dictionary<string, string> attributes, bool isActive)
     {
-        return new LicenseCreatedDomainEvent(aggregateId, name, description, modules, prices, idLogo, termOfService, attributes, isActive);
+        return new LicenseCreatedDomainEvent(aggregateId, name, description, modules, prices, idLogo, TermsOfService, attributes, isActive);
     }
 }

@@ -13,11 +13,11 @@ public static class MapsterConfigLicense
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new CreateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.Prices, src.IdLogo, src.TermOfService, src.Attributes, src.IsActive));
+            .ConstructUsing(src => new CreateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.Prices, src.IdLogo, src.TermsOfService, src.Attributes, src.IsActive));
 
         TypeAdapterConfig<UpdateLicenseDto, UpdateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.Prices, src.IdLogo, src.TermOfService, src.Attributes, src.IsActive));
+            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.Description, src.Modules, src.Prices, src.IdLogo, src.TermsOfService, src.Attributes, src.IsActive));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()

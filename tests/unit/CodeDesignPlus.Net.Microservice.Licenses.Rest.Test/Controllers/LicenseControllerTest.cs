@@ -92,7 +92,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                 Modules = [],
                 Prices = [PriceMonthly, PriceAnnualy],
                 IdLogo = Guid.NewGuid(),
-                TermOfService = "Test Terms of Service",
+                TermsOfService = "Test Terms of Service",
             };
             mapperMock
                 .Setup(m => m.Map<CreateLicenseCommand>(It.IsAny<CreateLicenseDto>()))

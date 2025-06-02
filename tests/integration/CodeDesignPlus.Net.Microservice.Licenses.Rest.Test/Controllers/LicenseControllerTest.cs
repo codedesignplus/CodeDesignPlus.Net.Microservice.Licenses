@@ -62,7 +62,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceMonthly.BillingType && o.Currency.Code == this.PriceMonthly.Currency.Code && o.Currency.Name == this.PriceMonthly.Currency.Name && o.Currency.Symbol == this.PriceMonthly.Currency.Symbol) != null
             && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceAnnualy.BillingType && o.Currency.Code == this.PriceAnnualy.Currency.Code && o.Currency.Name == this.PriceAnnualy.Currency.Name && o.Currency.Symbol == this.PriceAnnualy.Currency.Symbol) != null
             && x.IdLogo != Guid.Empty
-            && x.TermsOfService == license.TermOfService
+            && x.TermsOfService == license.TermsOfService
             && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
         );
     }
@@ -110,7 +110,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
                 PriceAnnualy
             ],
             IdLogo = Guid.NewGuid(),
-            TermOfService = "Terms of service for License Test",
+            TermsOfService = "Terms of service for License Test",
             Modules = [module]
         };
 
@@ -131,7 +131,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Contains(license.Prices, x => x.Pricing == PriceMonthly.Pricing && x.BillingType == PriceMonthly.BillingType && x.Currency.Code == PriceMonthly.Currency.Code && x.Currency.Name == PriceMonthly.Currency.Name && x.Currency.Symbol == PriceMonthly.Currency.Symbol);
         Assert.Contains(license.Prices, x => x.Pricing == PriceAnnualy.Pricing && x.BillingType == PriceAnnualy.BillingType && x.Currency.Code == PriceAnnualy.Currency.Code && x.Currency.Name == PriceAnnualy.Currency.Name && x.Currency.Symbol == PriceAnnualy.Currency.Symbol);
         Assert.Equal(data.IdLogo, license.IdLogo);
-        Assert.Equal(data.TermOfService, license.TermsOfService);
+        Assert.Equal(data.TermsOfService, license.TermsOfService);
         Assert.Contains(data.Modules, x =>
             x.Id == module.Id
             && x.Name == module.Name
@@ -271,7 +271,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
                 PriceAnnualy
             ],
             IdLogo = Guid.NewGuid(),
-            TermOfService = "Terms of service for License Test",
+            TermsOfService = "Terms of service for License Test",
             Modules = [module]
         };
 
