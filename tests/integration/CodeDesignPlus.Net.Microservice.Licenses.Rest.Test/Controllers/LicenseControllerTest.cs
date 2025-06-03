@@ -14,13 +14,14 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
     }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
-    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0);
+    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate, 0);
 
     private readonly ModuleDto module = new()
     {
         Id = Guid.NewGuid(),
         Name = "Module Test",
+        Description = "Module Test Description"
     };
 
     public LicenseControllerTest(Server<Program> server) : base(server)
@@ -61,7 +62,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             && x.Description == license.Description
             && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceMonthly.BillingType && o.Currency.Code == this.PriceMonthly.Currency.Code && o.Currency.Name == this.PriceMonthly.Currency.Name && o.Currency.Symbol == this.PriceMonthly.Currency.Symbol) != null
             && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceAnnualy.BillingType && o.Currency.Code == this.PriceAnnualy.Currency.Code && o.Currency.Name == this.PriceAnnualy.Currency.Name && o.Currency.Symbol == this.PriceAnnualy.Currency.Symbol) != null
-            && x.Icon == "icon"
+            && x.Icon.Name == "icon"
             && x.TermsOfService == license.TermsOfService
             && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
         );
@@ -109,7 +110,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
                 PriceMonthly,
                 PriceAnnualy
             ],
-            Icon = "icon",
+            Icon = Icon.Create("icon", "#FFFFFF"),
             TermsOfService = "Terms of service for License Test",
             Modules = [module]
         };
@@ -270,7 +271,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
                 PriceMonthly,
                 PriceAnnualy
             ],
-            Icon = "icon",
+            Icon = Icon.Create("icon", "#FFFFFF"),
             TermsOfService = "Terms of service for License Test",
             Modules = [module]
         };

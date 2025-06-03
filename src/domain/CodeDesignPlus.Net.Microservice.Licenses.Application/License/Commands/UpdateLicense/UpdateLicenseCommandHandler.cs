@@ -18,7 +18,7 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
             ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
         }
-        
+
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 
         license.Update(request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, user.IdUser);

@@ -13,10 +13,10 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     public List<ModuleEntity> Modules { get; private set; } = [];
     public List<Price> Prices { get; private set; } = [];
     public Dictionary<string, string> Attributes { get; private set; } = [];
-    public string Icon { get; private set; } = null!;
+    public Icon Icon { get; private set; } = null!;
     public string TermsOfService { get; private set; } = null!;
 
-    private LicenseAggregate(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive,bool isPopular, Guid createdBy) : this(id)
+    private LicenseAggregate(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive,bool isPopular, Guid createdBy) : this(id)
     {
         this.Name = name;
         this.ShortDescription = shortDescription;
@@ -35,7 +35,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         AddEvent(LicenseCreatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular));
     }
 
-    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid createdBy)
+    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdLicenseIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
@@ -43,19 +43,19 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
         DomainGuard.GuidIsEmpty(createdBy, Errors.CreatedByLicenseIsRequired);
-        DomainGuard.IsNullOrEmpty(icon, Errors.IconLicenseIsRequired);
+        DomainGuard.IsNull(icon, Errors.IconLicenseIsRequired);
 
         return new LicenseAggregate(id, name, shortDescription, description, modules, price, icon, TermsOfService, attributes, isActive, isPopular, createdBy);
     }
 
-    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, string icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid updatedBy)
+    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
         DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
         DomainGuard.GuidIsEmpty(updatedBy, Errors.CreatedByLicenseIsRequired);
-        DomainGuard.IsNullOrEmpty(icon, Errors.IconLicenseIsRequired);
+        DomainGuard.IsNull(icon, Errors.IconLicenseIsRequired);
 
         this.Name = name;
         this.Description = description;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using CodeDesignPlus.Net.Cache.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
@@ -20,8 +21,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IMapper> mapperMock;
         private readonly UpdateLicenseCommandHandler handler;
 
-        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
-        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate, 0);
 
         public UpdateLicenseCommandHandlerTest()
         {
@@ -34,7 +35,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
                 repositoryMock.Object,
                 userContextMock.Object,
                 pubSubMock.Object,
-                mapperMock.Object
+                mapperMock.Object,
+                Mock.Of<ICacheManager>()
             );
         }
 
@@ -57,7 +59,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseNotFound_ThrowsCodeDesignPlusException()
         {
             // Arrange
-            var request = new UpdateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false);
+            var request = new UpdateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock
@@ -76,8 +78,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_UpdatesLicense()
         {
             // Arrange
-            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false, Guid.NewGuid());
-            var request = new UpdateLicenseCommand(license.Id, "Test New License", "Short Description", "Test New Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test New Terms of Service", [], true, false);
+            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, Guid.NewGuid());
+            var request = new UpdateLicenseCommand(license.Id, "Test New License", "Short Description", "Test New Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test New Terms of Service", [], true, false);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock

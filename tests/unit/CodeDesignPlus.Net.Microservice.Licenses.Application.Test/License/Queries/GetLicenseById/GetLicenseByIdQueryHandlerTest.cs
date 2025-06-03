@@ -18,8 +18,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         private readonly GetLicenseByIdQueryHandler handler;
 
 
-        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
-        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate, 0);
 
 
         public GetLicenseByIdQueryHandlerTest()
@@ -75,7 +75,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         {
             // Arrange
             var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description","Test Description", [], [PriceAnnualy, PriceMonthly], "icon", "Term of Service", [], true, false, Guid.NewGuid());
+            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description","Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, Guid.NewGuid());
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,

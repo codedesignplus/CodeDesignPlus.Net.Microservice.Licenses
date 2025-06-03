@@ -28,7 +28,7 @@ public static class MapsterConfigLicense
                 ShortDescription = src.ShortDescription,
                 Description = src.Description,
                 Attributes = src.Attributes,
-                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Currency.Create(x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel)).ToList(),
+                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Currency.Create(x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel, x.Discount)).ToList(),
                 Icon = src.Icon,
                 TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,
@@ -36,7 +36,8 @@ public static class MapsterConfigLicense
                 Modules = src.Modules.Select(x => new ModuleDto
                 {
                     Id = x.Id,
-                    Name = x.Name
+                    Name = x.Name,
+                    Description = x.Description,
                 }).ToList()
             });
 

@@ -16,8 +16,8 @@ public class GetAAllLicenseQueryHandlerTest
     private readonly Mock<IMapper> mapperMock;
     private readonly GetAllLicenseQueryHandler handler;
 
-    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate);
-    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate);
+    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0);
+    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate, 0);
 
 
     public GetAAllLicenseQueryHandlerTest()
@@ -48,13 +48,13 @@ public class GetAAllLicenseQueryHandlerTest
         // Arrange
         var request = new GetAllLicenseQuery(null!);
         var cancellationToken = CancellationToken.None;
-        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], "icon", "Test Terms of Service", [], true, false, Guid.NewGuid());
+        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, Guid.NewGuid());
         var licenseDto = new LicenseDto()
         {
             Id = license.Id,
             Name = license.Name,
             Description = license.Description,
-            Modules = [.. license.Modules.Select(module => new ModuleDto() { Id = module.Id, Name = module.Name })],
+            Modules = [.. license.Modules.Select(module => new ModuleDto() { Id = module.Id, Name = module.Name, Description = module.Description })],
             Prices = license.Prices,
             TermsOfService = license.TermsOfService,
             IsActive = license.IsActive,
