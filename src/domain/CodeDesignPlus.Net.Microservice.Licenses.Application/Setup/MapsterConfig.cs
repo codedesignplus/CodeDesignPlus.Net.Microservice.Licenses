@@ -17,7 +17,7 @@ public static class MapsterConfigLicense
 
         TypeAdapterConfig<UpdateLicenseDto, UpdateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.Description, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
+            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()
