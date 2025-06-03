@@ -26,6 +26,7 @@ public sealed partial class Price
         this.Currency = currency;
         this.Pricing = pricing;
         this.BillingModel = billingModel;
+        this.Discount = discount;
     }
     public static Price Create(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel, short discount)
     {
