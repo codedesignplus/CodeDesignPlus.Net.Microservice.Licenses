@@ -7,14 +7,17 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
     public async Task Handle(CreateLicenseCommand request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
-        
+
         var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
 
         ApplicationGuard.IsTrue(exist, Errors.LicenseAlreadyExists);
 
-        var licensePopularityExist = await repository.LicesePopularityExistsAsync(request.Id, cancellationToken);
+        if (request.IsPopular)
+        {
+            var licensePopularityExist = await repository.LicesePopularityExistsAsync(request.Id, cancellationToken);
 
-        ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
+            ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
+        }
 
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 

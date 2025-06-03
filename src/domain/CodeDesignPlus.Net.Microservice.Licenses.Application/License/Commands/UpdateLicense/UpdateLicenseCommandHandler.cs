@@ -12,10 +12,13 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
-        var licensePopularityExist = await repository.LicesePopularityExistsAsync(request.Id, cancellationToken);
+        if (request.IsPopular)
+        {
+            var licensePopularityExist = await repository.LicesePopularityExistsAsync(request.Id, cancellationToken);
 
-        ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
-
+            ApplicationGuard.IsTrue(licensePopularityExist, Errors.LicensePopularityAlreadyExists);
+        }
+        
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 
         license.Update(request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, user.IdUser);
@@ -23,7 +26,7 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         await repository.UpdateAsync(license, cancellationToken);
 
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
-        
+
         await cacheManager.RemoveAsync(request.Id.ToString());
     }
 }
