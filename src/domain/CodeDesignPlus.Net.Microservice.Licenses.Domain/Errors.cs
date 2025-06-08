@@ -63,8 +63,6 @@ public class Errors : IErrorCodes
     public const string PseCodeMustBeValidFormat = "158 : Pse Code must be valid format";
     public const string TypePersonCannotBeNullOrEmpty = "159 : Type Person cannot be null or empty";
     public const string TypePersonCannotBeGreaterThan2Characters = "160 : Type Person cannot be greater than 2 characters";
-    public const string PseResponseUrlCannotBeNullOrEmpty = "161 : Pse Response URL cannot be null or empty";
-    public const string PseResponseUrlCannotBeGreaterThan255Characters = "162 : Pse Response URL cannot be greater than 255 characters";
     public const string PseCannotBeNull = "163 : Pse cannot be null";
     public const string CreditCardNumberCannotBeNullOrEmpty  = "164 : Credit Card Number cannot be null or empty";
     public const string CreditCardNumberCannotBeGreaterThan20Characters  = "165 : Credit Card Number cannot be greater than 20 characters"; 
