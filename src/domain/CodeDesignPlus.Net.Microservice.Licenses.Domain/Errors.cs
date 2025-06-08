@@ -79,6 +79,8 @@ public class Errors : IErrorCodes
 
     public const string MethodPayIsRequired = "174 : The MethodPay is required."; 
     public const string BuyerIsRequired = "175 : The Buyer is required."; 
-    public const string OrganizationIsRequired = "176 : The Organization is required."; 
+    public const string OrganizationIsRequired = "176 : The Organization is required.";
+
+    public const string CardHolderNameCannotBeNullOrEmpty = "177 : Card Holder Name cannot be null or empty";
 }
 

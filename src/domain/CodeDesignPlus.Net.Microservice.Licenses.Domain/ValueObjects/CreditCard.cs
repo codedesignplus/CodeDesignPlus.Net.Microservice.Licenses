@@ -12,10 +12,10 @@ public partial class CreditCard
     public string Number { get; set; } = null!;
     public string SecurityCode { get; set; } = null!;
     public string ExpirationDate { get; set; } = null!;
-    public string Name { get; set; } = null!;
+    public string CardHolderName { get; set; } = null!;
 
     [JsonConstructor]
-    private CreditCard(string number, string securityCode, string expirationDate, string name)
+    private CreditCard(string number, string securityCode, string expirationDate, string cardHolderNameame)
     {
         DomainGuard.IsNullOrEmpty(number, Errors.CreditCardNumberCannotBeNullOrEmpty);
         DomainGuard.IsGreaterThan(number.Length, 20, Errors.CreditCardNumberCannotBeGreaterThan20Characters);
@@ -29,14 +29,16 @@ public partial class CreditCard
         DomainGuard.IsGreaterThan(expirationDate.Length, 7, Errors.CreditCardExpirationDateCannotBeGreaterThan7Characters);
         DomainGuard.IsFalse(ExpirationDateRegex().IsMatch(expirationDate), Errors.CreditCardExpirationDateMustBeValidFormat);
 
+        DomainGuard.IsNullOrEmpty(cardHolderNameame, Errors.CardHolderNameCannotBeNullOrEmpty);
+
         Number = number;
         SecurityCode = securityCode;
         ExpirationDate = expirationDate;
-        Name = name;
+        CardHolderName = cardHolderNameame;
     }
     
-    public static CreditCard Create(string number, string securityCode, string expirationDate, string name)
+    public static CreditCard Create(string number, string securityCode, string expirationDate, string cardHolderName)
     {
-        return new CreditCard(number, securityCode, expirationDate, name);
+        return new CreditCard(number, securityCode, expirationDate, cardHolderName);
     }
 }
