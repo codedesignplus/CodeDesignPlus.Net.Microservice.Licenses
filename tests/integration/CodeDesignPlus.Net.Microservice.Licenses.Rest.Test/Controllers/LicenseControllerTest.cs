@@ -14,8 +14,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
     }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create("United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0);
-    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create("United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate, 0);
+    private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0);
+    private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annualy, Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$"), 1000, BillingModel.FlatRate, 0);
 
     private readonly ModuleDto module = new()
     {
