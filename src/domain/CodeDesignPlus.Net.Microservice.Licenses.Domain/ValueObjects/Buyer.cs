@@ -31,7 +31,7 @@ public sealed partial class Buyer
     private Buyer(string name, string phone, string email, string typeDocument, string document, Country country, State state, City city, string address, string postalCode)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.NameIsRequired);
-        DomainGuard.IsFalse(name.Length > 124, Errors.NameIsTooLong);
+        DomainGuard.IsTrue(name.Length > 124, Errors.NameIsTooLong);
 
         DomainGuard.IsNullOrEmpty(phone, Errors.PhoneIsRequired);
         DomainGuard.IsFalse(PhoneRegex().IsMatch(phone), Errors.PhoneContainsInvalidCharacters);
