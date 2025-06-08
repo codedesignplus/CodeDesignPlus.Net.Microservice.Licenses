@@ -16,7 +16,7 @@ public sealed partial class Organization
     private Organization(string name, string? web, Location location)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.NameIsRequired);
-        DomainGuard.IsTrue(name.Length > 124, Errors.NameIsTooLong);
+        DomainGuard.IsGreaterThan(name.Length, 124, Errors.NameIsTooLong);
 
         if (!string.IsNullOrEmpty(web))
             DomainGuard.IsFalse(WebRegex().IsMatch(web), Errors.WebContainsInvalidCharacters);

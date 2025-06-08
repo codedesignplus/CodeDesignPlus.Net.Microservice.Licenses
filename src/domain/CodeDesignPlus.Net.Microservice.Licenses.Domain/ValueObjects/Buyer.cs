@@ -31,7 +31,7 @@ public sealed partial class Buyer
     private Buyer(string name, string phone, string email, string typeDocument, string document, Country country, State state, City city, string address, string postalCode)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.NameIsRequired);
-        DomainGuard.IsTrue(name.Length > 124, Errors.NameIsTooLong);
+        DomainGuard.IsGreaterThan(name.Length, 124, Errors.NameIsTooLong);
 
         DomainGuard.IsNullOrEmpty(phone, Errors.PhoneIsRequired);
         DomainGuard.IsFalse(PhoneRegex().IsMatch(phone), Errors.PhoneContainsInvalidCharacters);
@@ -40,21 +40,21 @@ public sealed partial class Buyer
         DomainGuard.IsFalse(EmailRegex().IsMatch(email), Errors.EmailContainsInvalidCharacters);
 
         DomainGuard.IsNullOrEmpty(typeDocument, Errors.TypeDocumentIsRequired);
-        DomainGuard.IsFalse(typeDocument.Length > 2, Errors.TypeDocumentIsTooLong);
+        DomainGuard.IsGreaterThan(typeDocument.Length, 2, Errors.TypeDocumentIsTooLong);
 
         DomainGuard.IsNullOrEmpty(document, Errors.DocumentIsRequired);
-        DomainGuard.IsFalse(document.Length > 20, Errors.DocumentIsTooLong);
+        DomainGuard.IsGreaterThan(document.Length, 20, Errors.DocumentIsTooLong);
 
         DomainGuard.IsNull(country, Errors.CountryIsNull);
         DomainGuard.IsNull(state, Errors.StateIsNull);
         DomainGuard.IsNull(city, Errors.CityIsNull);
 
         DomainGuard.IsNullOrEmpty(address, Errors.AddressIsRequired);
-        DomainGuard.IsFalse(address.Length > 256, Errors.AddressIsTooLong);
+        DomainGuard.IsGreaterThan(address.Length , 256, Errors.AddressIsTooLong);
         DomainGuard.IsFalse(AddressRegex().IsMatch(address), Errors.AddressContainsInvalidCharacters);
 
         DomainGuard.IsNullOrEmpty(postalCode, Errors.PostalCodeIsRequired);
-        DomainGuard.IsFalse(postalCode.Length > 16, Errors.PostalCodeIsTooLong);
+        DomainGuard.IsGreaterThan(postalCode.Length, 16, Errors.PostalCodeIsTooLong);
         DomainGuard.IsFalse(PostalCodeRegex().IsMatch(postalCode), Errors.PostalCodeContainsInvalidCharacters);
 
         this.Name = name;
