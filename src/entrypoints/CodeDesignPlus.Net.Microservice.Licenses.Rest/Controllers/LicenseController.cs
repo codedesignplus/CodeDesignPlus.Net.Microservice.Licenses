@@ -1,4 +1,4 @@
-using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.AddModule;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 
@@ -18,6 +18,7 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Collection of Licenses.</returns>
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetLicenses([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetAllLicenseQuery(criteria), cancellationToken);
@@ -32,6 +33,7 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The License.</returns>
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetLicenseById(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetLicenseByIdQuery(id), cancellationToken);
@@ -101,10 +103,34 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
         return NoContent();
     }
 
+    /// <summary>
+    /// Remove a module from an existing License.
+    /// </summary>
+    /// <param name="id">The unique identifier of the License.</param>
+    /// <param name="idModule">The unique identifier of the module to be removed.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>HTTP status code 204 (No Content).</returns>
     [HttpDelete("{id}/module/{idModule}")]
     public async Task<IActionResult> RemoveModule(Guid id, Guid idModule, CancellationToken cancellationToken)
     {
         await mediator.Send(new RemoveModuleCommand(id, idModule), cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Pay for a License.
+    /// </summary>
+    /// <param name="id">The unique identifier of the License.</param>
+    /// <param name="data">Data for paying the License.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>HTTP status code 204 (No Content).</returns>
+    [HttpPost("{id}/pay")]
+    public async Task<IActionResult> PayLicense(Guid id, [FromBody] PayLicenseDto data, CancellationToken cancellationToken)
+    {
+        data.Id = id;
+
+        await mediator.Send(mapper.Map<PayLicenseCommand>(data), cancellationToken);
 
         return NoContent();
     }

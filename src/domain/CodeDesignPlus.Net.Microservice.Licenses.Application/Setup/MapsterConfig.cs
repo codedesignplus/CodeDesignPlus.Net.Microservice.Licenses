@@ -1,5 +1,6 @@
 ﻿using CodeDesignPlus.Microservice.Api.Dtos;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
@@ -19,6 +20,10 @@ public static class MapsterConfigLicense
             .NewConfig()
             .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
 
+        TypeAdapterConfig<PayLicenseDto, PayLicenseCommand>
+            .NewConfig()
+            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.MethodPay, src.Buyer, src.Organization));
+
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()
             .MapWith(src => new LicenseDto
@@ -28,7 +33,7 @@ public static class MapsterConfigLicense
                 ShortDescription = src.ShortDescription,
                 Description = src.Description,
                 Attributes = src.Attributes,
-                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Currency.Create(x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel, x.Discount)).ToList(),
+                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Currency.Create(x.Currency.Id, x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel, x.Discount)).ToList(),
                 Icon = src.Icon,
                 TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,
