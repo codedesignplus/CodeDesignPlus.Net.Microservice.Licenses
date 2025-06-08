@@ -22,7 +22,7 @@ public static class MapsterConfigLicense
 
         TypeAdapterConfig<PayLicenseDto, PayLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.MethodPay, src.Buyer, src.Organization));
+            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.PaymentMethod, src.Buyer, src.Organization));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()

@@ -2,13 +2,13 @@ using Newtonsoft.Json;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public sealed partial class MethodPay
+public sealed partial class PaymentMethod
 {
     public Pse? Pse { get; private set; }
     public CreditCard? CreditCard { get; private set; }
 
     [JsonConstructor]
-    private MethodPay(Pse? pse, CreditCard? creditCard)
+    private PaymentMethod(Pse? pse, CreditCard? creditCard)
     {
         if(pse == null)
             DomainGuard.IsNull(creditCard!, Errors.CreditCardCannotBeNull);
@@ -20,8 +20,8 @@ public sealed partial class MethodPay
         this.CreditCard = creditCard;
     }
 
-    public static MethodPay Create(Pse? pse, CreditCard? creditCard)
+    public static PaymentMethod Create(Pse? pse, CreditCard? creditCard)
     {
-        return new MethodPay(pse, creditCard);
+        return new PaymentMethod(pse, creditCard);
     }
 }

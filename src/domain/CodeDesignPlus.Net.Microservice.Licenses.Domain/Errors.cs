@@ -77,7 +77,7 @@ public class Errors : IErrorCodes
     public const string CreditCardExpirationDateCannotBeGreaterThan7Characters = "172 : Credit Card Expiration Date cannot be greater than 7 characters";
     public const string CreditCardCannotBeNull = "173 : Credit Card cannot be null";
 
-    public const string MethodPayIsRequired = "174 : The MethodPay is required."; 
+    public const string PaymentMethodIsRequired = "174 : The Payment Method is required."; 
     public const string BuyerIsRequired = "175 : The Buyer is required."; 
     public const string OrganizationIsRequired = "176 : The Organization is required.";
 
