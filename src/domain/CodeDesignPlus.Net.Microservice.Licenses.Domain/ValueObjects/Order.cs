@@ -1,33 +1,38 @@
 using System.Text.Json.Serialization;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 public sealed partial class Order
 {
     public Guid Id { get; private set; }
-    public long Amount { get; private set; } = 0;
+    public BillingTypeEnum BillingType { get; private set; }
+    public BillingModel BillingModel { get; private set; } 
+    public long Total { get; private set; } = 0;
     public long Tax { get; private set; } = 0;
-    public long TaxReturnBase { get; private set; } = 0;
+    public long SubTotal { get; private set; } = 0;
     public Buyer Buyer { get; private set; } = null!;
 
     [JsonConstructor]
-    public Order(Guid id, long amount, long tax, long taxReturnBase, Buyer buyer)
+    public Order(Guid id, long total, long tax, long subTotal, Buyer buyer, BillingTypeEnum billingType, BillingModel billingModel)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdOrderIsRequired);
-        DomainGuard.IsLessThan(amount, 1, Errors.AmountIsInvalid);
+        DomainGuard.IsLessThan(total, 1, Errors.TotalIsInvalid);
         DomainGuard.IsLessThan(tax, 0, Errors.TaxIsInvalid);
-        DomainGuard.IsLessThan(taxReturnBase, 0, Errors.TaxReturnBaseIsInvalid);
+        DomainGuard.IsLessThan(subTotal, 0, Errors.SubTotalIsInvalid);
         DomainGuard.IsNull(buyer, Errors.BuyerIsRequired);
 
         this.Id = id;
-        this.Amount = amount;
+        this.Total = total;
         this.Tax = tax;
-        this.TaxReturnBase = taxReturnBase;
+        this.SubTotal = subTotal;
         this.Buyer = buyer;
+        this.BillingType = billingType;
+        this.BillingModel = billingModel;
     }
 
-    public static Order Create(Guid id, long amount, long tax, long taxReturnBase, Buyer buyer)
+    public static Order Create(Guid id, long amount, long tax, long taxReturnBase, Buyer buyer, BillingTypeEnum billingType, BillingModel billingModel)
     {
-        return new Order(id, amount, tax, taxReturnBase, buyer);
+        return new Order(id, amount, tax, taxReturnBase, buyer, billingType, billingModel);
     }
 }

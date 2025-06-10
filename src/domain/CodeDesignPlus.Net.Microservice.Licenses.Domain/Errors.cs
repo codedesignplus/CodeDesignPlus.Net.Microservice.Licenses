@@ -74,18 +74,15 @@ public class Errors : IErrorCodes
     public const string CreditCardExpirationDateMustBeValidFormat = "171 : Credit Card Expiration Date must be valid format";
     public const string CreditCardExpirationDateCannotBeGreaterThan7Characters = "172 : Credit Card Expiration Date cannot be greater than 7 characters";
     public const string CreditCardCannotBeNull = "173 : Credit Card cannot be null";
-
     public const string PaymentMethodIsRequired = "174 : The Payment Method is required."; 
     public const string BuyerIsRequired = "175 : The Buyer is required."; 
     public const string OrganizationIsRequired = "176 : The Organization is required.";
-
     public const string CardHolderNameCannotBeNullOrEmpty = "177 : Card Holder Name cannot be null or empty";
-
     public const string IdOrderIsRequired = "178 : The Id Order is required.";
     public const string LicenseIdIsRequired = "179 : The License Id is required.";
-
-    public const string AmountIsInvalid = "180 : The Amount is invalid."; 
+    public const string TotalIsInvalid = "180 : The Total is invalid.";
     public const string TaxIsInvalid = "181 : The Tax is invalid."; 
-    public const string TaxReturnBaseIsInvalid = "182 : The Tax Return Base is invalid."; 
+    public const string SubTotalIsInvalid = "182 : The SubTotal is invalid.";
+    public const string IdTenantIsRequired = "183 : The Id Tenant is required.";
 }
 

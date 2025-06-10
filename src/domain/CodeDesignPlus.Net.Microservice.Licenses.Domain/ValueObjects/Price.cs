@@ -9,12 +9,16 @@ public sealed partial class Price
 
     public Currency Currency { get; private set; } = null!;
     public long Pricing { get; private set; }
-    public short Discount { get; set; } = 0;
+    public ushort DiscountPercentage { get; set; } = 0;
+    public ushort TaxPercentage { get; set; } = 0;
+    public long SubTotal => Pricing - (Pricing * (DiscountPercentage / 100));
+    public long Tax => SubTotal * (TaxPercentage / 100);
+    public long Total => SubTotal + Tax;
 
     public BillingModel BillingModel { get; set; }
 
     [JsonConstructor]
-    private Price(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel, short discount)
+    private Price(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel, ushort discount, ushort taxPercentage)
     {
         DomainGuard.IsNull(currency, Errors.CurrencyLicenseIsRequired);
         DomainGuard.IsLessThan(discount, 0, Errors.DiscountLicenseCannotBeLessThanZero);
@@ -26,10 +30,11 @@ public sealed partial class Price
         this.Currency = currency;
         this.Pricing = pricing;
         this.BillingModel = billingModel;
-        this.Discount = discount;
+        this.DiscountPercentage = discount;
+        this.TaxPercentage = taxPercentage;
     }
-    public static Price Create(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel, short discount)
+    public static Price Create(BillingTypeEnum billingType, Currency currency, long pricing, BillingModel billingModel, ushort discount, ushort taxPercentage)
     {
-        return new Price(billingType, currency, pricing, billingModel, discount);
+        return new Price(billingType, currency, pricing, billingModel, discount, taxPercentage);
     }
 }

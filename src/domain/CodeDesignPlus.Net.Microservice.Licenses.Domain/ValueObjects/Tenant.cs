@@ -1,20 +1,21 @@
-using CodeDesignPlus.Net.Security.Abstractions.Models;
 using Newtonsoft.Json;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public sealed partial class Organization
+public sealed partial class Tenant
 {
     [GeneratedRegex(@"^(https?:\/\/)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$", RegexOptions.Compiled)]
     private static partial Regex WebRegex();
 
+    public Guid Id { get; private set; }
     public string Name { get; private set; }
     public string? Web { get; private set; }
     public Location Location { get; private set; }
 
     [JsonConstructor]
-    private Organization(string name, string? web, Location location)
+    private Tenant(Guid id, string name, string? web, Location location)
     {
+        DomainGuard.GuidIsEmpty(id, Errors.IdTenantIsRequired);
         DomainGuard.IsNullOrEmpty(name, Errors.NameIsRequired);
         DomainGuard.IsGreaterThan(name.Length, 124, Errors.NameIsTooLong);
 
@@ -28,8 +29,8 @@ public sealed partial class Organization
         this.Location = location;
     }
 
-    public static Organization Create(string name, string? web, Location location)
+    public static Tenant Create(Guid id, string name, string? web, Location location)
     {
-        return new Organization(name, web, location);
+        return new Tenant(id, name, web, location);
     }
 }

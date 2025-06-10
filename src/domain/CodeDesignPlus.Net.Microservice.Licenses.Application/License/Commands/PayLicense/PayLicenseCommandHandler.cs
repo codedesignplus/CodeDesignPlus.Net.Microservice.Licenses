@@ -1,9 +1,13 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
+using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
+using CodeDesignPlus.Net.gRpc.Clients.Services.User;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
 
-public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, IPayment payment) : IRequestHandler<PayLicenseCommand>
+public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, IPaymentGrpc paymentGrpc, IUserGrpc userGrpc, ITenantGrpc tenantGrpc) : IRequestHandler<PayLicenseCommand>
 {
     public async Task Handle(PayLicenseCommand request, CancellationToken cancellationToken)
     {
@@ -15,26 +19,90 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
         var aggregate = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
-        var payRequest = mapper.Map<PayRequest>(request);
+        await PayLicense(request, aggregate.Prices, cancellationToken);
 
-        // var amount = aggregate.Prices
-        //     .Where(x => x.BillingType == request.PaymentMethod.BillingType)
-        //     .Select(x => x.Pricing)
-        //     .FirstOrDefault();
+        await CreateTenantAsync(request.Tenant, aggregate, cancellationToken);
 
-        // payRequest.Transaction.Order.Ammount = new Amount
-        // {
-        //     Currency = ag
-        // };
+        await UpdateUser(request.Tenant.Name, request.Tenant.Id, cancellationToken);
 
-        await payment.PayAsync(payRequest, cancellationToken);
-
-        var paymentResponse = await payment.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
-
-        var license = PaymentAggregate.Create(request.Order.Id, request.Id, request.PaymentMethod, request.Order.Buyer, request.Organization, user.Tenant, true, "Error", true, user.IdUser );
+        var license = PaymentAggregate.Create(request.Order.Id, request.Id, request.PaymentMethod, request.Order.Buyer, request.Tenant, user.Tenant, true, "Error", true, user.IdUser);
 
         await repository.CreateAsync(license, cancellationToken);
 
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
     }
+
+    private async Task PayLicense(PayLicenseCommand request, List<Price> prices, CancellationToken cancellationToken)
+    {
+        var payRequest = mapper.Map<PayRequest>(request);
+
+        var price = prices
+            .Where(x => x.BillingType == request.Order.BillingType && x.Pricing == request.Order.Total && x.BillingModel == request.Order.BillingModel)
+            .FirstOrDefault();
+
+        ApplicationGuard.IsNull(price, "202: The price for the selected billing type and model is not available.");
+
+        payRequest.Transaction.Order.TaxReturnBase = new Amount
+        {
+            Currency = price.Currency.Code,
+            Value = price.SubTotal
+        };
+
+        payRequest.Transaction.Order.Tax = new Amount
+        {
+            Currency = price.Currency.Code,
+            Value = price.Tax
+        };
+
+        payRequest.Transaction.Order.Amount = new Amount
+        {
+            Currency = price.Currency.Code,
+            Value = price.Total
+        };
+
+        await paymentGrpc.PayAsync(payRequest, cancellationToken);
+
+        var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
+
+    }
+
+    private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)
+    {
+        var tenantRequest = mapper.Map<CreateTenantRequest>(tenant);
+
+        tenantRequest.License = new gRpc.Clients.Services.Tenant.License()
+        {
+            Id = license.Id.ToString(),
+            Name = license.Name,
+            StartDate = SystemClock.Instance.GetCurrentInstant().ToString(),
+            EndDate = SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(license.Prices.FirstOrDefault()?.BillingType == BillingTypeEnum.Monthly ? 30 : 365)).ToString(),
+        };
+
+        foreach (var item in license.Attributes)
+        {
+            tenantRequest.License.Metadata.Add(item.Key, item.Value);
+        }
+
+        await tenantGrpc.CreateTenantAsync(tenantRequest, cancellationToken);
+    }
+
+    private async Task UpdateUser(string nameTenant, Guid idTenant, CancellationToken cancellationToken)
+    {
+        await userGrpc.AddTenantToUser(new AddTenantRequest
+        {
+            Id = user.IdUser.ToString(),
+            Tenant = new gRpc.Clients.Services.User.Tenant()
+            {
+                Id = idTenant.ToString(),
+                Name = nameTenant
+            }
+        }, cancellationToken);
+
+        await userGrpc.AddGroupToUser(new AddGroupRequest
+        {
+            Id = user.IdUser.ToString(),
+            Role = "Administrator"
+        }, cancellationToken);
+    }
+
 }

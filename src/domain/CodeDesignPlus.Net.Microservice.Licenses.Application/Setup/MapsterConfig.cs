@@ -1,5 +1,6 @@
 ﻿using CodeDesignPlus.Microservice.Api.Dtos;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
+using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
@@ -23,7 +24,7 @@ public static class MapsterConfigLicense
 
         TypeAdapterConfig<PayLicenseDto, PayLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.Order, src.PaymentMethod, src.Organization));
+            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.Order, src.PaymentMethod, src.Tenant));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()
@@ -34,7 +35,7 @@ public static class MapsterConfigLicense
                 ShortDescription = src.ShortDescription,
                 Description = src.Description,
                 Attributes = src.Attributes,
-                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Currency.Create(x.Currency.Id, x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel, x.Discount)).ToList(),
+                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Domain.ValueObjects.Currency.Create(x.Currency.Id, x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel, x.DiscountPercentage, x.TaxPercentage)).ToList(),
                 Icon = src.Icon,
                 TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,
@@ -77,7 +78,7 @@ public static class MapsterConfigLicense
                                 Country = src.Order.Buyer.Country.Name
                             }
                         },
-                        Ammount = null!,
+                        Amount = null!,
                         Description = null!,
                         Tax = null!,
                         TaxReturnBase = null!
@@ -99,7 +100,6 @@ public static class MapsterConfigLicense
                     },
                     Cookie = null!,
                     UserAgent = null!,
-                    PaymentMethod = "",
                     DeviceSessionId = null!,
                     IpAddress = null!,
                     CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
@@ -117,5 +117,34 @@ public static class MapsterConfigLicense
                     } : null,
                 }
             });
+
+
+        TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>
+            .NewConfig()
+            .ConstructUsing(
+                src => new CreateTenantRequest
+                {
+                    Id = src.Id.ToString(),
+                    Name = src.Name,
+                    Domain = src.Web,
+                    Location = new gRpc.Clients.Services.Tenant.Location()
+                    {
+                        Country = new CodeDesignPlus.Net.gRpc.Clients.Services.Tenant.Country
+                        {
+                            Id = src.Location.Country.Id.ToString(),
+                            Name = src.Location.Country.Name,
+                            Code = src.Location.Country.Code,
+                            Timezone = src.Location.Country.Timezone,
+                            Currency = new CodeDesignPlus.Net.gRpc.Clients.Services.Tenant.Currency
+                            {
+                                Id = src.Location.Country.Currency.Id.ToString(),
+                                Name = src.Location.Country.Currency.Name,
+                                Code = src.Location.Country.Currency.Code,
+                                Symbol = src.Location.Country.Currency.Symbol
+                            }
+                        },
+                    }
+                }
+            );
     }
 }
