@@ -51,7 +51,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         payRequest.Transaction.Order.Tax = new Amount
         {
             Currency = price.Currency.Code,
-            Value = price.Tax
+            Value = (long)price.Tax
         };
 
         payRequest.Transaction.Order.Amount = new Amount
