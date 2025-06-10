@@ -1,4 +1,5 @@
 ﻿using CodeDesignPlus.Microservice.Api.Dtos;
+using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
@@ -22,7 +23,7 @@ public static class MapsterConfigLicense
 
         TypeAdapterConfig<PayLicenseDto, PayLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.PaymentMethod, src.Buyer, src.Organization));
+            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.Order, src.PaymentMethod, src.Organization));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()
@@ -50,5 +51,71 @@ public static class MapsterConfigLicense
         TypeAdapterConfig<ModuleDto, ModuleEntity>
             .NewConfig()
             .TwoWays();
+
+        //Payment gRpc
+        TypeAdapterConfig<PayLicenseCommand, PayRequest>
+            .NewConfig()
+            .ConstructUsing(src => new PayRequest
+            {
+                Id = src.Order.Id.ToString(),
+                Transaction = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
+                {
+                    Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
+                    {
+                        Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
+                        {
+                            FullName = src.Order.Buyer.Name,
+                            ContactPhone = src.Order.Buyer.Phone,
+                            DniNumber = src.Order.Buyer.Document,
+                            EmailAddress = src.Order.Buyer.Email,
+                            ShippingAddress = new Address
+                            {
+                                Street = src.Order.Buyer.Address,
+                                City = src.Order.Buyer.City.Name,
+                                State = src.Order.Buyer.State.Name,
+                                PostalCode = src.Order.Buyer.PostalCode,
+                                Country = src.Order.Buyer.Country.Name
+                            }
+                        },
+                        Ammount = null!,
+                        Description = null!,
+                        Tax = null!,
+                        TaxReturnBase = null!
+                    },
+                    Payer = new Payer
+                    {
+                        FullName = src.Order.Buyer.Name,
+                        ContactPhone = src.Order.Buyer.Phone,
+                        DniNumber = src.Order.Buyer.Document,
+                        EmailAddress = src.Order.Buyer.Email,
+                        BillingAddress = new Address
+                        {
+                            Street = src.Order.Buyer.Address,
+                            City = src.Order.Buyer.City.Name,
+                            State = src.Order.Buyer.State.Name,
+                            PostalCode = src.Order.Buyer.PostalCode,
+                            Country = src.Order.Buyer.Country.Name
+                        }
+                    },
+                    Cookie = null!,
+                    UserAgent = null!,
+                    PaymentMethod = "",
+                    DeviceSessionId = null!,
+                    IpAddress = null!,
+                    CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
+                    {
+                        Number = src.PaymentMethod.CreditCard.Number,
+                        ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
+                        SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
+                        Name = src.PaymentMethod.CreditCard.CardHolderName,
+                    } : null,
+                    Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
+                    {
+                        PseCode = src.PaymentMethod.Pse.PseCode,
+                        PseResponseUrl = null,
+                        TypePerson = src.PaymentMethod.Pse.TypePerson,
+                    } : null,
+                }
+            });
     }
 }

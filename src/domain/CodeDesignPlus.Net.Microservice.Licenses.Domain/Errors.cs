@@ -80,5 +80,12 @@ public class Errors : IErrorCodes
     public const string OrganizationIsRequired = "176 : The Organization is required.";
 
     public const string CardHolderNameCannotBeNullOrEmpty = "177 : Card Holder Name cannot be null or empty";
+
+    public const string IdOrderIsRequired = "178 : The Id Order is required.";
+    public const string LicenseIdIsRequired = "179 : The License Id is required.";
+
+    public const string AmountIsInvalid = "180 : The Amount is invalid."; 
+    public const string TaxIsInvalid = "181 : The Tax is invalid."; 
+    public const string TaxReturnBaseIsInvalid = "182 : The Tax Return Base is invalid."; 
 }
 
