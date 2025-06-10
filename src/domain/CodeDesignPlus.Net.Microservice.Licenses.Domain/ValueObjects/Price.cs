@@ -9,11 +9,23 @@ public sealed partial class Price
 
     public Currency Currency { get; private set; } = null!;
     public long Pricing { get; private set; }
-    public ushort DiscountPercentage { get; set; } = 0;
-    public ushort TaxPercentage { get; set; } = 0;
-    public long SubTotal => Pricing - (Pricing * (DiscountPercentage / 100));
-    public long Tax => SubTotal * (TaxPercentage / 100);
-    public long Total => SubTotal + Tax;
+    public ushort DiscountPercentage { get; private set; }
+    public ushort TaxPercentage { get; private set; }
+    
+    public long SubTotal
+    {
+        get => Pricing - (Pricing * (DiscountPercentage / 100));
+    }
+
+    public long Tax
+    {
+        get => SubTotal * (TaxPercentage / 100);
+    }
+    
+    public long Total
+    {
+        get => SubTotal + Tax;
+    }
 
     public BillingModel BillingModel { get; set; }
 
