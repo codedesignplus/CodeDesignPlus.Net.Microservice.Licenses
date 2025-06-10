@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.gRpc.Clients.Extensions;
 using CodeDesignPlus.Net.Microservice.Commons.Application;
 using CodeDesignPlus.Net.Microservice.Commons.EntryPoints.Rest.Middlewares;
 using CodeDesignPlus.Net.Microservice.Commons.EntryPoints.Rest.Resources;
@@ -44,6 +45,7 @@ builder.Services.AddCoreSwagger<Program>(builder.Configuration);
 builder.Services.AddCache(builder.Configuration);
 builder.Services.AddResources<Program>(builder.Configuration);
 builder.Services.AddHealthChecksServices();
+builder.Services.AddGrpcClients(builder.Configuration);
 
 
 var app = builder.Build();
