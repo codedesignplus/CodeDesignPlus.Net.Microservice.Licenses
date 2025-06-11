@@ -12,8 +12,8 @@ public sealed partial class Price
     public ushort DiscountPercentage { get; private set; }
     public ushort TaxPercentage { get; private set; }
     public double Discount  => Pricing * (DiscountPercentage / 100.0);
-    public double Tax => Discount * (TaxPercentage / 100.0);
     public long SubTotal => (long)(Pricing - Discount);
+    public double Tax => SubTotal * (TaxPercentage / 100.0);
     public long Total => (long)(SubTotal + Tax);
 
     public BillingModel BillingModel { get; set; }
