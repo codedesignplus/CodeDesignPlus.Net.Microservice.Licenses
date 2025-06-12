@@ -73,6 +73,9 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Creating tenant for license: {@Tenant}", tenant);
+        logger.LogInformation("License details: {@License}", license);
+
         var tenantRequest = mapper.Map<CreateTenantRequest>(tenant);
 
         tenantRequest.License = new gRpc.Clients.Services.Tenant.License()
