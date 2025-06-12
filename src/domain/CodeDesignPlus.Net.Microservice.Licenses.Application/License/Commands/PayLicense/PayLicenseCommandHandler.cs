@@ -19,7 +19,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
         var aggregate = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
-        await PayLicense(request, aggregate.Prices, cancellationToken);
+        await PayLicense(request, aggregate.Prices, aggregate, cancellationToken);
 
         await CreateTenantAsync(request.Tenant, aggregate, cancellationToken);
 
@@ -32,7 +32,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
     }
 
-    private async Task PayLicense(PayLicenseCommand request, List<Price> prices, CancellationToken cancellationToken)
+    private async Task PayLicense(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<PayRequest>(request);
 
@@ -59,6 +59,8 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
             Currency = price.Currency.Code,
             Value = price.Total
         };
+
+        payRequest.Transaction.Order.Description = $"Payment for license {license.Name} - {license.Id} to tenant {request.Tenant.Name} - {request.Tenant.Id}";
 
         await paymentGrpc.PayAsync(payRequest, cancellationToken);
 
