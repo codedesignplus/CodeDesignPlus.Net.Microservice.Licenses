@@ -24,6 +24,7 @@ public sealed partial class Tenant
 
         DomainGuard.IsNull(location, Errors.LocationIsRequired);
 
+        this.Id = id;
         this.Name = name;
         this.Web = web;
         this.Location = location;

@@ -136,6 +136,28 @@ public static class MapsterConfigLicense
                                 Symbol = src.Location.Country.Currency.Symbol
                             }
                         },
+                        State = new gRpc.Clients.Services.Tenant.State
+                        {
+                            Id = src.Location.State.Id.ToString(),
+                            Name = src.Location.State.Name,
+                            Code = src.Location.State.Code
+                        },
+                        City = new gRpc.Clients.Services.Tenant.City
+                        {
+                            Id = src.Location.City.Id.ToString(),
+                            Name = src.Location.City.Name,
+                            Timezone = src.Location.City.Timezone
+                        },
+                        Locality = new gRpc.Clients.Services.Tenant.Locality
+                        {
+                            Id = src.Location.Locality.Id.ToString(),
+                            Name = src.Location.Locality.Name
+                        },
+                        Neighborhood = new gRpc.Clients.Services.Tenant.Neighborhood
+                        {
+                            Id = src.Location.Neighborhood.Id.ToString(),
+                            Name = src.Location.Neighborhood.Name
+                        }
                     }
                 }
             );
