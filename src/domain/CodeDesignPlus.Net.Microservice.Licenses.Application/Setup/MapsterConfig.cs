@@ -85,6 +85,7 @@ public static class MapsterConfigLicense
                         FullName = src.Order.Buyer.Name,
                         ContactPhone = src.Order.Buyer.Phone,
                         DniNumber = src.Order.Buyer.Document,
+                        DniType = src.Order.Buyer.TypeDocument,
                         EmailAddress = src.Order.Buyer.Email,
                         BillingAddress = new Address
                         {
