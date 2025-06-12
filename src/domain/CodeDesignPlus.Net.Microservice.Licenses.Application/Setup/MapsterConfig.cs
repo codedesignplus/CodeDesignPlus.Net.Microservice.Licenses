@@ -54,40 +54,20 @@ public static class MapsterConfigLicense
             .TwoWays();
 
         //Payment gRpc
-        TypeAdapterConfig<PayLicenseCommand, PayRequest>
+         TypeAdapterConfig<PayLicenseCommand, PayRequest>
             .NewConfig()
-            .ConstructUsing(src => new PayRequest
+            .Map(dest => dest.Id, src => src.Order.Id.ToString())
+            .Map(dest => dest.Transaction, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
             {
-                Id = src.Order.Id.ToString(),
-                Transaction = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
+                Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
                 {
-                    Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
-                    {
-                        Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
-                        {
-                            FullName = src.Order.Buyer.Name,
-                            ContactPhone = src.Order.Buyer.Phone,
-                            DniNumber = src.Order.Buyer.Document,
-                            EmailAddress = src.Order.Buyer.Email,
-                            ShippingAddress = new Address
-                            {
-                                Street = src.Order.Buyer.Address,
-                                City = src.Order.Buyer.City.Name,
-                                State = src.Order.Buyer.State.Name,
-                                PostalCode = src.Order.Buyer.PostalCode,
-                                Country = src.Order.Buyer.Country.Alpha2,
-                                Phone = src.Order.Buyer.Phone
-                            }
-                        },
-                    },
-                    Payer = new Payer
+                    Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
                     {
                         FullName = src.Order.Buyer.Name,
                         ContactPhone = src.Order.Buyer.Phone,
                         DniNumber = src.Order.Buyer.Document,
-                        DniType = src.Order.Buyer.TypeDocument,
                         EmailAddress = src.Order.Buyer.Email,
-                        BillingAddress = new Address
+                        ShippingAddress = new Address
                         {
                             Street = src.Order.Buyer.Address,
                             City = src.Order.Buyer.City.Name,
@@ -97,21 +77,38 @@ public static class MapsterConfigLicense
                             Phone = src.Order.Buyer.Phone
                         }
                     },
-                    PaymentMethod = src.PaymentMethod.Code,
-                    CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
+                },
+                Payer = new Payer
+                {
+                    FullName = src.Order.Buyer.Name,
+                    ContactPhone = src.Order.Buyer.Phone,
+                    DniNumber = src.Order.Buyer.Document,
+                    DniType = src.Order.Buyer.TypeDocument,
+                    EmailAddress = src.Order.Buyer.Email,
+                    BillingAddress = new Address
                     {
-                        Number = src.PaymentMethod.CreditCard.Number,
-                        ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
-                        SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
-                        Name = src.PaymentMethod.CreditCard.CardHolderName,
-                    } : null,
-                    Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
-                    {
-                        PseCode = src.PaymentMethod.Pse.PseCode,
-                        PseResponseUrl = null,
-                        TypePerson = src.PaymentMethod.Pse.TypePerson,
-                    } : null,
-                }
+                        Street = src.Order.Buyer.Address,
+                        City = src.Order.Buyer.City.Name,
+                        State = src.Order.Buyer.State.Name,
+                        PostalCode = src.Order.Buyer.PostalCode,
+                        Country = src.Order.Buyer.Country.Alpha2,
+                        Phone = src.Order.Buyer.Phone
+                    }
+                },
+                PaymentMethod = src.PaymentMethod.Code,
+                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
+                {
+                    Number = src.PaymentMethod.CreditCard.Number,
+                    ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
+                    SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
+                    Name = src.PaymentMethod.CreditCard.CardHolderName,
+                } : null,
+                Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
+                {
+                    PseCode = src.PaymentMethod.Pse.PseCode,
+                    PseResponseUrl = null,
+                    TypePerson = src.PaymentMethod.Pse.TypePerson,
+                } : null,
             });
 
 
