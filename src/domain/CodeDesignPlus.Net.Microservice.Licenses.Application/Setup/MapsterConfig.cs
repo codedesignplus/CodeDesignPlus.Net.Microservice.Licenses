@@ -97,6 +97,7 @@ public static class MapsterConfigLicense
                             Phone = src.Order.Buyer.Phone
                         }
                     },
+                    PaymentMethod = src.PaymentMethod.Code,
                     CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
                     {
                         Number = src.PaymentMethod.CreditCard.Number,

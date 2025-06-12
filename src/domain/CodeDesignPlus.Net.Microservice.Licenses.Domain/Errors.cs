@@ -85,5 +85,7 @@ public class Errors : IErrorCodes
     public const string SubTotalIsInvalid = "182 : The SubTotal is invalid.";
     public const string IdTenantIsRequired = "183 : The Id Tenant is required.";
     public const string CountryAlpha2IsEmpty = "184 : The Country Alpha2 is empty.";
+
+    public const string CodeOfThePaymentMethodIsRequired = "185 : The code of the payment method is required.";
 }
 
