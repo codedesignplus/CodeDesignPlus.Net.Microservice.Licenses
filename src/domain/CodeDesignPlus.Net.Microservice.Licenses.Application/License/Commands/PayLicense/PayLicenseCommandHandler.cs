@@ -79,6 +79,8 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
         var tenantRequest = mapper.Map<CreateTenantRequest>(tenant);
 
+        logger.LogWarning("Tenant request: {@TenantRequest}", tenantRequest);
+
         tenantRequest.License = new gRpc.Clients.Services.Tenant.License()
         {
             Id = license.Id.ToString(),
@@ -87,12 +89,18 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
             EndDate = SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(license.Prices.FirstOrDefault()?.BillingType == BillingTypeEnum.Monthly ? 30 : 365)).ToString(),
         };
 
+        logger.LogWarning("Tenant request with license: {@TenantRequestWithLicense}", tenantRequest);
+
         foreach (var item in license.Attributes)
         {
             tenantRequest.License.Metadata.Add(item.Key, item.Value);
         }
 
+        logger.LogWarning("Tenant request with metadata: {@TenantRequestWithMetadata}", tenantRequest);
+
         await tenantGrpc.CreateTenantAsync(tenantRequest, cancellationToken);
+
+        logger.LogWarning("Tenant created successfully: {@TenantRequest}", tenantRequest);
     }
 
     private async Task UpdateUserAsync(string nameTenant, Guid idTenant, CancellationToken cancellationToken)
