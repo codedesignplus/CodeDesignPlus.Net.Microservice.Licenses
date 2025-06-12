@@ -4,7 +4,5 @@ public enum BillingTypeEnum
 {
     None,
     Monthly,
-    Quarterly,
-    Semiannualy,
-    Annualy
+    Annually
 }

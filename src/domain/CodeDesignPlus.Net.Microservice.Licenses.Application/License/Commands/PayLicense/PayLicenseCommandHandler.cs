@@ -37,7 +37,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         var payRequest = mapper.Map<PayRequest>(request);
 
         var price = prices
-            .Where(x => x.BillingType == request.Order.BillingType && x.Pricing == request.Order.Total && x.BillingModel == request.Order.BillingModel)
+            .Where(x => x.BillingType == request.Order.BillingType && x.Total == request.Order.Total && x.BillingModel == request.Order.BillingModel)
             .FirstOrDefault();
 
         ApplicationGuard.IsNull(price, "202: The price for the selected billing type and model is not available.");
