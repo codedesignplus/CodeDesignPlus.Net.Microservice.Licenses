@@ -75,7 +75,8 @@ public static class MapsterConfigLicense
                                 City = src.Order.Buyer.City.Name,
                                 State = src.Order.Buyer.State.Name,
                                 PostalCode = src.Order.Buyer.PostalCode,
-                                Country = src.Order.Buyer.Country.Alpha2
+                                Country = src.Order.Buyer.Country.Alpha2,
+                                Phone = src.Order.Buyer.Phone
                             }
                         },
                     },
@@ -91,7 +92,8 @@ public static class MapsterConfigLicense
                             City = src.Order.Buyer.City.Name,
                             State = src.Order.Buyer.State.Name,
                             PostalCode = src.Order.Buyer.PostalCode,
-                            Country = src.Order.Buyer.Country.Alpha2
+                            Country = src.Order.Buyer.Country.Alpha2,
+                            Phone = src.Order.Buyer.Phone
                         }
                     },
                     CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
