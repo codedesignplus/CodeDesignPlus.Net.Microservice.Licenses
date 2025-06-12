@@ -36,13 +36,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
     private async Task PayLicense(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Starting payment process for license {LicenseId} with order {OrderId}", request.Id, request.Order.Id);
-
-        logger.LogDebug("Command: {@Command}", request);
-
         var payRequest = mapper.Map<PayRequest>(request);
-
-        logger.LogDebug("PayRequest: {@PayRequest}", payRequest);
 
         var price = prices
             .Where(x => x.BillingType == request.Order.BillingType && x.Total == request.Order.Total && x.BillingModel == request.Order.BillingModel)
