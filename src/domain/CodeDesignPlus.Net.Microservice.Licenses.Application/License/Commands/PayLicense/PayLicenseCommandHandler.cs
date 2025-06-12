@@ -60,7 +60,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
             Value = price.Total
         };
 
-        payRequest.Transaction.Order.Description = $"Payment for license {license.Name} - {license.Id} to tenant {request.Tenant.Name} - {request.Tenant.Id}";
+        payRequest.Transaction.Order.Description = $"Payment for license {license.Name} to tenant {request.Tenant.Name}. Order ID: {request.Order.Id}";
 
         await paymentGrpc.PayAsync(payRequest, cancellationToken);
 
