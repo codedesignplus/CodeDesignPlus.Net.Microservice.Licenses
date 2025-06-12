@@ -4,10 +4,12 @@ using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
 using CodeDesignPlus.Net.gRpc.Clients.Services.User;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using DnsClient.Internal;
+using Microsoft.Extensions.Logging;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
 
-public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, IPaymentGrpc paymentGrpc, IUserGrpc userGrpc, ITenantGrpc tenantGrpc) : IRequestHandler<PayLicenseCommand>
+public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, IPaymentGrpc paymentGrpc, IUserGrpc userGrpc, ITenantGrpc tenantGrpc, ILogger<PayLicenseCommandHandler> logger) : IRequestHandler<PayLicenseCommand>
 {
     public async Task Handle(PayLicenseCommand request, CancellationToken cancellationToken)
     {
@@ -34,7 +36,13 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
     private async Task PayLicense(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
+        logger.LogDebug("Starting payment process for license {LicenseId} with order {OrderId}", request.Id, request.Order.Id);
+
+        logger.LogDebug("Command: {@Command}", request);
+
         var payRequest = mapper.Map<PayRequest>(request);
+
+        logger.LogDebug("PayRequest: {@PayRequest}", payRequest);
 
         var price = prices
             .Where(x => x.BillingType == request.Order.BillingType && x.Total == request.Order.Total && x.BillingModel == request.Order.BillingModel)
