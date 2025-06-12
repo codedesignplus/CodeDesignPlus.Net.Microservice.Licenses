@@ -69,12 +69,13 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
         var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
 
+        logger.LogWarning("Payment response: {@PaymentResponse}", paymentResponse);
     }
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Creating tenant for license: {@Tenant}", tenant);
-        logger.LogInformation("License details: {@License}", license);
+        logger.LogWarning("Creating tenant for license: {@Tenant}", tenant);
+        logger.LogWarning("License details: {@License}", license);
 
         var tenantRequest = mapper.Map<CreateTenantRequest>(tenant);
 
