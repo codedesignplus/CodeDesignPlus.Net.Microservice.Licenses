@@ -78,10 +78,6 @@ public static class MapsterConfigLicense
                                 Country = src.Order.Buyer.Country.Name
                             }
                         },
-                        Amount = null!,
-                        Description = null!,
-                        Tax = null!,
-                        TaxReturnBase = null!
                     },
                     Payer = new Payer
                     {
@@ -98,10 +94,6 @@ public static class MapsterConfigLicense
                             Country = src.Order.Buyer.Country.Name
                         }
                     },
-                    Cookie = null!,
-                    UserAgent = null!,
-                    DeviceSessionId = null!,
-                    IpAddress = null!,
                     CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
                     {
                         Number = src.PaymentMethod.CreditCard.Number,
