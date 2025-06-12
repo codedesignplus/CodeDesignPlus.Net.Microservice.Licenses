@@ -13,6 +13,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 {
     public async Task Handle(PayLicenseCommand request, CancellationToken cancellationToken)
     {
+        logger.LogWarning("Processing PayLicenseCommand: {@Request}", request);
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
         var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
@@ -21,11 +22,11 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
         var aggregate = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
-        await PayLicense(request, aggregate.Prices, aggregate, cancellationToken);
+        await PayLicenseAsync(request, aggregate.Prices, aggregate, cancellationToken);
 
         await CreateTenantAsync(request.Tenant, aggregate, cancellationToken);
 
-        await UpdateUser(request.Tenant.Name, request.Tenant.Id, cancellationToken);
+        await UpdateUserAsync(request.Tenant.Name, request.Tenant.Id, cancellationToken);
 
         var license = PaymentAggregate.Create(request.Order.Id, request.Id, request.PaymentMethod, request.Order.Buyer, request.Tenant, user.Tenant, true, "Error", true, user.IdUser);
 
@@ -34,7 +35,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
     }
 
-    private async Task PayLicense(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task PayLicenseAsync(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<PayRequest>(request);
 
@@ -90,7 +91,7 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         await tenantGrpc.CreateTenantAsync(tenantRequest, cancellationToken);
     }
 
-    private async Task UpdateUser(string nameTenant, Guid idTenant, CancellationToken cancellationToken)
+    private async Task UpdateUserAsync(string nameTenant, Guid idTenant, CancellationToken cancellationToken)
     {
         await userGrpc.AddTenantToUser(new AddTenantRequest
         {
