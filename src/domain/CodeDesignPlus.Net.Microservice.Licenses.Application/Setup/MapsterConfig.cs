@@ -114,7 +114,7 @@ public static class MapsterConfigLicense
 
         TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>
             .NewConfig()
-            .ConstructUsing(
+            .MapWith(
                 src => new CreateTenantRequest
                 {
                     Id = src.Id.ToString(),
