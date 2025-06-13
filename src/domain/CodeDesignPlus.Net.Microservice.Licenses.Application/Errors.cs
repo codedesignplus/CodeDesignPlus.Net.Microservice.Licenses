@@ -10,4 +10,5 @@ public class Errors: IErrorCodes
     public const string LicensePopularityAlreadyExists = "204 : The license popularity already exists.";
 
     public const string PriceLicenseChangedOrIsNotValid = "205 : The price of the license has changed or is not valid.";
+    public const string PaymentFailed = "206 : The payment failed because {0}";
 }

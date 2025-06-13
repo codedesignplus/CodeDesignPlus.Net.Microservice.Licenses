@@ -71,6 +71,8 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         await paymentGrpc.PayAsync(payRequest, cancellationToken);
 
         var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
+
+        ApplicationGuard.IsTrue(paymentResponse.Response.Code == "ERROR", string.Format(Errors.PaymentFailed, paymentResponse.Response.Error));
     }
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)
