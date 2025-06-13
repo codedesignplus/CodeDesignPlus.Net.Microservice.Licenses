@@ -119,7 +119,7 @@ public static class MapsterConfigLicense
                 {
                     Id = src.Id.ToString(),
                     Name = src.Name,
-                    Domain = src.Web ?? string.Empty,
+                    Domain = src.Web,
                     Location = new gRpc.Clients.Services.Tenant.Location()
                     {
                         Country = new CodeDesignPlus.Net.gRpc.Clients.Services.Tenant.Country
