@@ -16,15 +16,20 @@ public static class MapsterConfigLicense
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new CreateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
+            .MapWith(src => new CreateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
 
         TypeAdapterConfig<UpdateLicenseDto, UpdateLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
+            .MapWith(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
 
         TypeAdapterConfig<PayLicenseDto, PayLicenseCommand>
             .NewConfig()
-            .ConstructUsing(src => new PayLicenseCommand(src.Id, src.Order, src.PaymentMethod, src.Tenant));
+            .MapWith(src => new PayLicenseCommand(
+                src.Id,
+                src.Order,
+                src.PaymentMethod,
+                src.Tenant
+            ));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
             .NewConfig()
@@ -54,62 +59,62 @@ public static class MapsterConfigLicense
             .TwoWays();
 
         //Payment gRpc
-         TypeAdapterConfig<PayLicenseCommand, PayRequest>
-            .NewConfig()
-            .Map(dest => dest.Id, src => src.Order.Id.ToString())
-            .Map(dest => dest.Transaction, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
-            {
-                Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
-                {
-                    Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
-                    {
-                        FullName = src.Order.Buyer.Name,
-                        ContactPhone = src.Order.Buyer.Phone,
-                        DniNumber = src.Order.Buyer.Document,
-                        EmailAddress = src.Order.Buyer.Email,
-                        ShippingAddress = new Address
-                        {
-                            Street = src.Order.Buyer.Address,
-                            City = src.Order.Buyer.City.Name,
-                            State = src.Order.Buyer.State.Name,
-                            PostalCode = src.Order.Buyer.PostalCode,
-                            Country = src.Order.Buyer.Country.Alpha2,
-                            Phone = src.Order.Buyer.Phone
-                        }
-                    },
-                },
-                Payer = new Payer
-                {
-                    FullName = src.Order.Buyer.Name,
-                    ContactPhone = src.Order.Buyer.Phone,
-                    DniNumber = src.Order.Buyer.Document,
-                    DniType = src.Order.Buyer.TypeDocument,
-                    EmailAddress = src.Order.Buyer.Email,
-                    BillingAddress = new Address
-                    {
-                        Street = src.Order.Buyer.Address,
-                        City = src.Order.Buyer.City.Name,
-                        State = src.Order.Buyer.State.Name,
-                        PostalCode = src.Order.Buyer.PostalCode,
-                        Country = src.Order.Buyer.Country.Alpha2,
-                        Phone = src.Order.Buyer.Phone
-                    }
-                },
-                PaymentMethod = src.PaymentMethod.Code,
-                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
-                {
-                    Number = src.PaymentMethod.CreditCard.Number,
-                    ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
-                    SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
-                    Name = src.PaymentMethod.CreditCard.CardHolderName,
-                } : null,
-                Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
-                {
-                    PseCode = src.PaymentMethod.Pse.PseCode,
-                    PseResponseUrl = null,
-                    TypePerson = src.PaymentMethod.Pse.TypePerson,
-                } : null,
-            });
+        TypeAdapterConfig<PayLicenseCommand, PayRequest>
+           .NewConfig()
+           .Map(dest => dest.Id, src => src.Order.Id.ToString())
+           .Map(dest => dest.Transaction, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
+           {
+               Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
+               {
+                   Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
+                   {
+                       FullName = src.Order.Buyer.Name,
+                       ContactPhone = src.Order.Buyer.Phone,
+                       DniNumber = src.Order.Buyer.Document,
+                       EmailAddress = src.Order.Buyer.Email,
+                       ShippingAddress = new Address
+                       {
+                           Street = src.Order.Buyer.Address,
+                           City = src.Order.Buyer.City.Name,
+                           State = src.Order.Buyer.State.Name,
+                           PostalCode = src.Order.Buyer.PostalCode,
+                           Country = src.Order.Buyer.Country.Alpha2,
+                           Phone = src.Order.Buyer.Phone
+                       }
+                   },
+               },
+               Payer = new Payer
+               {
+                   FullName = src.Order.Buyer.Name,
+                   ContactPhone = src.Order.Buyer.Phone,
+                   DniNumber = src.Order.Buyer.Document,
+                   DniType = src.Order.Buyer.TypeDocument,
+                   EmailAddress = src.Order.Buyer.Email,
+                   BillingAddress = new Address
+                   {
+                       Street = src.Order.Buyer.Address,
+                       City = src.Order.Buyer.City.Name,
+                       State = src.Order.Buyer.State.Name,
+                       PostalCode = src.Order.Buyer.PostalCode,
+                       Country = src.Order.Buyer.Country.Alpha2,
+                       Phone = src.Order.Buyer.Phone
+                   }
+               },
+               PaymentMethod = src.PaymentMethod.Code,
+               CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
+               {
+                   Number = src.PaymentMethod.CreditCard.Number,
+                   ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
+                   SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
+                   Name = src.PaymentMethod.CreditCard.CardHolderName,
+               } : null,
+               Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
+               {
+                   PseCode = src.PaymentMethod.Pse.PseCode,
+                   PseResponseUrl = null,
+                   TypePerson = src.PaymentMethod.Pse.TypePerson,
+               } : null,
+           });
 
 
         TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>

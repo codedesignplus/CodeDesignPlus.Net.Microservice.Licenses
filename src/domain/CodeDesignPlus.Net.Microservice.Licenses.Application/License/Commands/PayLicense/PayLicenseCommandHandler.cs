@@ -13,7 +13,6 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 {
     public async Task Handle(PayLicenseCommand request, CancellationToken cancellationToken)
     {
-        logger.LogWarning("Processing PayLicenseCommand: {@Request}", request);
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
         var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
@@ -68,18 +67,11 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         await paymentGrpc.PayAsync(payRequest, cancellationToken);
 
         var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
-
-        logger.LogWarning("Payment response: {@PaymentResponse}", paymentResponse);
     }
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)
     {
-        logger.LogWarning("Creating tenant for license: {@Tenant}", tenant);
-        logger.LogWarning("License details: {@License}", license);
-
         var tenantRequest = mapper.Map<CreateTenantRequest>(tenant);
-
-        logger.LogWarning("Tenant request: {@TenantRequest}", tenantRequest);
 
         tenantRequest.License = new gRpc.Clients.Services.Tenant.License()
         {
@@ -89,18 +81,12 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
             EndDate = SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(license.Prices.FirstOrDefault()?.BillingType == BillingTypeEnum.Monthly ? 30 : 365)).ToString(),
         };
 
-        logger.LogWarning("Tenant request with license: {@TenantRequestWithLicense}", tenantRequest);
-
         foreach (var item in license.Attributes)
         {
             tenantRequest.License.Metadata.Add(item.Key, item.Value);
         }
 
-        logger.LogWarning("Tenant request with metadata: {@TenantRequestWithMetadata}", tenantRequest);
-
         await tenantGrpc.CreateTenantAsync(tenantRequest, cancellationToken);
-
-        logger.LogWarning("Tenant created successfully: {@TenantRequest}", tenantRequest);
     }
 
     private async Task UpdateUserAsync(string nameTenant, Guid idTenant, CancellationToken cancellationToken)
