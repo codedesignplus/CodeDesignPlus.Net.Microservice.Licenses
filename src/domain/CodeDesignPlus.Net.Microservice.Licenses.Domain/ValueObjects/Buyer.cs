@@ -40,7 +40,7 @@ public sealed partial class Buyer
         DomainGuard.IsFalse(EmailRegex().IsMatch(email), Errors.EmailContainsInvalidCharacters);
 
         DomainGuard.IsNullOrEmpty(typeDocument, Errors.TypeDocumentIsRequired);
-        DomainGuard.IsGreaterThan(typeDocument.Length, 2, Errors.TypeDocumentIsTooLong);
+        DomainGuard.IsGreaterThan(typeDocument.Length, 3, Errors.TypeDocumentIsTooLong);
 
         DomainGuard.IsNullOrEmpty(document, Errors.DocumentIsRequired);
         DomainGuard.IsGreaterThan(document.Length, 20, Errors.DocumentIsTooLong);

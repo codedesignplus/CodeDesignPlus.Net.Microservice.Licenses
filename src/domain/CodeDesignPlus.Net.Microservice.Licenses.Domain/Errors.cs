@@ -28,7 +28,7 @@ public class Errors : IErrorCodes
     public const string EmailIsRequired = "123 : The Email is required.";
     public const string EmailContainsInvalidCharacters = "124 : The Email contains invalid characters, it should be a valid email format.";
     public const string TypeDocumentIsRequired = "125 : The TypeDocument is required.";
-    public const string TypeDocumentIsTooLong = "126 : The TypeDocument is too long, maximum length is 2 characters.";
+    public const string TypeDocumentIsTooLong = "126 : The TypeDocument is too long, maximum length is 3 characters.";
     public const string DocumentIsRequired = "127 : The Document is required.";
     public const string DocumentIsTooLong = "128 : The Document is too long, maximum length is 20 characters.";
     public const string AddressIsRequired = "129 : The Address is required.";
