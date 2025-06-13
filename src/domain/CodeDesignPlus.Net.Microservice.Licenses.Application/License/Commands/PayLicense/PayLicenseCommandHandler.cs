@@ -11,6 +11,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.
 
 public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, IPaymentGrpc paymentGrpc, IUserGrpc userGrpc, ITenantGrpc tenantGrpc, ILogger<PayLicenseCommandHandler> logger) : IRequestHandler<PayLicenseCommand>
 {
+    private const string MODULE = "Licenses";
+
     public async Task Handle(PayLicenseCommand request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
@@ -37,6 +39,8 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
     private async Task PayLicenseAsync(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<PayRequest>(request);
+
+        payRequest.Module = MODULE;
 
         var price = prices
             .Where(x => x.BillingType == request.Order.BillingType && x.Total == request.Order.Total && x.BillingModel == request.Order.BillingModel)
