@@ -76,7 +76,7 @@ public class Errors : IErrorCodes
     public const string CreditCardCannotBeNull = "173 : Credit Card cannot be null";
     public const string PaymentMethodIsRequired = "174 : The Payment Method is required."; 
     public const string BuyerIsRequired = "175 : The Buyer is required."; 
-    public const string OrganizationIsRequired = "176 : The Organization is required.";
+    public const string TenantDetailIsRequired = "176 : The Tenant Detail is required.";
     public const string CardHolderNameCannotBeNullOrEmpty = "177 : Card Holder Name cannot be null or empty";
     public const string IdOrderIsRequired = "178 : The Id Order is required.";
     public const string LicenseIdIsRequired = "179 : The License Id is required.";

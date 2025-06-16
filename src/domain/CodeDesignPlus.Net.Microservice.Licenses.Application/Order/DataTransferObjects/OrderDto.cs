@@ -8,8 +8,6 @@ public class OrderDto : IDtoBase
     public Guid IdLicense { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; } = null!;
     public Buyer Buyer { get; private set; } = null!;
-    public Tenant Organization { get; private set; } = null!;
-    public string? Error { get; private set; }
-    public bool IsSuccess { get; private set; }    
+    public Tenant TenantDetail { get; private set; } = null!;
     public PaymentResponse Response { get; private set; } = null!;
 }

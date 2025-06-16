@@ -26,9 +26,9 @@ public static class MapsterConfigLicense
             .NewConfig()
             .MapWith(src => new PayOrderCommand(
                 src.Id,
-                src.Order,
+                src.OrderDetail,
                 src.PaymentMethod,
-                src.Tenant
+                src.TenantDetail
             ));
 
         TypeAdapterConfig<LicenseAggregate, LicenseDto>
@@ -85,43 +85,43 @@ public static class MapsterConfigLicense
         //Payment gRpc
         TypeAdapterConfig<PayOrderCommand, PayRequest>
            .NewConfig()
-           .Map(dest => dest.Id, src => src.Order.Id.ToString())
+           .Map(dest => dest.Id, src => src.OrderDetail.Id.ToString())
            .Map(dest => dest.Transaction, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
            {
                Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
                {
                    Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
                    {
-                       FullName = src.Order.Buyer.Name,
-                       ContactPhone = src.Order.Buyer.Phone,
-                       DniNumber = src.Order.Buyer.Document,
-                       EmailAddress = src.Order.Buyer.Email,
+                       FullName = src.OrderDetail.Buyer.Name,
+                       ContactPhone = src.OrderDetail.Buyer.Phone,
+                       DniNumber = src.OrderDetail.Buyer.Document,
+                       EmailAddress = src.OrderDetail.Buyer.Email,
                        ShippingAddress = new Address
                        {
-                           Street = src.Order.Buyer.Address,
-                           City = src.Order.Buyer.City.Name,
-                           State = src.Order.Buyer.State.Name,
-                           PostalCode = src.Order.Buyer.PostalCode,
-                           Country = src.Order.Buyer.Country.Alpha2,
-                           Phone = src.Order.Buyer.Phone
+                           Street = src.OrderDetail.Buyer.Address,
+                           City = src.OrderDetail.Buyer.City.Name,
+                           State = src.OrderDetail.Buyer.State.Name,
+                           PostalCode = src.OrderDetail.Buyer.PostalCode,
+                           Country = src.OrderDetail.Buyer.Country.Alpha2,
+                           Phone = src.OrderDetail.Buyer.Phone
                        }
                    },
                },
                Payer = new Payer
                {
-                   FullName = src.Order.Buyer.Name,
-                   ContactPhone = src.Order.Buyer.Phone,
-                   DniNumber = src.Order.Buyer.Document,
-                   DniType = src.Order.Buyer.TypeDocument,
-                   EmailAddress = src.Order.Buyer.Email,
+                   FullName = src.OrderDetail.Buyer.Name,
+                   ContactPhone = src.OrderDetail.Buyer.Phone,
+                   DniNumber = src.OrderDetail.Buyer.Document,
+                   DniType = src.OrderDetail.Buyer.TypeDocument,
+                   EmailAddress = src.OrderDetail.Buyer.Email,
                    BillingAddress = new Address
                    {
-                       Street = src.Order.Buyer.Address,
-                       City = src.Order.Buyer.City.Name,
-                       State = src.Order.Buyer.State.Name,
-                       PostalCode = src.Order.Buyer.PostalCode,
-                       Country = src.Order.Buyer.Country.Alpha2,
-                       Phone = src.Order.Buyer.Phone
+                       Street = src.OrderDetail.Buyer.Address,
+                       City = src.OrderDetail.Buyer.City.Name,
+                       State = src.OrderDetail.Buyer.State.Name,
+                       PostalCode = src.OrderDetail.Buyer.PostalCode,
+                       Country = src.OrderDetail.Buyer.Country.Alpha2,
+                       Phone = src.OrderDetail.Buyer.Phone
                    }
                },
                PaymentMethod = src.PaymentMethod.Code,

@@ -3,7 +3,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public sealed partial class Order
+public sealed partial class OrderDetail
 {
     public Guid Id { get; private set; }
     public BillingTypeEnum BillingType { get; private set; }
@@ -14,7 +14,7 @@ public sealed partial class Order
     public Buyer Buyer { get; private set; } = null!;
 
     [JsonConstructor]
-    public Order(Guid id, long total, long tax, long subTotal, Buyer buyer, BillingTypeEnum billingType, BillingModel billingModel)
+    public OrderDetail(Guid id, long total, long tax, long subTotal, Buyer buyer, BillingTypeEnum billingType, BillingModel billingModel)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdOrderIsRequired);
         DomainGuard.IsLessThan(total, 1, Errors.TotalIsInvalid);
@@ -31,8 +31,8 @@ public sealed partial class Order
         this.BillingModel = billingModel;
     }
 
-    public static Order Create(Guid id, long amount, long tax, long taxReturnBase, Buyer buyer, BillingTypeEnum billingType, BillingModel billingModel)
+    public static OrderDetail Create(Guid id, long amount, long tax, long taxReturnBase, Buyer buyer, BillingTypeEnum billingType, BillingModel billingModel)
     {
-        return new Order(id, amount, tax, taxReturnBase, buyer, billingType, billingModel);
+        return new OrderDetail(id, amount, tax, taxReturnBase, buyer, billingType, billingModel);
     }
 }
