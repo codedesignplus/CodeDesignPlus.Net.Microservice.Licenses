@@ -6,7 +6,12 @@ public class GetOrderByIdQueryHandler(IOrderRepository repository, IMapper mappe
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
-        var order = await repository.FindAsync<OrderAggregate>(request.Id, user.Tenant, cancellationToken);
+        OrderAggregate order;
+
+        if(user.Tenant == Guid.Empty)
+            order = await repository.FindAsync<OrderAggregate>(request.Id, cancellationToken);
+        else
+            order = await repository.FindAsync<OrderAggregate>(request.Id, user.Tenant, cancellationToken);
 
         ApplicationGuard.IsNull(order, Errors.OrderNotFound);
 
