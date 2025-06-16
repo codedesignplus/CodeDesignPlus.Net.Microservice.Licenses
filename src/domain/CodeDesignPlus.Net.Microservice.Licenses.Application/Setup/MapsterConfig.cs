@@ -13,6 +13,39 @@ public static class MapsterConfigLicense
 {
     public static void Configure()
     {
+        //OrderAggreate
+        TypeAdapterConfig<OrderAggregate, OrderDto>
+            .NewConfig()
+            .MapWith(src => new OrderDto
+            {
+                Id = src.Id,
+                Buyer = src.Buyer,
+                PaymentMethod = src.PaymentMethod,
+                IdLicense = src.IdLicense,
+                TenantDetail = src.TenantDetail,
+                Response = new Domain.ValueObjects.PaymentResponse(
+                    src.Response.Id,
+                    src.Response.Provider,
+                    new Domain.ValueObjects.Response(
+                        src.Response.Reponse.Code,
+                        src.Response.Reponse.Error,
+                        new ResponseDetails(
+                            src.Response.Reponse.Details.OrderId,
+                            src.Response.Reponse.Details.TransactionId,
+                            src.Response.Reponse.Details.State,
+                            src.Response.Reponse.Details.ResponseCode,
+                            src.Response.Reponse.Details.PaymentNetworkResponseCode,    
+                            src.Response.Reponse.Details.PaymentNetworkResponseErrorMessage,
+                            src.Response.Reponse.Details.TrazabilityCode,
+                            src.Response.Reponse.Details.AuthorizationCode,
+                            src.Response.Reponse.Details.ResponseMessage,
+                            src.Response.Reponse.Details.ExtraParameters.ToDictionary(x => x.Key, x => x.Value),
+                            src.Response.Reponse.Details.AdditionalInfo.ToDictionary(x => x.Key, x => x.Value)
+                        )
+                    )
+                )
+            });
+
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()
