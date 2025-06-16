@@ -4,16 +4,24 @@ using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
 using CodeDesignPlus.Net.gRpc.Clients.Services.User;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using DnsClient.Internal;
 using Microsoft.Extensions.Logging;
 
-namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
+namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 
-public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, IPaymentGrpc paymentGrpc, IUserGrpc userGrpc, ITenantGrpc tenantGrpc, ILogger<PayLicenseCommandHandler> logger) : IRequestHandler<PayLicenseCommand>
+public class PayOrderCommandHandler(
+    ILicenseRepository repository,
+    IUserContext user,
+    IPubSub pubsub,
+    IMapper mapper,
+    IPaymentGrpc paymentGrpc,
+    IUserGrpc userGrpc,
+    ITenantGrpc tenantGrpc,
+    ILogger<PayOrderCommandHandler> logger
+) : IRequestHandler<PayOrderCommand>
 {
     private const string MODULE = "Licenses";
 
-    public async Task Handle(PayLicenseCommand request, CancellationToken cancellationToken)
+    public async Task Handle(PayOrderCommand request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
@@ -21,22 +29,31 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
 
         ApplicationGuard.IsFalse(exist, Errors.LicenseNotFound);
 
-        var aggregate = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
+        var payment = OrderAggregate.Create(request.Order.Id, request.Id, request.PaymentMethod, request.Order.Buyer, request.Tenant, user.Tenant, true, user.IdUser);
 
-        await PayLicenseAsync(request, aggregate.Prices, aggregate, cancellationToken);
+        await ProcessPayment(request, cancellationToken);
 
-        await CreateTenantAsync(request.Tenant, aggregate, cancellationToken);
+        var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
 
-        await UpdateUserAsync(request.Tenant.Name, request.Tenant.Id, cancellationToken);
+        payment.SetPaymentResponse(mapper.Map<Domain.ValueObjects.PaymentResponse>(paymentResponse));
 
-        var license = PaymentAggregate.Create(request.Order.Id, request.Id, request.PaymentMethod, request.Order.Buyer, request.Tenant, user.Tenant, true, "Error", true, user.IdUser);
+        await repository.CreateAsync(payment, cancellationToken);
 
-        await repository.CreateAsync(license, cancellationToken);
-
-        await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
+        await pubsub.PublishAsync(payment.GetAndClearEvents(), cancellationToken);
     }
 
-    private async Task PayLicenseAsync(PayLicenseCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task ProcessPayment(PayOrderCommand request, CancellationToken cancellationToken)
+    {
+        var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
+
+        await PayLicenseAsync(request, license.Prices, license, cancellationToken);
+
+        await CreateTenantAsync(request.Tenant, license, cancellationToken);
+
+        await UpdateUserAsync(request.Tenant.Name, request.Tenant.Id, cancellationToken);
+    }
+
+    private async Task PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<PayRequest>(request);
 
@@ -69,10 +86,6 @@ public class PayLicenseCommandHandler(ILicenseRepository repository, IUserContex
         payRequest.Transaction.Order.Description = $"Payment for license {license.Name} to tenant {request.Tenant.Name}. Order ID: {request.Order.Id}";
 
         await paymentGrpc.PayAsync(payRequest, cancellationToken);
-
-        var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.Order.Id.ToString() }, cancellationToken);
-
-        ApplicationGuard.IsTrue(paymentResponse.Response.Code == "ERROR", string.Format(Errors.PaymentFailed, paymentResponse.Response.Error));
     }
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)

@@ -11,4 +11,6 @@ public class Errors: IErrorCodes
 
     public const string PriceLicenseChangedOrIsNotValid = "205 : The price of the license has changed or is not valid.";
     public const string PaymentFailed = "206 : The payment failed because {0}";
+
+    public const string OrderNotFound = "207 : The order was not found.";
 }

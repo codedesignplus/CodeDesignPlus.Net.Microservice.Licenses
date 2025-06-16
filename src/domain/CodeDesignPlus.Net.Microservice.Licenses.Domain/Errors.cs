@@ -87,5 +87,7 @@ public class Errors : IErrorCodes
     public const string CountryAlpha2IsEmpty = "184 : The Country Alpha2 is empty.";
 
     public const string CodeOfThePaymentMethodIsRequired = "185 : The code of the payment method is required.";
+
+    public const string PaymentResponseIsRequired = "186 : The Payment Response is required.";
 }
 

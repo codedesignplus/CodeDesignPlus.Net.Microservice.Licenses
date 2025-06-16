@@ -117,21 +117,4 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
 
         return NoContent();
     }
-
-    /// <summary>
-    /// Pay for a License.
-    /// </summary>
-    /// <param name="id">The unique identifier of the License.</param>
-    /// <param name="data">Data for paying the License.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>HTTP status code 204 (No Content).</returns>
-    [HttpPost("{id}/pay")]
-    public async Task<IActionResult> PayLicense(Guid id, [FromBody] PayLicenseDto data, CancellationToken cancellationToken)
-    {
-        data.Id = id;
-
-        await mediator.Send(mapper.Map<PayLicenseCommand>(data), cancellationToken);
-
-        return NoContent();
-    }
 }

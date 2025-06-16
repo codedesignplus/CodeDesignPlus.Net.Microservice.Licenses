@@ -2,8 +2,8 @@
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
-using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.PayLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -22,9 +22,9 @@ public static class MapsterConfigLicense
             .NewConfig()
             .MapWith(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
 
-        TypeAdapterConfig<PayLicenseDto, PayLicenseCommand>
+        TypeAdapterConfig<PayOrderDto, PayOrderCommand>
             .NewConfig()
-            .MapWith(src => new PayLicenseCommand(
+            .MapWith(src => new PayOrderCommand(
                 src.Id,
                 src.Order,
                 src.PaymentMethod,
@@ -58,8 +58,32 @@ public static class MapsterConfigLicense
             .NewConfig()
             .TwoWays();
 
+        TypeAdapterConfig<gRpc.Clients.Services.Payment.PaymentResponse, Domain.ValueObjects.PaymentResponse>
+            .NewConfig()
+            .MapWith(src => new Domain.ValueObjects.PaymentResponse(
+                Guid.Parse(src.Id),
+                src.Provider,
+                new Domain.ValueObjects.Response(
+                    src.Response.Code,
+                    src.Response.Error,
+                    new Domain.ValueObjects.ResponseDetails(
+                        src.Response.TransactionResponse.OrderId,
+                        src.Response.TransactionResponse.TransactionId,
+                        src.Response.TransactionResponse.State,
+                        src.Response.TransactionResponse.ResponseCode,
+                        src.Response.TransactionResponse.PaymentNetworkResponseCode,
+                        src.Response.TransactionResponse.PaymentNetworkResponseErrorMessage,
+                        src.Response.TransactionResponse.TrazabilityCode,
+                        src.Response.TransactionResponse.AuthorizationCode,
+                        src.Response.TransactionResponse.ResponseMessage,
+                        src.Response.TransactionResponse.ExtraParameters.ToDictionary(x => x.Key, x => x.Value),
+                        src.Response.TransactionResponse.AdditionalData.ToDictionary(x => x.Key, x => x.Value)
+                    )
+                )
+            ));
+
         //Payment gRpc
-        TypeAdapterConfig<PayLicenseCommand, PayRequest>
+        TypeAdapterConfig<PayOrderCommand, PayRequest>
            .NewConfig()
            .Map(dest => dest.Id, src => src.Order.Id.ToString())
            .Map(dest => dest.Transaction, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
