@@ -5,9 +5,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransfe
 public class OrderDto : IDtoBase
 {
     public required Guid Id { get; set; }
-    public Guid IdLicense { get; private set; }
-    public PaymentMethod PaymentMethod { get; private set; } = null!;
-    public Buyer Buyer { get; private set; } = null!;
-    public Tenant TenantDetail { get; private set; } = null!;
-    public PaymentResponse Response { get; private set; } = null!;
+    public Guid IdLicense { get; set; }
+    public PaymentMethod PaymentMethod { get; set; } = null!;
+    public Buyer Buyer { get; set; } = null!;
+    public Tenant TenantDetail { get; set; } = null!;
+    public PaymentResponse Response { get; set; } = null!;
 }
