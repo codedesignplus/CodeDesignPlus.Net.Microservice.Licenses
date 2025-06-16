@@ -10,4 +10,5 @@ public class OrderDto : IDtoBase
     public Buyer Buyer { get; set; } = null!;
     public Tenant TenantDetail { get; set; } = null!;
     public PaymentResponse PaymentResponse { get; set; } = null!;
+    public Instant CreatedAt { get; set; }
 }

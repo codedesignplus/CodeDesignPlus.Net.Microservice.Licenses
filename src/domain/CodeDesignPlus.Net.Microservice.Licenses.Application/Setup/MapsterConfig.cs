@@ -23,6 +23,7 @@ public static class MapsterConfigLicense
                 PaymentMethod = src.PaymentMethod,
                 IdLicense = src.IdLicense,
                 TenantDetail = src.TenantDetail,
+                CreatedAt = src.CreatedAt,
                 PaymentResponse = new Domain.ValueObjects.PaymentResponse(
                     src.PaymentResponse.Id,
                     src.PaymentResponse.Provider,
