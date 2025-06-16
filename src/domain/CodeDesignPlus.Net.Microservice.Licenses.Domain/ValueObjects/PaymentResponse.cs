@@ -2,7 +2,7 @@ using System;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public record PaymentResponse(Guid Id, string Provider, Response Reponse);
+public record PaymentResponse(Guid Id, string Provider, Response Response);
 
 public record Response(string Code, string? Error, ResponseDetails Details);
 

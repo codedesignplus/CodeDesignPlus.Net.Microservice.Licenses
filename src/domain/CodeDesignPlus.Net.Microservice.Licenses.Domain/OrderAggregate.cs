@@ -11,7 +11,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public Tenant TenantDetail { get; private set; } = null!;
     public string? Error { get; private set; }
     public bool IsSuccess { get; private set; }    
-    public PaymentResponse Response { get; private set; } = null!;
+    public PaymentResponse PaymentResponse { get; private set; } = null!;
 
     public OrderAggregate(Guid id, Guid idLicense, PaymentMethod paymentMethod, Buyer buyer, Tenant tenantDetail, Guid createdBy) : this(id)
     {
@@ -40,6 +40,6 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     {
         DomainGuard.IsNull(response, Errors.PaymentResponseIsRequired);
 
-        Response = response;
+        PaymentResponse = response;
     }
 }

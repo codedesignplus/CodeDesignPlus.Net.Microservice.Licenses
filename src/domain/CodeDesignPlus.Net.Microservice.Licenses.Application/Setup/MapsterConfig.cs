@@ -23,24 +23,24 @@ public static class MapsterConfigLicense
                 PaymentMethod = src.PaymentMethod,
                 IdLicense = src.IdLicense,
                 TenantDetail = src.TenantDetail,
-                Response = new Domain.ValueObjects.PaymentResponse(
-                    src.Response.Id,
-                    src.Response.Provider,
+                PaymentResponse = new Domain.ValueObjects.PaymentResponse(
+                    src.PaymentResponse.Id,
+                    src.PaymentResponse.Provider,
                     new Domain.ValueObjects.Response(
-                        src.Response.Reponse.Code,
-                        src.Response.Reponse.Error,
+                        src.PaymentResponse.Response.Code,
+                        src.PaymentResponse.Response.Error,
                         new ResponseDetails(
-                            src.Response.Reponse.Details.OrderId,
-                            src.Response.Reponse.Details.TransactionId,
-                            src.Response.Reponse.Details.State,
-                            src.Response.Reponse.Details.ResponseCode,
-                            src.Response.Reponse.Details.PaymentNetworkResponseCode,    
-                            src.Response.Reponse.Details.PaymentNetworkResponseErrorMessage,
-                            src.Response.Reponse.Details.TrazabilityCode,
-                            src.Response.Reponse.Details.AuthorizationCode,
-                            src.Response.Reponse.Details.ResponseMessage,
-                            src.Response.Reponse.Details.ExtraParameters.ToDictionary(x => x.Key, x => x.Value),
-                            src.Response.Reponse.Details.AdditionalInfo.ToDictionary(x => x.Key, x => x.Value)
+                            src.PaymentResponse.Response.Details.OrderId,
+                            src.PaymentResponse.Response.Details.TransactionId,
+                            src.PaymentResponse.Response.Details.State,
+                            src.PaymentResponse.Response.Details.ResponseCode,
+                            src.PaymentResponse.Response.Details.PaymentNetworkResponseCode,    
+                            src.PaymentResponse.Response.Details.PaymentNetworkResponseErrorMessage,
+                            src.PaymentResponse.Response.Details.TrazabilityCode,
+                            src.PaymentResponse.Response.Details.AuthorizationCode,
+                            src.PaymentResponse.Response.Details.ResponseMessage,
+                            src.PaymentResponse.Response.Details.ExtraParameters.ToDictionary(x => x.Key, x => x.Value),
+                            src.PaymentResponse.Response.Details.AdditionalInfo.ToDictionary(x => x.Key, x => x.Value)
                         )
                     )
                 )
