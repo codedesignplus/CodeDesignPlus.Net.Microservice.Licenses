@@ -3,7 +3,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain;
 
-public class OrderAggregate(Guid id) : AggregateRoot(id)
+public class OrderAggregate(Guid id) : AggregateRootBase(id)
 {
     public Guid IdLicense { get; private set; }
     public PaymentMethod PaymentMethod { get; private set; } = null!;
@@ -26,7 +26,6 @@ public class OrderAggregate(Guid id) : AggregateRoot(id)
         Buyer = buyer;
         TenantDetail = tenantDetail;
         IsActive = true;
-        Tenant = tenantDetail.Id;
 
         CreatedAt = SystemClock.Instance.GetCurrentInstant();
         CreatedBy = createdBy;
