@@ -19,7 +19,7 @@ public sealed partial class PaymentMethod
         if(creditCard == null)
             DomainGuard.IsNull(pse!, Errors.PseCannotBeNull);
 
-        Code = code;
+        this.Code = code;
         this.Pse = pse;
         this.CreditCard = creditCard;
     }
