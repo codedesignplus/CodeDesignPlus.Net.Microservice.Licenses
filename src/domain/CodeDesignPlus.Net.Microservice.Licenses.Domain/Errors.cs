@@ -89,5 +89,18 @@ public class Errors : IErrorCodes
     public const string CodeOfThePaymentMethodIsRequired = "185 : The code of the payment method is required.";
 
     public const string PaymentResponseIsRequired = "186 : The Payment Response is required.";
+
+    public const string PseResponseUrlCannotBeNullOrEmpty = "187 : The Pse Response URL cannot be null or empty."; 
+    public const string PseResponseUrlCannotBeGreaterThan200Characters = "188 : The Pse Response URL cannot be greater than 200 characters.";
+
+    public const string PseResponseUrlMustBeValidFormat = "189 : The Pse Response URL must be a valid URL.";
+
+    public const string NotifyUrlIsRequired = "190 : The Notify URL is required.";
+    public const string NotifyUrlMustBeValidFormat = "191 : The Notify URL must be a valid URL.";
+
+    public const string CodeTypeDocumentCannotBeNullOrEmpty = "192 : The Code Type Document cannot be null or empty.";
+    public const string NameTypeDocumentIsInvalid = "193 : The Name Type Document is invalid.";
+    public const string CodeTypeDocumentIsInvalid = "194 : The Code Type Document is invalid.";
+    public const string NumberDocumentIsRequired = "195 : The Number Document is required.";
 }
 

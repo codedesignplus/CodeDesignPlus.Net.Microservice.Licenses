@@ -124,39 +124,22 @@ public static class MapsterConfigLicense
            {
                Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
                {
-                   Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
-                   {
-                       FullName = src.OrderDetail.Buyer.Name,
-                       ContactPhone = src.OrderDetail.Buyer.Phone,
-                       DniNumber = src.OrderDetail.Buyer.Document,
-                       EmailAddress = src.OrderDetail.Buyer.Email,
-                       ShippingAddress = new Address
-                       {
-                           Street = src.OrderDetail.Buyer.Address,
-                           City = src.OrderDetail.Buyer.City.Name,
-                           State = src.OrderDetail.Buyer.State.Name,
-                           PostalCode = src.OrderDetail.Buyer.PostalCode,
-                           Country = src.OrderDetail.Buyer.Country.Alpha2,
-                           Phone = src.OrderDetail.Buyer.Phone
-                       }
-                   },
+                    Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
+                    {
+                        FullName = src.TenantDetail.Name,
+                        ContactPhone = src.TenantDetail.Phone,
+                        DniNumber = src.TenantDetail.NumberDocument,
+                        EmailAddress = src.TenantDetail.Email,
+                        DniType = src.TenantDetail.TypeDocument.Code
+                    }
                },
                Payer = new Payer
                {
                    FullName = src.OrderDetail.Buyer.Name,
                    ContactPhone = src.OrderDetail.Buyer.Phone,
                    DniNumber = src.OrderDetail.Buyer.Document,
-                   DniType = src.OrderDetail.Buyer.TypeDocument,
+                   DniType = src.OrderDetail.Buyer.TypeDocument.Code,
                    EmailAddress = src.OrderDetail.Buyer.Email,
-                   BillingAddress = new Address
-                   {
-                       Street = src.OrderDetail.Buyer.Address,
-                       City = src.OrderDetail.Buyer.City.Name,
-                       State = src.OrderDetail.Buyer.State.Name,
-                       PostalCode = src.OrderDetail.Buyer.PostalCode,
-                       Country = src.OrderDetail.Buyer.Country.Alpha2,
-                       Phone = src.OrderDetail.Buyer.Phone
-                   }
                },
                PaymentMethod = src.PaymentMethod.Code,
                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
@@ -169,7 +152,7 @@ public static class MapsterConfigLicense
                Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
                {
                    PseCode = src.PaymentMethod.Pse.PseCode,
-                   PseResponseUrl = null,
+                   PseResponseUrl = src.PaymentMethod.Pse.PseResponseUrl,
                    TypePerson = src.PaymentMethod.Pse.TypePerson,
                } : null,
            });

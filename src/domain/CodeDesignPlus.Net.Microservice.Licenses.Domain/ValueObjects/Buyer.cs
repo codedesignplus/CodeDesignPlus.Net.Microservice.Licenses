@@ -19,16 +19,11 @@ public sealed partial class Buyer
     public string Name { get; private set; }
     public string Phone { get; private set; }
     public string Email { get; private set; }
-    public string TypeDocument { get; private set; }
+    public TypeDocument TypeDocument { get; private set; }
     public string Document { get; private set; }
-    public Country Country { get; private set; }
-    public State State { get; private set; }
-    public City City { get; private set; }
-    public string Address { get; private set; }
-    public string PostalCode { get; private set; }
 
     [JsonConstructor]
-    private Buyer(string name, string phone, string email, string typeDocument, string document, Country country, State state, City city, string address, string postalCode)
+    private Buyer(string name, string phone, string email, TypeDocument typeDocument, string document)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.NameIsRequired);
         DomainGuard.IsGreaterThan(name.Length, 124, Errors.NameIsTooLong);
@@ -39,38 +34,20 @@ public sealed partial class Buyer
         DomainGuard.IsNullOrEmpty(email, Errors.EmailIsRequired);
         DomainGuard.IsFalse(EmailRegex().IsMatch(email), Errors.EmailContainsInvalidCharacters);
 
-        DomainGuard.IsNullOrEmpty(typeDocument, Errors.TypeDocumentIsRequired);
-        DomainGuard.IsGreaterThan(typeDocument.Length, 3, Errors.TypeDocumentIsTooLong);
+        DomainGuard.IsNull(typeDocument, Errors.TypeDocumentIsRequired);
 
         DomainGuard.IsNullOrEmpty(document, Errors.DocumentIsRequired);
         DomainGuard.IsGreaterThan(document.Length, 20, Errors.DocumentIsTooLong);
-
-        DomainGuard.IsNull(country, Errors.CountryIsNull);
-        DomainGuard.IsNull(state, Errors.StateIsNull);
-        DomainGuard.IsNull(city, Errors.CityIsNull);
-
-        DomainGuard.IsNullOrEmpty(address, Errors.AddressIsRequired);
-        DomainGuard.IsGreaterThan(address.Length , 256, Errors.AddressIsTooLong);
-        DomainGuard.IsFalse(AddressRegex().IsMatch(address), Errors.AddressContainsInvalidCharacters);
-
-        DomainGuard.IsNullOrEmpty(postalCode, Errors.PostalCodeIsRequired);
-        DomainGuard.IsGreaterThan(postalCode.Length, 16, Errors.PostalCodeIsTooLong);
-        DomainGuard.IsFalse(PostalCodeRegex().IsMatch(postalCode), Errors.PostalCodeContainsInvalidCharacters);
 
         this.Name = name;
         this.Phone = phone;
         this.Email = email;
         this.TypeDocument = typeDocument;
         this.Document = document;
-        this.Country = country;
-        this.State = state;
-        this.City = city;
-        this.Address = address;
-        this.PostalCode = postalCode;
     }
 
-    public static Buyer Create(string name, string phone, string email, string typeDocument, string document, Country country, State state, City city, string address, string postalCode)
+    public static Buyer Create(string name, string phone, string email, TypeDocument typeDocument, string document)
     {
-        return new Buyer(name, phone, email, typeDocument, document, country, state, city, address, postalCode);
+        return new Buyer(name, phone, email, typeDocument, document);
     }
 }
