@@ -126,11 +126,11 @@ public static class MapsterConfigLicense
                {
                     Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
                     {
-                        FullName = src.TenantDetail.Name,
-                        ContactPhone = src.TenantDetail.Phone,
-                        DniNumber = src.TenantDetail.NumberDocument,
-                        EmailAddress = src.TenantDetail.Email,
-                        DniType = src.TenantDetail.TypeDocument.Code
+                        FullName = src.OrderDetail.Buyer.Name,
+                        ContactPhone = src.OrderDetail.Buyer.Phone,
+                        DniNumber = src.OrderDetail.Buyer.Document,
+                        EmailAddress = src.OrderDetail.Buyer.Email,
+                        DniType = src.OrderDetail.Buyer.TypeDocument.Code
                     }
                },
                Payer = new Payer
