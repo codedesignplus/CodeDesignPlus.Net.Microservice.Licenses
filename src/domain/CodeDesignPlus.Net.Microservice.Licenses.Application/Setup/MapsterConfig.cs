@@ -165,9 +165,20 @@ public static class MapsterConfigLicense
                 {
                     Id = src.Id.ToString(),
                     Name = src.Name,
+                    Email = src.Email,
+                    Phone = src.Phone,
+                    TypeDocument = new gRpc.Clients.Services.Tenant.TypeDocument
+                    {
+                        Name = src.TypeDocument.Name,
+                        Code = src.TypeDocument.Code
+                    },
+                    NumbreDocument = src.NumberDocument,
+                    IsActive = true,
                     Domain = src.Web,
                     Location = new gRpc.Clients.Services.Tenant.Location()
                     {
+                        Address = src.Location.Address,
+                        PostalCode = src.Location.PostalCode,
                         Country = new CodeDesignPlus.Net.gRpc.Clients.Services.Tenant.Country
                         {
                             Id = src.Location.Country.Id.ToString(),
