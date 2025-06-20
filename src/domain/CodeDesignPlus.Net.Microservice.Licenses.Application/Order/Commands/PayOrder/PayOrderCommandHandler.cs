@@ -24,9 +24,17 @@ public class PayOrderCommandHandler(
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
-        var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
+        var existLicense = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
 
-        ApplicationGuard.IsFalse(exist, Errors.LicenseNotFound);
+        ApplicationGuard.IsFalse(existLicense, Errors.LicenseNotFound);
+
+        var existTenant = await tenantGrpc.GetTenantByIdAsync(new GetTenantRequest { Id = request.TenantDetail.Id.ToString() }, cancellationToken);
+
+        ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
+
+        var orderExists = await repository.ExistsAsync<OrderAggregate>(request.OrderDetail.Id, cancellationToken);
+
+        ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
 
         var payment = OrderAggregate.Create(request.OrderDetail.Id, request.Id, request.PaymentMethod, request.OrderDetail.Buyer, request.TenantDetail, user.IdUser);
 
@@ -45,14 +53,17 @@ public class PayOrderCommandHandler(
     {
         var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
-        await PayLicenseAsync(request, license.Prices, license, cancellationToken);
+        var response = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
 
-        await CreateTenantAsync(request.TenantDetail, license, cancellationToken);
+        if (response.Response.Code == "SUCCESS" && response.Response.TransactionResponse.State == "APPROVED")
+        {
+            await CreateTenantAsync(request.TenantDetail, license, cancellationToken);
 
-        await UpdateUserAsync(request.TenantDetail.Name, request.TenantDetail.Id, cancellationToken);
+            await UpdateUserAsync(request.TenantDetail.Name, request.TenantDetail.Id, cancellationToken);
+        }
     }
 
-    private async Task PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task<gRpc.Clients.Services.Payment.PaymentResponse> PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<PayRequest>(request);
 
@@ -84,7 +95,7 @@ public class PayOrderCommandHandler(
 
         payRequest.Transaction.Order.Description = $"Payment for license {license.Name} to tenant {request.TenantDetail.Name}. Order ID: {request.OrderDetail.Id}";
 
-        await paymentGrpc.PayAsync(payRequest, cancellationToken);
+        return await paymentGrpc.PayAsync(payRequest, cancellationToken);
     }
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)

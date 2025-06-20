@@ -13,4 +13,8 @@ public class Errors: IErrorCodes
     public const string PaymentFailed = "206 : The payment failed because {0}";
 
     public const string OrderNotFound = "207 : The order was not found.";
+
+    public const string TenantAlreadyExists = "208 : The tenant already exists.";
+
+    public const string OrderAlreadyExists = "209 : The order already exists.";
 }
