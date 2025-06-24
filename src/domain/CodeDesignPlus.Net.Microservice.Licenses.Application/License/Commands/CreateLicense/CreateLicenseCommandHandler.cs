@@ -21,7 +21,7 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 
-        var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, user.IdUser);
+        var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
 
         await repository.CreateAsync(license, cancellationToken);
 

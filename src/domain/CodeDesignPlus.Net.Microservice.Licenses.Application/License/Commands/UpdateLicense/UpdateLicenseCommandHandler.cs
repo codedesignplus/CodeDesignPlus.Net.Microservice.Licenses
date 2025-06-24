@@ -21,7 +21,7 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
 
-        license.Update(request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, user.IdUser);
+        license.Update(request.Name, request.ShortDescription, request.Description, modules, request.Prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
 
         await repository.UpdateAsync(license, cancellationToken);
 

@@ -17,6 +17,7 @@ public class LicenseCreatedDomainEvent(
     Dictionary<string, string> attributes,
     bool isActive,
     bool isPopular,
+    bool showInLandingPage,
     Guid? eventId = null,
     Instant? occurredAt = null,
     Dictionary<string, object>? metadata = null
@@ -32,9 +33,10 @@ public class LicenseCreatedDomainEvent(
     public Dictionary<string, string> Attributes { get; private set; } = attributes;
     public bool IsActive { get; private set; } = isActive;
     public bool IsPopular { get; private set; } = isPopular;
+    public bool ShowInLandingPage { get; private set; } = showInLandingPage;
 
-    public static LicenseCreatedDomainEvent Create(Guid aggregateId, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular)
+    public static LicenseCreatedDomainEvent Create(Guid aggregateId, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage)
     {
-        return new LicenseCreatedDomainEvent(aggregateId, name, shortDescription, description, modules, prices, icon, TermsOfService, attributes, isActive, isPopular);
+        return new LicenseCreatedDomainEvent(aggregateId, name, shortDescription, description, modules, prices, icon, TermsOfService, attributes, isActive, isPopular, showInLandingPage);
     }
 }

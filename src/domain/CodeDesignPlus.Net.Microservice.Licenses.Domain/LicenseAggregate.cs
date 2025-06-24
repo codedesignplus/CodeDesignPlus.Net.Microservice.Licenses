@@ -15,8 +15,9 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     public Dictionary<string, string> Attributes { get; private set; } = [];
     public Icon Icon { get; private set; } = null!;
     public string TermsOfService { get; private set; } = null!;
+    public bool ShowInLandingPage { get; private set; } = false;
 
-    private LicenseAggregate(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive,bool isPopular, Guid createdBy) : this(id)
+    private LicenseAggregate(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, Guid createdBy) : this(id)
     {
         this.Name = name;
         this.ShortDescription = shortDescription;
@@ -28,14 +29,15 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         this.TermsOfService = TermsOfService;
         this.IsActive = isActive;
         this.IsPopular = isPopular;
+        this.ShowInLandingPage = showInLandingPage;
 
         this.CreatedAt = SystemClock.Instance.GetCurrentInstant();
         this.CreatedBy = createdBy;
 
-        AddEvent(LicenseCreatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular));
+        AddEvent(LicenseCreatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular, ShowInLandingPage));
     }
 
-    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid createdBy)
+    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdLicenseIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
@@ -45,10 +47,10 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.GuidIsEmpty(createdBy, Errors.CreatedByLicenseIsRequired);
         DomainGuard.IsNull(icon, Errors.IconLicenseIsRequired);
 
-        return new LicenseAggregate(id, name, shortDescription, description, modules, price, icon, TermsOfService, attributes, isActive, isPopular, createdBy);
+        return new LicenseAggregate(id, name, shortDescription, description, modules, price, icon, TermsOfService, attributes, isActive, isPopular, showInLandingPage, createdBy);
     }
 
-    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, Guid updatedBy)
+    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> price, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
         DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
@@ -67,11 +69,12 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         this.TermsOfService = TermsOfService;
         this.IsActive = isActive;
         this.IsPopular = isPopular;
+        this.ShowInLandingPage = showInLandingPage;
 
         this.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         this.UpdatedBy = updatedBy;
 
-        AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular));
+        AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular, ShowInLandingPage));
     }
 
     public void Delete(Guid deletedBy)

@@ -50,11 +50,11 @@ public static class MapsterConfigLicense
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()
-            .MapWith(src => new CreateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
+            .MapWith(src => new CreateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular, src.ShowInLandingPage));
 
         TypeAdapterConfig<UpdateLicenseDto, UpdateLicenseCommand>
             .NewConfig()
-            .MapWith(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular));
+            .MapWith(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular, src.ShowInLandingPage));
 
         TypeAdapterConfig<PayOrderDto, PayOrderCommand>
             .NewConfig()
@@ -79,6 +79,7 @@ public static class MapsterConfigLicense
                 TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,
                 IsPopular = src.IsPopular,
+                ShowInLandingPage = src.ShowInLandingPage,
                 Modules = src.Modules.Select(x => new ModuleDto
                 {
                     Id = x.Id,

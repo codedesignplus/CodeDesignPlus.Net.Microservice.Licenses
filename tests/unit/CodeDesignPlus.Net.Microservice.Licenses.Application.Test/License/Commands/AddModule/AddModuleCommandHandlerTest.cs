@@ -67,7 +67,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             // Arrange
             var request = new AddModuleCommand(Guid.NewGuid(), Guid.NewGuid(), "TestModule", "Description");
             var cancellationToken = CancellationToken.None;
-            var license = LicenseAggregate.Create(Guid.NewGuid(), "TestLicense", "Short Description", "TestDescription", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "TestTermsOfService", [], true, false, Guid.NewGuid());
+            var license = LicenseAggregate.Create(Guid.NewGuid(), "TestLicense", "Short Description", "TestDescription", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "TestTermsOfService", [], true, false, false, Guid.NewGuid());
 
             repositoryMock
                 .Setup(r => r.FindAsync<LicenseAggregate>(request.Id, cancellationToken))

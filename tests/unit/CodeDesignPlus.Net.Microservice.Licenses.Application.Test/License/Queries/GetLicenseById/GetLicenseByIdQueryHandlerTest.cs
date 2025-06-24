@@ -75,7 +75,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         {
             // Arrange
             var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description","Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, Guid.NewGuid());
+            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description","Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, false, Guid.NewGuid());
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,

@@ -96,7 +96,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
             };
             mapperMock
                 .Setup(m => m.Map<CreateLicenseCommand>(It.IsAny<CreateLicenseDto>()))
-                .Returns(new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false));
+                .Returns(new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false, false));
 
             // Act
             var result = await controller.CreateLicense(createLicenseDto, CancellationToken.None);
@@ -130,7 +130,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
             var updateLicenseDto = new UpdateLicenseDto();
             mapperMock
                 .Setup(m => m.Map<UpdateLicenseCommand>(It.IsAny<UpdateLicenseDto>()))
-                .Returns(new UpdateLicenseCommand(licenseId, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false));
+                .Returns(new UpdateLicenseCommand(licenseId, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false, false));
 
             // Act
             var result = await controller.UpdateLicense(licenseId, updateLicenseDto, CancellationToken.None);

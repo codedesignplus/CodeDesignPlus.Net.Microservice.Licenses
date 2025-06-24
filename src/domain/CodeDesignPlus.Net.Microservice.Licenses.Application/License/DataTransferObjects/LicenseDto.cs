@@ -16,4 +16,5 @@ public class LicenseDto : IDtoBase
     public Dictionary<string, string> Attributes { get; set; } = [];
     public bool IsActive { get; set; }
     public bool IsPopular { get; set; }
+    public bool ShowInLandingPage { get; set; }
 }
