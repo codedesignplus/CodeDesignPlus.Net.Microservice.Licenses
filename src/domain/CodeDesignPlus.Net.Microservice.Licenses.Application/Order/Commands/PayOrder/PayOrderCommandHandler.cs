@@ -4,6 +4,7 @@ using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
 using CodeDesignPlus.Net.gRpc.Clients.Services.User;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
@@ -28,9 +29,16 @@ public class PayOrderCommandHandler(
 
         ApplicationGuard.IsFalse(existLicense, Errors.LicenseNotFound);
 
-        var existTenant = await tenantGrpc.GetTenantByIdAsync(new GetTenantRequest { Id = request.TenantDetail.Id.ToString() }, cancellationToken);
+        try
+        {
+            var existTenant = await tenantGrpc.GetTenantByIdAsync(new GetTenantRequest { Id = request.TenantDetail.Id.ToString() }, cancellationToken);
+            ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.FailedPrecondition)
+        {
+            // Tenant does not exist, proceed with creation
+        }
 
-        ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
 
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.OrderDetail.Id, cancellationToken);
 
