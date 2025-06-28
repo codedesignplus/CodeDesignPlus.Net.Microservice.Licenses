@@ -2,20 +2,28 @@ using System;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public record PaymentResponse(Guid Id, string Provider, Response Response);
-
-public record Response(string Code, string? Error, ResponseDetails Details);
-
-public record ResponseDetails(
-    string OrderId,
+public record PaymentResponse(
+    bool Success,
+    PaymentStatus Status,
     string TransactionId,
-    string State,
-    string ResponseCode,
+    string Message,
+    string? RedirectUrl,
+    FinancialNetwork FinancialNetwork
+);
+
+public record FinancialNetwork(
     string PaymentNetworkResponseCode,
     string PaymentNetworkResponseErrorMessage,
     string TrazabilityCode,
     string AuthorizationCode,
-    string ResponseMessage,
-    Dictionary<string, string> ExtraParameters,
-    Dictionary<string, string> AdditionalInfo
+    string ResponseCode
 );
+
+public enum PaymentStatus
+{
+    None = 0,
+    Initiated = 1,
+    Succeeded = 2,
+    Failed = 3,
+    Pending = 4
+}

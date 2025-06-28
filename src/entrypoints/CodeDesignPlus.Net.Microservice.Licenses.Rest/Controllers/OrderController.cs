@@ -26,6 +26,7 @@ public class OrderController(IMediator mediator, IMapper mapper) : ControllerBas
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>HTTP status code 204 (No Content).</returns>
     [HttpPost("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> PayOrder(Guid id, [FromBody] PayOrderDto data, CancellationToken cancellationToken)
     {
         data.Id = id;
