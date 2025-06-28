@@ -48,9 +48,9 @@ public class PayOrderCommandHandler(
 
         await ProcessPayment(request, cancellationToken);
 
-        var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.OrderDetail.Id.ToString() }, cancellationToken);
+        // var paymentResponse = await paymentGrpc.GetPayByIdAsync(new GetPaymentRequest { Id = request.OrderDetail.Id.ToString() }, cancellationToken);
 
-        payment.SetPaymentResponse(mapper.Map<Domain.ValueObjects.PaymentResponse>(paymentResponse));
+        // payment.SetPaymentResponse(mapper.Map<Domain.ValueObjects.PaymentResponse>(paymentResponse));
 
         await repository.CreateAsync(payment, cancellationToken);
 
@@ -61,19 +61,19 @@ public class PayOrderCommandHandler(
     {
         var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
-        var response = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
+        await PayLicenseAsync(request, license.Prices, license, cancellationToken);
 
-        if (response.Response.Code == "SUCCESS" && response.Response.TransactionResponse.State == "APPROVED")
-        {
-            await CreateTenantAsync(request.TenantDetail, license, cancellationToken);
+        // if (response.Response.Code == "SUCCESS" && response.Response.TransactionResponse.State == "APPROVED")
+        // {
+        //     await CreateTenantAsync(request.TenantDetail, license, cancellationToken);
 
-            await UpdateUserAsync(request.TenantDetail.Name, request.TenantDetail.Id, cancellationToken);
-        }
+        //     await UpdateUserAsync(request.TenantDetail.Name, request.TenantDetail.Id, cancellationToken);
+        // }
     }
 
-    private async Task<gRpc.Clients.Services.Payment.PaymentResponse> PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
-        var payRequest = mapper.Map<PayRequest>(request);
+        var payRequest = mapper.Map<InitiatePaymentRequest>(request);
 
         payRequest.Module = MODULE;
 
@@ -83,27 +83,27 @@ public class PayOrderCommandHandler(
 
         ApplicationGuard.IsNull(price, "202: The price for the selected billing type and model is not available.");
 
-        payRequest.Transaction.Order.TaxReturnBase = new Amount
+        payRequest.SubTotal = new Amount
         {
             Currency = price.Currency.Code,
             Value = price.SubTotal
         };
 
-        payRequest.Transaction.Order.Tax = new Amount
+        payRequest.Tax = new Amount
         {
             Currency = price.Currency.Code,
             Value = (long)price.Tax
         };
 
-        payRequest.Transaction.Order.Amount = new Amount
+        payRequest.Total = new Amount
         {
             Currency = price.Currency.Code,
             Value = price.Total
         };
 
-        payRequest.Transaction.Order.Description = $"Payment for license {license.Name} to tenant {request.TenantDetail.Name}. Order ID: {request.OrderDetail.Id}";
+        payRequest.Description = $"Payment for license {license.Name} to tenant {request.TenantDetail.Name}.";
 
-        return await paymentGrpc.PayAsync(payRequest, cancellationToken);
+        await paymentGrpc.PayAsync(payRequest, cancellationToken);
     }
 
     private async Task CreateTenantAsync(Domain.ValueObjects.Tenant tenant, LicenseAggregate license, CancellationToken cancellationToken)

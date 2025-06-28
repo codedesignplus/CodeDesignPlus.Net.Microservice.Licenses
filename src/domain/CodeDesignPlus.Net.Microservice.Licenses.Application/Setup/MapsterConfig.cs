@@ -35,7 +35,7 @@ public static class MapsterConfigLicense
                             src.PaymentResponse.Response.Details.TransactionId,
                             src.PaymentResponse.Response.Details.State,
                             src.PaymentResponse.Response.Details.ResponseCode,
-                            src.PaymentResponse.Response.Details.PaymentNetworkResponseCode,    
+                            src.PaymentResponse.Response.Details.PaymentNetworkResponseCode,
                             src.PaymentResponse.Response.Details.PaymentNetworkResponseErrorMessage,
                             src.PaymentResponse.Response.Details.TrazabilityCode,
                             src.PaymentResponse.Response.Details.AuthorizationCode,
@@ -93,72 +93,38 @@ public static class MapsterConfigLicense
             .NewConfig()
             .TwoWays();
 
-        TypeAdapterConfig<gRpc.Clients.Services.Payment.PaymentResponse, Domain.ValueObjects.PaymentResponse>
-            .NewConfig()
-            .MapWith(src => new Domain.ValueObjects.PaymentResponse(
-                Guid.Parse(src.Id),
-                src.Provider,
-                new Domain.ValueObjects.Response(
-                    src.Response.Code,
-                    src.Response.Error,
-                    new Domain.ValueObjects.ResponseDetails(
-                        src.Response.TransactionResponse.OrderId,
-                        src.Response.TransactionResponse.TransactionId,
-                        src.Response.TransactionResponse.State,
-                        src.Response.TransactionResponse.ResponseCode,
-                        src.Response.TransactionResponse.PaymentNetworkResponseCode,
-                        src.Response.TransactionResponse.PaymentNetworkResponseErrorMessage,
-                        src.Response.TransactionResponse.TrazabilityCode,
-                        src.Response.TransactionResponse.AuthorizationCode,
-                        src.Response.TransactionResponse.ResponseMessage,
-                        src.Response.TransactionResponse.ExtraParameters.ToDictionary(x => x.Key, x => x.Value),
-                        src.Response.TransactionResponse.AdditionalData.ToDictionary(x => x.Key, x => x.Value)
-                    )
-                )
-            ));
-
         //Payment gRpc
-        TypeAdapterConfig<PayOrderCommand, PayRequest>
+        TypeAdapterConfig<PayOrderCommand, InitiatePaymentRequest>
            .NewConfig()
            .Map(dest => dest.Id, src => src.OrderDetail.Id.ToString())
-           .Map(dest => dest.Transaction, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Transaction
+           .Map(dest => dest.Module, src => "Licenses")
+           .Map(dest => dest.Payer, src => new Payer
            {
-               Order = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Order
-               {
-                    Buyer = new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Buyer
-                    {
-                        FullName = src.OrderDetail.Buyer.Name,
-                        ContactPhone = src.OrderDetail.Buyer.Phone,
-                        DniNumber = src.OrderDetail.Buyer.Document,
-                        EmailAddress = src.OrderDetail.Buyer.Email,
-                        DniType = src.OrderDetail.Buyer.TypeDocument.Code
-                    }
-               },
-               Payer = new Payer
-               {
-                   FullName = src.OrderDetail.Buyer.Name,
-                   ContactPhone = src.OrderDetail.Buyer.Phone,
-                   DniNumber = src.OrderDetail.Buyer.Document,
-                   DniType = src.OrderDetail.Buyer.TypeDocument.Code,
-                   EmailAddress = src.OrderDetail.Buyer.Email,
-               },
-               PaymentMethod = src.PaymentMethod.Code,
+               FullName = src.OrderDetail.Buyer.Name,
+               ContactPhone = src.OrderDetail.Buyer.Phone,
+               DniNumber = src.OrderDetail.Buyer.Document,
+               DniType = src.OrderDetail.Buyer.TypeDocument.Code,
+               EmailAddress = src.OrderDetail.Buyer.Email
+           })
+           .Map(dest => dest.PaymentMethod, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.PaymentMethod
+           {
+               Type = src.PaymentMethod.Code,
                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
                {
                    Number = src.PaymentMethod.CreditCard.Number,
                    ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
                    SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
                    Name = src.PaymentMethod.CreditCard.CardHolderName,
+                   InstallmentsNumber = 1
                } : null,
                Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
                {
                    PseCode = src.PaymentMethod.Pse.PseCode,
                    PseResponseUrl = src.PaymentMethod.Pse.PseResponseUrl,
-                   TypePerson = src.PaymentMethod.Pse.TypePerson,
-               } : null,
+                   TypePerson = src.PaymentMethod.Pse.TypePerson
+               } : null
            });
-
-
+           
         TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>
             .NewConfig()
             .MapWith(
