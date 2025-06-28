@@ -41,7 +41,7 @@ public class PayOrderCommandHandler(
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
 
-        var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
+        var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
         await PayLicenseAsync(request, license.Prices, license, cancellationToken);
 
         var payment = OrderAggregate.Create(request.Id, request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
