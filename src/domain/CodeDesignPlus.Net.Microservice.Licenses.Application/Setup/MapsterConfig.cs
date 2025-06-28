@@ -25,24 +25,17 @@ public static class MapsterConfigLicense
                 TenantDetail = src.TenantDetail,
                 CreatedAt = src.CreatedAt,
                 PaymentResponse = new Domain.ValueObjects.PaymentResponse(
-                    src.PaymentResponse.Id,
-                    src.PaymentResponse.Provider,
-                    new Domain.ValueObjects.Response(
-                        src.PaymentResponse.Response.Code,
-                        src.PaymentResponse.Response.Error,
-                        new ResponseDetails(
-                            src.PaymentResponse.Response.Details.OrderId,
-                            src.PaymentResponse.Response.Details.TransactionId,
-                            src.PaymentResponse.Response.Details.State,
-                            src.PaymentResponse.Response.Details.ResponseCode,
-                            src.PaymentResponse.Response.Details.PaymentNetworkResponseCode,
-                            src.PaymentResponse.Response.Details.PaymentNetworkResponseErrorMessage,
-                            src.PaymentResponse.Response.Details.TrazabilityCode,
-                            src.PaymentResponse.Response.Details.AuthorizationCode,
-                            src.PaymentResponse.Response.Details.ResponseMessage,
-                            src.PaymentResponse.Response.Details.ExtraParameters.ToDictionary(x => x.Key, x => x.Value),
-                            src.PaymentResponse.Response.Details.AdditionalInfo.ToDictionary(x => x.Key, x => x.Value)
-                        )
+                    src.PaymentResponse.Success,
+                    src.PaymentResponse.Status,
+                    src.PaymentResponse.TransactionId,
+                    src.PaymentResponse.Message,
+                    src.PaymentResponse.RedirectUrl,
+                    new Domain.ValueObjects.FinancialNetwork(
+                        src.PaymentResponse.FinancialNetwork.PaymentNetworkResponseCode,
+                        src.PaymentResponse.FinancialNetwork.PaymentNetworkResponseErrorMessage,
+                        src.PaymentResponse.FinancialNetwork.TrazabilityCode,
+                        src.PaymentResponse.FinancialNetwork.AuthorizationCode,
+                        src.PaymentResponse.FinancialNetwork.ResponseCode
                     )
                 )
             });
