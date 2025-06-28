@@ -102,5 +102,14 @@ public class Errors : IErrorCodes
     public const string NameTypeDocumentIsInvalid = "193 : The Name Type Document is invalid.";
     public const string CodeTypeDocumentIsInvalid = "194 : The Code Type Document is invalid.";
     public const string NumberDocumentIsRequired = "195 : The Number Document is required.";
+
+    public const string NameOfLicenseIsRequired = "196 : The Name of the license is required."; 
+    public const string TotalOfLicenseShouldBeGreaterThanZero  = "197 : The Total of the license should be greater than zero.";
+    public const string TaxOfLicenseShouldBeGreaterThanZero = "198 : The Tax of the license should be greater than zero."; 
+    public const string SubTotalOfLicenseShouldBeGreaterThanZero = "199 : The SubTotal of the license should be greater than zero.";
+
+    public const string TotalIsNotEqualToTaxAndSubTotal = "200 : The Total is not equal to the sum of Tax and SubTotal.";
+
+    public const string IdOfLicenseIsRequired = "201 : The Id of the license is required.";
 }
 

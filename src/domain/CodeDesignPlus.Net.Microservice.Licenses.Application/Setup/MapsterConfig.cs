@@ -21,7 +21,7 @@ public static class MapsterConfigLicense
                 Id = src.Id,
                 Buyer = src.Buyer,
                 PaymentMethod = src.PaymentMethod,
-                IdLicense = src.IdLicense,
+                License = src.License,
                 TenantDetail = src.TenantDetail,
                 CreatedAt = src.CreatedAt,
                 PaymentResponse = src.PaymentResponse == null ? null : new Domain.ValueObjects.PaymentResponse(
@@ -53,7 +53,8 @@ public static class MapsterConfigLicense
             .NewConfig()
             .MapWith(src => new PayOrderCommand(
                 src.Id,
-                src.OrderDetail,
+                src.Buyer,
+                src.License,
                 src.PaymentMethod,
                 src.TenantDetail
             ));
@@ -89,15 +90,15 @@ public static class MapsterConfigLicense
         //Payment gRpc
         TypeAdapterConfig<PayOrderCommand, InitiatePaymentRequest>
            .NewConfig()
-           .Map(dest => dest.Id, src => src.OrderDetail.Id.ToString())
+           .Map(dest => dest.Id, src => src.Id.ToString())
            .Map(dest => dest.Module, src => "Licenses")
            .Map(dest => dest.Payer, src => new Payer
            {
-               FullName = src.OrderDetail.Buyer.Name,
-               ContactPhone = src.OrderDetail.Buyer.Phone,
-               DniNumber = src.OrderDetail.Buyer.Document,
-               DniType = src.OrderDetail.Buyer.TypeDocument.Code,
-               EmailAddress = src.OrderDetail.Buyer.Email
+               FullName = src.Buyer.Name,
+               ContactPhone = src.Buyer.Phone,
+               DniNumber = src.Buyer.Document,
+               DniType = src.Buyer.TypeDocument.Code,
+               EmailAddress = src.Buyer.Email
            })
            .Map(dest => dest.PaymentMethod, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.PaymentMethod
            {
