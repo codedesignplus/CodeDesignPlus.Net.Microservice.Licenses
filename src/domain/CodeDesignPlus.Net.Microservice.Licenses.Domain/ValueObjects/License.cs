@@ -22,7 +22,7 @@ public sealed partial class License
         DomainGuard.IsLessThan(total, 0, Errors.TotalOfLicenseShouldBeGreaterThanZero);
         DomainGuard.IsLessThan(tax, 0, Errors.TaxOfLicenseShouldBeGreaterThanZero);
         DomainGuard.IsLessThan(subTotal, 0, Errors.SubTotalOfLicenseShouldBeGreaterThanZero);
-        DomainGuard.IsFalse(total < tax + subTotal, Errors.TotalIsNotEqualToTaxAndSubTotal);
+        DomainGuard.IsTrue(total < tax + subTotal, Errors.TotalIsNotEqualToTaxAndSubTotal);
 
         this.Id = id;
         this.Name = name;
