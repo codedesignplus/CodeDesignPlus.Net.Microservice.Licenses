@@ -27,8 +27,15 @@ public class PayOrderCommandHandler(
         var existLicense = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsFalse(existLicense, Errors.LicenseNotFound);
 
-        var existTenant = await tenantGrpc.GetTenantByIdAsync(new GetTenantRequest { Id = request.TenantDetail.Id.ToString() }, cancellationToken);
-        ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
+        try
+        {
+            var existTenant = await tenantGrpc.GetTenantByIdAsync(new GetTenantRequest { Id = request.TenantDetail.Id.ToString() }, cancellationToken);
+            ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.FailedPrecondition)
+        {
+            // Tenant does not exist, proceed with payment
+        }
 
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.OrderDetail.Id, cancellationToken);
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
