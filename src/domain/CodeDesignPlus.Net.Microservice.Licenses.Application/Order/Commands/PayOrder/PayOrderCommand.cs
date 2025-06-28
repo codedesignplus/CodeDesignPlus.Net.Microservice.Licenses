@@ -3,7 +3,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 
 [DtoGenerator]
-public record PayOrderCommand(Guid Id, Buyer Buyer, Domain.ValueObjects.License License, PaymentMethod PaymentMethod, Tenant TenantDetail) : IRequest;
+public record PayOrderCommand(Guid Id, Buyer Buyer, Domain.ValueObjects.License License, PaymentMethod PaymentMethod, Tenant TenantDetail) : IRequest<PaymentResponse>;
 
 public class Validator : AbstractValidator<PayOrderCommand>
 {

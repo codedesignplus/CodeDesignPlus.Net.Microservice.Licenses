@@ -17,11 +17,11 @@ public class PayOrderCommandHandler(
     IPaymentGrpc paymentGrpc,
     ITenantGrpc tenantGrpc,
     ILogger<PayOrderCommandHandler> logger
-) : IRequestHandler<PayOrderCommand>
+) : IRequestHandler<PayOrderCommand, PaymentResponse>
 {
     private const string MODULE = "Licenses";
 
-    public async Task Handle(PayOrderCommand request, CancellationToken cancellationToken)
+    public async Task<PaymentResponse> Handle(PayOrderCommand request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
@@ -42,13 +42,20 @@ public class PayOrderCommandHandler(
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
 
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
-        await PayLicenseAsync(request, license.Prices, license, cancellationToken);
+        var response = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
 
         var payment = OrderAggregate.Create(request.Id, request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
+
+        var paymentResponse = mapper.Map<PaymentResponse>(response);
+
+        if (request.PaymentMethod.Code != "PSE")
+            payment.SetPaymentResponse(paymentResponse);
 
         await repository.CreateAsync(payment, cancellationToken);
 
         await pubsub.PublishAsync(payment.GetAndClearEvents(), cancellationToken);
+
+        return paymentResponse;
     }
 
     private async Task<InitiatePaymentRequest> PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)

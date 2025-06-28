@@ -28,7 +28,7 @@ public class OrderController(IMediator mediator, IMapper mapper) : ControllerBas
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>HTTP status code 204 (No Content).</returns>
     [HttpPost("{id}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PaymentResponse))]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -38,9 +38,9 @@ public class OrderController(IMediator mediator, IMapper mapper) : ControllerBas
     {
         data.Id = id;
 
-        await mediator.Send(mapper.Map<PayOrderCommand>(data), cancellationToken);
+        var response = await mediator.Send(mapper.Map<PayOrderCommand>(data), cancellationToken);
 
-        return NoContent();
+        return Ok(response);
     }
 
     /// <summary>
