@@ -9,6 +9,6 @@ public class OrderDto : IDtoBase
     public PaymentMethod PaymentMethod { get; set; } = null!;
     public Buyer Buyer { get; set; } = null!;
     public Tenant TenantDetail { get; set; } = null!;
-    public PaymentResponse PaymentResponse { get; set; } = null!;
+    public PaymentResponse? PaymentResponse { get; set; } = null!;
     public Instant CreatedAt { get; set; }
 }

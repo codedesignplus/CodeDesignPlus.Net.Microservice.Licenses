@@ -24,7 +24,7 @@ public static class MapsterConfigLicense
                 IdLicense = src.IdLicense,
                 TenantDetail = src.TenantDetail,
                 CreatedAt = src.CreatedAt,
-                PaymentResponse = new Domain.ValueObjects.PaymentResponse(
+                PaymentResponse = src.PaymentResponse == null ? null : new Domain.ValueObjects.PaymentResponse(
                     src.PaymentResponse.Success,
                     src.PaymentResponse.Status,
                     src.PaymentResponse.TransactionId,
