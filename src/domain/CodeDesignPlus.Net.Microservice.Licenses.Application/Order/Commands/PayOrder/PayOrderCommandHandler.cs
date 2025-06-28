@@ -42,13 +42,13 @@ public class PayOrderCommandHandler(
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
 
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
-        var response = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
+        var responseGrpc = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
 
-        logger.LogWarning("Pay license {LicenseName} for tenant {TenantName} with response {@Response}", license.Name, request.TenantDetail.Name, response);
+        logger.LogWarning("Pay license {LicenseName} for tenant {TenantName} with response {@Response}", license.Name, request.TenantDetail.Name, responseGrpc);
 
         var payment = OrderAggregate.Create(request.Id, request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
 
-        var paymentResponse = mapper.Map<PaymentResponse>(response);
+        var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
 
         if (request.PaymentMethod.Code != "PSE")
             payment.SetPaymentResponse(paymentResponse);
@@ -60,7 +60,7 @@ public class PayOrderCommandHandler(
         return paymentResponse;
     }
 
-    private async Task<InitiatePaymentRequest> PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task<InitiatePaymentResponse> PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<InitiatePaymentRequest>(request);
 
@@ -95,9 +95,7 @@ public class PayOrderCommandHandler(
 
         payRequest.Description = $"Payment for license {license.Name} to tenant {request.TenantDetail.Name}.";
 
-        await paymentGrpc.InitiatePaymentAsync(payRequest, cancellationToken);
-
-        return payRequest;
+        return await paymentGrpc.InitiatePaymentAsync(payRequest, cancellationToken);
     }
 
 }
