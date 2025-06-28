@@ -44,6 +44,8 @@ public class PayOrderCommandHandler(
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
         var response = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
 
+        logger.LogWarning("Pay license {LicenseName} for tenant {TenantName} with response {@Response}", license.Name, request.TenantDetail.Name, response);
+
         var payment = OrderAggregate.Create(request.Id, request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
 
         var paymentResponse = mapper.Map<PaymentResponse>(response);
