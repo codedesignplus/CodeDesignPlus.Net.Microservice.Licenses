@@ -55,6 +55,7 @@ public class PayOrderCommandHandler(
         var payRequest = mapper.Map<InitiatePaymentRequest>(request);
 
         payRequest.Module = MODULE;
+        payRequest.Provider = PaymentProvider.Payu;
 
         var price = prices
             .Where(x => x.BillingType == request.OrderDetail.BillingType && x.Total == request.OrderDetail.Total && x.BillingModel == request.OrderDetail.BillingModel)
