@@ -23,7 +23,7 @@ public class UpdateStateOrderCommandHandler(IOrderRepository orderRepository,
         var order = await orderRepository.FindAsync<OrderAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsNull(order, Errors.OrderNotFound);
 
-        var license = await licenseRepository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
+        var license = await licenseRepository.FindAsync<LicenseAggregate>(order.IdLicense, cancellationToken);
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
         var statusPayment = await paymentGrpc.UpdateStatusAsync(request.Id, cancellationToken);
