@@ -26,6 +26,9 @@ public class UpdateStateOrderCommandHandler(IOrderRepository orderRepository,
         var license = await licenseRepository.FindAsync<LicenseAggregate>(order.IdLicense, cancellationToken);
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
+        if (order.PaymentResponse is not null)
+            return order.PaymentResponse;
+
         var statusPayment = await paymentGrpc.UpdateStatusAsync(request.Id, cancellationToken);
 
         var response = mapper.Map<PaymentResponse>(statusPayment);
