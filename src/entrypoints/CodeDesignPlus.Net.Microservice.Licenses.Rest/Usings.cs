@@ -31,3 +31,4 @@ global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Comman
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderById;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.UpdateStateOrder;
+global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetMyOrders;
