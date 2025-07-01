@@ -84,7 +84,7 @@ public class UpdateStateOrderCommandHandler(IOrderRepository orderRepository,
         await userGrpc.AddGroupToUser(new AddGroupRequest
         {
             Id = user.IdUser.ToString(),
-            Role = "Administrator"
+            Role = "Administrador"
         }, cancellationToken);
     }
 
