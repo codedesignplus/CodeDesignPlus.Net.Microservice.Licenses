@@ -11,4 +11,5 @@ public class OrderDto : IDtoBase
     public Tenant TenantDetail { get; set; } = null!;
     public PaymentResponse? PaymentResponse { get; set; } = null!;
     public Instant CreatedAt { get; set; }
+    public bool IsActive { get; set; }
 }
