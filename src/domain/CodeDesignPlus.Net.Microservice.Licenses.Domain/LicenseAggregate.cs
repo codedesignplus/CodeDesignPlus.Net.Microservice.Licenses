@@ -81,8 +81,10 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     {
         DomainGuard.GuidIsEmpty(deletedBy, Errors.CreatedByLicenseIsRequired);
 
-        this.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
-        this.UpdatedBy = deletedBy;
+        this.IsDeleted = true;
+        this.IsActive = false;
+        this.DeletedAt = SystemClock.Instance.GetCurrentInstant();
+        this.DeletedBy = deletedBy;
 
         AddEvent(LicenseDeletedDomainEvent.Create(Id, Name, Description, Modules, Prices, Attributes, IsActive));
     }
