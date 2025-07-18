@@ -101,7 +101,7 @@ ms-base:
     hosts:
       - services.codedesignplus.com
     gateways:
-      - istio-ingress/istio-gateway
+      - istio-ingress/istio-codedesignplus-gateway
     http:
     - name: ms-licenses
       match:
