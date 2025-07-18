@@ -111,6 +111,6 @@ ms-base:
         uri: /
       route:
       - destination:
-          host: ms-licenses-rest.urbancore.svc.cluster.local
+          host: ms-licenses-rest.codedesignplus.svc.cluster.local
           port:
             number: 5000
