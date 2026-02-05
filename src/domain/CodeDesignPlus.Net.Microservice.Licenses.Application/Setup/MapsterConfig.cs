@@ -25,20 +25,7 @@ public static class MapsterConfigLicense
                 TenantDetail = src.TenantDetail,
                 CreatedAt = src.CreatedAt,
                 IsActive = src.IsActive,
-                PaymentResponse = src.PaymentResponse == null ? null : new Domain.ValueObjects.PaymentResponse(
-                    src.PaymentResponse.Success,
-                    src.PaymentResponse.Status,
-                    src.PaymentResponse.TransactionId,
-                    src.PaymentResponse.Message,
-                    src.PaymentResponse.RedirectUrl,
-                    new Domain.ValueObjects.FinancialNetwork(
-                        src.PaymentResponse.FinancialNetwork.PaymentNetworkResponseCode,
-                        src.PaymentResponse.FinancialNetwork.PaymentNetworkResponseErrorMessage,
-                        src.PaymentResponse.FinancialNetwork.TrazabilityCode,
-                        src.PaymentResponse.FinancialNetwork.AuthorizationCode,
-                        src.PaymentResponse.FinancialNetwork.ResponseCode
-                    )
-                )
+                PaymentStatus = src.PaymentStatus
             });
 
         //License
@@ -89,9 +76,9 @@ public static class MapsterConfigLicense
             .TwoWays();
 
         //Payment gRpc
-        TypeAdapterConfig<PayOrderCommand, InitiatePaymentRequest>
+        TypeAdapterConfig<OrderAggregate, InitiatePaymentRequest>
            .NewConfig()
-           .Map(dest => dest.Id, src => src.Id.ToString())
+           .Map(dest => dest.Id, src => src.PaymentId.ToString())
            .Map(dest => dest.Module, src => "Licenses")
            .Map(dest => dest.Payer, src => new Payer
            {
@@ -120,6 +107,18 @@ public static class MapsterConfigLicense
                } : null
            });
            
+        TypeAdapterConfig<InitiatePaymentResponse, PaymentResponse>
+            .NewConfig()
+            .MapWith(src => new PaymentResponse
+            {
+                Success = src.Success,
+                PaymentId = Guid.Parse(src.PaymentId),
+                NextAction = (NextActionType)src.NextAction,
+                ProviderResponse = src.ProviderResponse,
+                ProviderTransactionId = src.ProviderTransactionId,
+                RedirectUrl = src.RedirectUrl
+            });
+
         TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>
             .NewConfig()
             .MapWith(

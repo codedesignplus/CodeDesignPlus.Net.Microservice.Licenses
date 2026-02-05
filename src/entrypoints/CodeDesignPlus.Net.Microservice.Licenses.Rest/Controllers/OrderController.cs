@@ -82,29 +82,6 @@ public class OrderController(IMediator mediator, IMapper mapper) : ControllerBas
 
         return Ok(response);
     }
-
-    /// <summary>
-    /// Update the state of an Order by its ID.
-    /// </summary>
-    /// <param name="id">The unique identifier of the Order.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <response code="200">Returns the updated PaymentResponse.</response>
-    /// <response code="400">If the request is invalid.</response>
-    /// <response code="401">If the user is not authenticated.</response>
-    /// <response code="403">If the user does not have permission to update the Order.</response>
-    /// <response code="500">If an internal server error occurs.</response>
-    [HttpPut("{id}/state")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PaymentResponse))]
-    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-    public async Task<IActionResult> UpdateStateOrder(Guid id, CancellationToken cancellationToken)
-    {
-        var result = await mediator.Send(new UpdateStateOrderCommand(id), cancellationToken);
-
-        return Ok(result);
-    }
 }
 
 

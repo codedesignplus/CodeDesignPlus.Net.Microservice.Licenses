@@ -1,45 +1,68 @@
 using System.Security.Cryptography.X509Certificates;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain;
 
 public class OrderAggregate(Guid id) : AggregateRootBase(id)
 {
-    public Domain.ValueObjects.License License { get; private set; } = null!;
+    public Guid PaymentId { get; private set; }
+    public License License { get; private set; } = null!;
     public PaymentMethod PaymentMethod { get; private set; } = null!;
     public Buyer Buyer { get; private set; } = null!;
     public Tenant TenantDetail { get; private set; } = null!;
     public string? Error { get; private set; }
     public bool IsSuccess { get; private set; }
-    public PaymentResponse? PaymentResponse { get; private set; }
+    public PaymentStatus PaymentStatus { get; private set; }
 
-    public OrderAggregate(Guid id, License license, PaymentMethod paymentMethod, Buyer buyer, Tenant tenantDetail, Guid createdBy) : this(id)
+    public static OrderAggregate Create(Guid id, Guid paymentId, License license, PaymentMethod paymentMethod, Buyer buyer, Tenant tenantDetail, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdOrderIsRequired);
+        DomainGuard.GuidIsEmpty(paymentId, Errors.IdPaymentIsRequired);
         DomainGuard.IsNull(license, Errors.LicenseIdIsRequired);
         DomainGuard.IsNull(paymentMethod, Errors.PaymentMethodIsRequired);
         DomainGuard.IsNull(buyer, Errors.BuyerIsRequired);
         DomainGuard.IsNull(tenantDetail, Errors.TenantDetailIsRequired);
 
-        License = license;
-        PaymentMethod = paymentMethod;
-        Buyer = buyer;
-        TenantDetail = tenantDetail;
-        IsActive = true;
+        var aggregate = new OrderAggregate(id)
+        {
+            PaymentId = paymentId,
+            License = license,
+            PaymentMethod = paymentMethod,
+            Buyer = buyer,
+            PaymentStatus = PaymentStatus.Initiated,
+            TenantDetail = tenantDetail,
+            IsActive = true,
 
-        CreatedAt = SystemClock.Instance.GetCurrentInstant();
-        CreatedBy = createdBy;
+            CreatedAt = SystemClock.Instance.GetCurrentInstant(),
+            CreatedBy = createdBy
+        };
+
+        return aggregate;
     }
 
-    public static OrderAggregate Create(Guid id, License license, PaymentMethod methodPay, Buyer buyer, Tenant tenantDetail, Guid createdBy)
+    public void SetPaymentStatus(PaymentStatus paymentStatus, Dictionary<string, string> metadata, Guid buyerId)
     {
-        return new OrderAggregate(id, license, methodPay, buyer, tenantDetail, createdBy);
-    }
+        PaymentStatus = paymentStatus;
 
-    public void SetPaymentResponse(PaymentResponse response)
-    {
-        DomainGuard.IsNull(response, Errors.PaymentResponseIsRequired);
+        if (paymentStatus == PaymentStatus.Succeeded)
+        {
+            var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
+                this.Id, 
+                TenantDetail,
+                LicenseTenant.Create(
+                    License.Id,
+                    License.Name,
+                    SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(License.BillingType == BillingTypeEnum.Monthly ? 30 : 365)),
+                    SystemClock.Instance.GetCurrentInstant(),
+                    metadata
+                ),
+                buyerId
+            );
 
-        PaymentResponse = response;
+            AddEvent(@event);
+        }
+
+        UpdatedAt = SystemClock.Instance.GetCurrentInstant();
     }
 }

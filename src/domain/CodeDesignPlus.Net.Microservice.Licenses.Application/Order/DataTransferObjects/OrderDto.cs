@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
@@ -9,7 +10,7 @@ public class OrderDto : IDtoBase
     public Buyer Buyer { get; set; } = null!;
     public Domain.ValueObjects.License License { get; set; } = null!;
     public Tenant TenantDetail { get; set; } = null!;
-    public PaymentResponse? PaymentResponse { get; set; } = null!;
+    public PaymentStatus PaymentStatus { get; set; }
     public Instant CreatedAt { get; set; }
     public bool IsActive { get; set; }
 }

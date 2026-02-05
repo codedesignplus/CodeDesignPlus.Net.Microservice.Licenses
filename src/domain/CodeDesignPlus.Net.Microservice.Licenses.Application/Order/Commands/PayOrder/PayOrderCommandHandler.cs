@@ -19,7 +19,7 @@ public class PayOrderCommandHandler(
     ILogger<PayOrderCommandHandler> logger
 ) : IRequestHandler<PayOrderCommand, PaymentResponse>
 {
-    private const string MODULE = "Licenses";
+    public const string MODULE = "Licenses";
 
     public async Task<PaymentResponse> Handle(PayOrderCommand request, CancellationToken cancellationToken)
     {
@@ -42,16 +42,13 @@ public class PayOrderCommandHandler(
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
 
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
-        var responseGrpc = await PayLicenseAsync(request, license.Prices, license, cancellationToken);
+        ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
-        logger.LogWarning("Pay license {@Response}", responseGrpc);
+        var payment = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
 
-        var payment = OrderAggregate.Create(request.Id, request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
+        var responseGrpc = await PayLicenseAsync(payment, license.Prices, license, cancellationToken);
 
         var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
-
-        if (request.PaymentMethod.Code != "PSE")
-            payment.SetPaymentResponse(paymentResponse);
 
         await repository.CreateAsync(payment, cancellationToken);
 
@@ -60,18 +57,18 @@ public class PayOrderCommandHandler(
         return paymentResponse;
     }
 
-    private async Task<InitiatePaymentResponse> PayLicenseAsync(PayOrderCommand request, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task<InitiatePaymentResponse> PayLicenseAsync(OrderAggregate payment, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
-        var payRequest = mapper.Map<InitiatePaymentRequest>(request);
+        var payRequest = mapper.Map<InitiatePaymentRequest>(payment);
 
         payRequest.Module = MODULE;
         payRequest.Provider = PaymentProvider.Payu;
 
         var price = prices
-            .Where(x => x.BillingType == request.License.BillingType && x.Total == request.License.Total && x.BillingModel == request.License.BillingModel)
+            .Where(x => x.BillingType == payment.License.BillingType && x.Total == payment.License.Total && x.BillingModel == payment.License.BillingModel)
             .FirstOrDefault();
 
-        logger.LogWarning("Paying license {LicenseName} for tenant {TenantName} with price {@Price}", license.Name, request.TenantDetail.Name, price);
+        logger.LogWarning("Paying license {LicenseName} for tenant {TenantName} with price {@Price}", license.Name, payment.TenantDetail.Name, price);
 
         ApplicationGuard.IsNull(price!, "202: The price for the selected billing type and model is not available.");
 
@@ -93,7 +90,7 @@ public class PayOrderCommandHandler(
             Value = price.Total
         };
 
-        payRequest.Description = $"Payment for license {license.Name} to tenant {request.TenantDetail.Name}.";
+        payRequest.Description = $"Payment for license {license.Name} to tenant {payment.TenantDetail.Name}.";
 
         return await paymentGrpc.InitiatePaymentAsync(payRequest, cancellationToken);
     }
