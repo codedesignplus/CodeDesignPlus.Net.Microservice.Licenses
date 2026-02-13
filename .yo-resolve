@@ -1,1 +1,3 @@
 src/domain/CodeDesignPlus.Net.Microservice.Licenses.Application/Order/DataTransferObjects/OrderDto.cs skip
+src\domain\CodeDesignPlus.Net.Microservice.Licenses.Domain\OrderAggregate.cs skip
+src\entrypoints\CodeDesignPlus.Net.Microservice.Licenses.Rest\Usings.cs skip

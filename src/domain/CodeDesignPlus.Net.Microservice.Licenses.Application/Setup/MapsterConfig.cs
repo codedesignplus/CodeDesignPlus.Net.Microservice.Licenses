@@ -113,9 +113,8 @@ public static class MapsterConfigLicense
             {
                 Success = src.Success,
                 PaymentId = Guid.Parse(src.PaymentId),
-                NextAction = (NextActionType)src.NextAction,
-                ProviderResponse = src.ProviderResponse,
-                ProviderTransactionId = src.ProviderTransactionId,
+                NextAction = (Order.DataTransferObjects.NextActionType)src.NextAction,
+                Metadata = src.Metadata.ToDictionary(k => k.Key, v => v.Value),
                 RedirectUrl = src.RedirectUrl
             });
 

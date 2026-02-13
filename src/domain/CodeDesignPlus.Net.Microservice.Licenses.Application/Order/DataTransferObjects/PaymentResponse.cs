@@ -35,10 +35,6 @@ public class PaymentResponse
     /// </summary>
     public Guid PaymentId { get; set; }
     /// <summary>
-    /// El ID de la transacción proporcionado por el proveedor de pagos.
-    /// </summary>
-    public string? ProviderTransactionId { get; set; }
-    /// <summary>
     /// La siguiente acción que el sistema debe tomar.
     /// </summary>
     public NextActionType NextAction { get; set; }
@@ -47,11 +43,7 @@ public class PaymentResponse
     /// </summary>
     public string? RedirectUrl { get; set; }
     /// <summary>
-    /// Parámetros adicionales necesarios para integrar el widget de pago del proveedor.
+    /// Metadatos adicionales proporcionados por el proveedor de pagos.
     /// </summary>
-    public Dictionary<string, string> WidgetParameters { get; set; } = [];
-    /// <summary>
-    /// Respuesta cruda del proveedor de pagos para referencia o depuración.
-    /// </summary>
-    public Dictionary<string, string> ProviderResponse { get; set; } = [];
+    public Dictionary<string, string> Metadata { get; set; } = [];
 }
