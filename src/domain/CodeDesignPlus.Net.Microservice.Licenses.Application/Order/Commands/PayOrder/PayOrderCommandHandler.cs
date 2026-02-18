@@ -37,6 +37,8 @@ public class PayOrderCommandHandler(
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
+        request.Buyer.SetBuyerId(user.IdUser);
+
         var payment = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
 
         var responseGrpc = await PayLicenseAsync(payment, license.Prices, license, cancellationToken);
