@@ -29,7 +29,7 @@ public class PayOrderCommandHandler(
         ApplicationGuard.IsFalse(existLicense, Errors.LicenseNotFound);
 
         var existTenant = await tenantGrpc.ExistTenantAsync(request.TenantDetail.Id, cancellationToken);
-        ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
+        ApplicationGuard.IsTrue(existTenant, Errors.TenantAlreadyExists);
 
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
@@ -53,6 +53,9 @@ public class PayOrderCommandHandler(
     private async Task<InitiatePaymentResponse> PayLicenseAsync(OrderAggregate payment, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<InitiatePaymentRequest>(payment);
+
+        payRequest.Id = payment.PaymentId.ToString();
+        payRequest.ReferenceId = payment.Id.ToString();
 
         payRequest.Module = MODULE;
         payRequest.Provider = PaymentProvider.Payu;
