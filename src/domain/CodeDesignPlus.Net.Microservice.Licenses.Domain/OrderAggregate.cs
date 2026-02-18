@@ -47,8 +47,10 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
         if (paymentStatus == PaymentStatus.Succeeded)
         {
+            IsSuccess = true;
+            
             var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
-                this.Id, 
+                this.Id,
                 TenantDetail,
                 LicenseTenant.Create(
                     License.Id,
