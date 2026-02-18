@@ -53,8 +53,8 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
                 LicenseTenant.Create(
                     License.Id,
                     License.Name,
-                    SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(License.BillingType == BillingTypeEnum.Monthly ? 30 : 365)),
                     SystemClock.Instance.GetCurrentInstant(),
+                    SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(License.BillingType == BillingTypeEnum.Monthly ? 30 : 365)),
                     metadata
                 ),
                 buyerId
