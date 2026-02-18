@@ -6,7 +6,7 @@ using MediatR;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Consumers;
 
-[QueueName("Order", "UpdateOrderHandler")]
+[QueueName<OrderAggregate>("UpdateOrderHandler")]
 public class UpdateOrderHandler(ILogger<UpdateOrderHandler> logger, IMediator mediator) : IEventHandler<PaymentResponseAssociatedDomainEvent>
 {
     public Task HandleAsync(PaymentResponseAssociatedDomainEvent data, CancellationToken cancellationToken)
