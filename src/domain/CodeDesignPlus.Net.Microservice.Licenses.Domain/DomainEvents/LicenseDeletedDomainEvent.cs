@@ -4,7 +4,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 
-[EventKey<LicenseAggregate>(1, "LicenseDeletedDomainEvent")]
+[EventKey<LicenseAggregate>(1, "LicenseDeletedDomainEvent", autoCreate: false)]
 public class LicenseDeletedDomainEvent(
     Guid aggregateId,
     string name, 

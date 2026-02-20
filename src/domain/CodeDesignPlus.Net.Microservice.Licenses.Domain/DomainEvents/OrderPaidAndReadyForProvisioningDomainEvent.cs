@@ -2,7 +2,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 
-[EventKey<OrderAggregate>(1, "OrderPaidAndReadyForProvisioningDomainEvent")]
+[EventKey<OrderAggregate>(1, "OrderPaidAndReadyForProvisioningDomainEvent", autoCreate: false)]
 public class OrderPaidAndReadyForProvisioningDomainEvent(
     Guid aggregateId,
     Tenant tenantDetail,

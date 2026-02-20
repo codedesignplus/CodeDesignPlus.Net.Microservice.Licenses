@@ -47,7 +47,6 @@ builder.Services.AddResources<Program>(builder.Configuration);
 builder.Services.AddHealthChecksServices();
 builder.Services.AddGrpcClients(builder.Configuration);
 
-
 var app = builder.Build();
 
 app.UseCors(builder => builder

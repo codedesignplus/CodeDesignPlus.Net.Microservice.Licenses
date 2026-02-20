@@ -1,6 +1,6 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 
-[EventKey<LicenseAggregate>(1, "LicenseModuleAddedDomainEvent")]
+[EventKey<LicenseAggregate>(1, "LicenseModuleAddedDomainEvent", autoCreate: false)]
 public class LicenseModuleAddedDomainEvent(
     Guid aggregateId,
     Guid idModule,

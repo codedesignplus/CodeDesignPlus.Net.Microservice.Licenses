@@ -4,7 +4,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 
-[EventKey<LicenseAggregate>(1, "LicenseCreatedDomainEvent")]
+[EventKey<LicenseAggregate>(1, "LicenseCreatedDomainEvent", autoCreate: false)]
 public class LicenseCreatedDomainEvent(
     Guid aggregateId, 
     string name, 
