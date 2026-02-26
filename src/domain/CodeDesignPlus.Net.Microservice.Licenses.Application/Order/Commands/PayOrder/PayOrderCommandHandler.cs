@@ -1,10 +1,6 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
-using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
-using CodeDesignPlus.Net.gRpc.Clients.Services.User;
-using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
-using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using Grpc.Core;
+using CodeDesignPlus.Net.ValueObjects.Financial;
 using Microsoft.Extensions.Logging;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
@@ -37,55 +33,56 @@ public class PayOrderCommandHandler(
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
-        var payment = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
+        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
 
-        var responseGrpc = await PayLicenseAsync(payment, license.Prices, license, cancellationToken);
+        var responseGrpc = await PayLicenseAsync(order, license, request.TenantDetail.Location.Country.Currency, cancellationToken);
 
         var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
 
-        await repository.CreateAsync(payment, cancellationToken);
+        await repository.CreateAsync(order, cancellationToken);
 
-        await pubsub.PublishAsync(payment.GetAndClearEvents(), cancellationToken);
+        await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
         return paymentResponse;
     }
 
-    private async Task<InitiatePaymentResponse> PayLicenseAsync(OrderAggregate payment, List<Price> prices, LicenseAggregate license, CancellationToken cancellationToken)
+    private async Task<InitiatePaymentResponse> PayLicenseAsync(OrderAggregate order, LicenseAggregate license, Currency tenantCurrency, CancellationToken cancellationToken)
     {
-        var payRequest = mapper.Map<InitiatePaymentRequest>(payment);
+        var payRequest = mapper.Map<InitiatePaymentRequest>(order);
 
         payRequest.Module = MODULE;
         payRequest.Provider = PaymentProvider.Payu;
 
-        var price = prices
-            .Where(x => x.BillingType == payment.License.BillingType && x.Total == payment.License.Total && x.BillingModel == payment.License.BillingModel)
-            .FirstOrDefault();
+        var isCorrectCurrency = order.License.Total.Currency == tenantCurrency.Code;
+        ApplicationGuard.IsFalse(isCorrectCurrency, Errors.InvalidCurrency);
 
-        logger.LogWarning("Paying license {LicenseName} for tenant {TenantName} with price {@Price}", license.Name, payment.TenantDetail.Name, price);
+        var price = license.Prices.FirstOrDefault(x => 
+            x.BillingType == order.License.BillingType && 
+            x.BillingModel == order.License.BillingModel && 
+            x.Total == order.License.Total);
 
-        ApplicationGuard.IsNull(price!, "202: The price for the selected billing type and model is not available.");
+        ApplicationGuard.IsNull(price, Errors.PriceInvalid);
 
         payRequest.SubTotal = new Amount
         {
-            Currency = price.Currency.Code,
-            Value = price.SubTotal
+            Currency = price.BasePrice.Currency, 
+            Value = price.SubTotal.ToLong(tenantCurrency.DecimalDigits)
         };
 
         payRequest.Tax = new Amount
         {
-            Currency = price.Currency.Code,
-            Value = (long)price.Tax
+            Currency = price.BasePrice.Currency,
+            Value = price.Tax.ToLong(tenantCurrency.DecimalDigits)
         };
 
         payRequest.Total = new Amount
         {
-            Currency = price.Currency.Code,
-            Value = price.Total
+            Currency = price.BasePrice.Currency,
+            Value = price.Total.ToLong(tenantCurrency.DecimalDigits)
         };
 
-        payRequest.Description = $"Payment for license {license.Name} to tenant {payment.TenantDetail.Name}.";
+        payRequest.Description = $"Payment for license {license.Name} to tenant {order.TenantDetail.Name}.";
 
         return await paymentGrpc.InitiatePaymentAsync(payRequest, cancellationToken);
     }
-
 }

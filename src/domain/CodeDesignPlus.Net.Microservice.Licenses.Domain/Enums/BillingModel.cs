@@ -9,7 +9,7 @@ public enum BillingModel
     /// No billing model is applicable, or billing is handled externally/manually.
     /// This can be used for free plans or special arrangements.
     /// </summary>
-    None, // Added as a sensible default or for free/non-billed scenarios
+    None,
 
     /// <summary>
     /// A single, fixed fee for the service or plan, regardless of usage, number of users, or units.

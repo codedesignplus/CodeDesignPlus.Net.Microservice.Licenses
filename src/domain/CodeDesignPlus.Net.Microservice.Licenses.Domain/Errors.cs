@@ -96,5 +96,14 @@ public class Errors : IErrorCodes
     public const string LicenseNameIsInvalid = "192 : The license name is invalid.";
     public const string IdBuyerIsRequired = "193 : The Id Buyer is required.";
     public const string IdPaymentIsRequired = "194 : The Id Payment is required.";
+
+    public const string TaxLicenseCannotBeLessThanZero = "195 : The Tax of the license cannot be less than zero.";
+
+    public const string DuplicatePricingStrategyFound = "196 : A duplicate pricing strategy was found.";
+
+    public const string TotalOfLicenseIsRequired = "197 : The Total of the license is required.";
+    public const string TaxOfLicenseIsRequired = "198 : The Tax of the license is required.";
+    public const string SubTotalOfLicenseIsRequired = "199 : The SubTotal of the license is required.";
+    public const string CurrenciesMustMatch = "200 : The currencies must match.";
 }
 

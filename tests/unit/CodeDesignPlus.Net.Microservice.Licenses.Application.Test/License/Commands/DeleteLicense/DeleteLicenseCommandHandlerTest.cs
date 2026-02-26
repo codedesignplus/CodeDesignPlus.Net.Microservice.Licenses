@@ -16,8 +16,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IPubSub> pubSubMock;
         private readonly DeleteLicenseCommandHandler handler;
 
-        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Monthly, Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$"), 100, BillingModel.FlatRate, 0, 19);
+        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
 
         public DeleteLicenseCommandHandlerTest()
         {

@@ -1,38 +1,73 @@
 using System;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Collections.ObjectModel;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public sealed partial class LicenseTenant
+/// <summary>
+/// Represents a snapshot of the tenant's license constraints and validity period.
+/// Implemented as a record to automatically provide value-based equality.
+/// </summary>
+public sealed partial record LicenseTenant
 {
-    [GeneratedRegex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{1,128}$")]
+    
+    [GeneratedRegex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{1,128}$", RegexOptions.Compiled)]
     private static partial Regex Regex();
 
-    public Guid Id { get; private set; }
-    public string Name { get; private set; }
-    public Instant StartDate { get; private set; }
-    public Instant EndDate { get; private set; }
-    public Dictionary<string, string> Metadata { get; private set; } 
+    /// <summary>
+    /// The unique identifier of the license.
+    /// </summary>
+    public Guid Id { get; init; }
+    /// <summary>
+    /// The name of the license.
+    /// </summary>
+    public string Name { get; init; }    
+    /// <summary>
+    /// The start date of the license validity period.
+    /// </summary>
+    public Instant StartDate { get; init; }
+    /// <summary>
+    /// The end date of the license validity period.
+    /// </summary>
+    public Instant EndDate { get; init; }    
+    /// <summary>
+    /// Additional metadata associated with the license.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Metadata { get; init; } 
 
     [JsonConstructor]
-    public LicenseTenant(Guid Id, string Name, Instant StartDate, Instant EndDate, Dictionary<string, string> Metadata)
+    private LicenseTenant(Guid id, string name, Instant startDate, Instant endDate, Dictionary<string, string> metadata)
     {        
-        DomainGuard.GuidIsEmpty(Id, Errors.LicenseIdIsEmpty);
-        DomainGuard.IsNullOrEmpty(Name, Errors.LicenseNameIsEmpty);
-        DomainGuard.IsGreaterThan(StartDate, EndDate, Errors.LicenseStartDateGreaterThanEndDate);
-        DomainGuard.IsNull(Metadata, Errors.LicenseMetadataIsNull);
+        var normalizedName = name?.Trim() ?? string.Empty;
 
-        DomainGuard.IsFalse(Regex().IsMatch(Name), Errors.LicenseNameIsInvalid);
+        DomainGuard.GuidIsEmpty(id, Errors.LicenseIdIsEmpty);
+        
+        DomainGuard.IsNullOrEmpty(normalizedName, Errors.LicenseNameIsEmpty);
+        DomainGuard.IsFalse(Regex().IsMatch(normalizedName), Errors.LicenseNameIsInvalid);
+        
+        DomainGuard.IsGreaterThan(startDate, endDate, Errors.LicenseStartDateGreaterThanEndDate);
+        
+        DomainGuard.IsNull(metadata, Errors.LicenseMetadataIsNull);
 
-        this.Id = Id;
-        this.Name = Name;
-        this.StartDate = StartDate;
-        this.EndDate = EndDate;
-        this.Metadata = Metadata;
+        this.Id = id;
+        this.Name = normalizedName;
+        this.StartDate = startDate;
+        this.EndDate = endDate;
+        this.Metadata = new ReadOnlyDictionary<string, string>(metadata);
     }
 
-    public static LicenseTenant Create(Guid Id, string Name, Instant StartDate, Instant EndDate, Dictionary<string, string> Metadata)
+    /// <summary>
+    /// Creates a new immutable snapshot of a tenant's license.
+    /// </summary>
+    /// <param name="id">The unique identifier of the license.</param>
+    /// <param name="name">The name of the license.</param>
+    /// <param name="startDate">The start date of the license validity period.</param>
+    /// <param name="endDate">The end date of the license validity period.</param>
+    /// <param name="metadata">Additional metadata associated with the license.</param>
+    /// <returns>A new immutable snapshot of a tenant's license.</returns>
+    public static LicenseTenant Create(Guid id, string name, Instant startDate, Instant endDate, Dictionary<string, string> metadata)
     {
-        return new LicenseTenant(Id, Name, StartDate, EndDate, Metadata);
+        return new LicenseTenant(id, name, startDate, endDate, metadata);
     }
 }

@@ -17,4 +17,8 @@ public class Errors: IErrorCodes
     public const string TenantAlreadyExists = "208 : The tenant already exists.";
 
     public const string OrderAlreadyExists = "209 : The order already exists.";
+
+    public const string PriceInvalid ="210 : The price for the selected billing type and model is not available.";
+
+    public const string InvalidCurrency = "211 : The order currency does not match the tenant's country currency.";
 }

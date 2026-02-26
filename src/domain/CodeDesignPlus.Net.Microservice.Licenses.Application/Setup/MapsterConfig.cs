@@ -56,7 +56,7 @@ public static class MapsterConfigLicense
                 ShortDescription = src.ShortDescription,
                 Description = src.Description,
                 Attributes = src.Attributes,
-                Prices = src.Prices.Select(x => Price.Create(x.BillingType, Domain.ValueObjects.Currency.Create(x.Currency.Id, x.Currency.Name, x.Currency.Code, x.Currency.Symbol), x.Pricing, x.BillingModel, x.DiscountPercentage, x.TaxPercentage)).ToList(),
+                Prices = src.Prices.Select(x => Price.Create(x.BillingType, x.BasePrice, x.BillingModel, x.DiscountPercentage, x.TaxPercentage)).ToList(),
                 Icon = src.Icon,
                 TermsOfService = src.TermsOfService,
                 IsActive = src.IsActive,
@@ -93,9 +93,9 @@ public static class MapsterConfigLicense
                Type = src.PaymentMethod.Code,
                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
                {
-                   Number = src.PaymentMethod.CreditCard.Number,
-                   ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
-                   SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
+                   Number = src.PaymentMethod.CreditCard.Token,
+                   ExpirationDate = src.PaymentMethod.CreditCard.Last4Digits,
+                   SecurityCode = src.PaymentMethod.CreditCard.ExpirationDate,
                    Name = src.PaymentMethod.CreditCard.CardHolderName,
                    InstallmentsNumber = 1
                } : null,
@@ -147,10 +147,11 @@ public static class MapsterConfigLicense
                             Timezone = src.Location.Country.Timezone,
                             Currency = new CodeDesignPlus.Net.gRpc.Clients.Services.Tenant.Currency
                             {
-                                Id = src.Location.Country.Currency.Id.ToString(),
+                                Id = src.Location.Country.Currency.CurrencyId.ToString(),
                                 Name = src.Location.Country.Currency.Name,
                                 Code = src.Location.Country.Currency.Code,
                                 Symbol = src.Location.Country.Currency.Symbol
+                                //TODO modificar el currency
                             }
                         },
                         State = new gRpc.Clients.Services.Tenant.State

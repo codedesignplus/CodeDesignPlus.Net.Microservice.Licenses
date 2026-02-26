@@ -8,6 +8,7 @@ global using Moq;
 global using Microsoft.Extensions.Configuration;
 global using CodeDesignPlus.Net.Serializers;
 global using NodaTime;
+global using CodeDesignPlus.Net.ValueObjects.Financial;
 
 global using CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Repositories;
 global using CodeDesignPlus.Net.Microservice.Licenses.Domain;

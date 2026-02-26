@@ -10,6 +10,7 @@ global using MapsterMapper;
 global using C = CodeDesignPlus.Net.Core.Abstractions.Models.Criteria;
 global using CodeDesignPlus.Net.Serializers;
 global using NodaTime;
+global using CodeDesignPlus.Net.ValueObjects.Financial;
 
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 

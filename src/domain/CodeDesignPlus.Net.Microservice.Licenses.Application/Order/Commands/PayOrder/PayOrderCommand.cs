@@ -1,4 +1,6 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.ValueObjects.Payment;
+using CodeDesignPlus.Net.ValueObjects.User;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 

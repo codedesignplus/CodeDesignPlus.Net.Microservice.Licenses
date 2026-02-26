@@ -5,3 +5,4 @@ global using CodeDesignPlus.Net.xUnit.Microservice.Utils.Reflection;
 global using Xunit;
 global using CodeDesignPlus.Net.Serializers;
 global using NodaTime;
+global using CodeDesignPlus.Net.ValueObjects.Financial;
