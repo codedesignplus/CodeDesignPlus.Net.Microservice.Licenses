@@ -105,5 +105,8 @@ public class Errors : IErrorCodes
     public const string TaxOfLicenseIsRequired = "198 : The Tax of the license is required.";
     public const string SubTotalOfLicenseIsRequired = "199 : The SubTotal of the license is required.";
     public const string CurrenciesMustMatch = "200 : The currencies must match.";
+
+    public const string ModulesLicenseIsRequired = "201 : The modules of the license are required.";
+    public const string AttributesLicenseIsRequired = "202 : The attributes of the license are required.";
 }
 

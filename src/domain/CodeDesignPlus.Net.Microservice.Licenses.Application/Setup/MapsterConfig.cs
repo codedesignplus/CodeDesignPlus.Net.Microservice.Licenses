@@ -78,7 +78,6 @@ public static class MapsterConfigLicense
         //Payment gRpc
         TypeAdapterConfig<OrderAggregate, InitiatePaymentRequest>
            .NewConfig()
-           .Map(dest => dest.Id, src => src.PaymentId.ToString())
            .Map(dest => dest.Module, src => "Licenses")
            .Map(dest => dest.Payer, src => new Payer
            {
@@ -106,7 +105,7 @@ public static class MapsterConfigLicense
                    TypePerson = src.PaymentMethod.Pse.TypePerson
                } : null
            });
-           
+
         TypeAdapterConfig<InitiatePaymentResponse, PaymentResponse>
             .NewConfig()
             .MapWith(src => new PaymentResponse

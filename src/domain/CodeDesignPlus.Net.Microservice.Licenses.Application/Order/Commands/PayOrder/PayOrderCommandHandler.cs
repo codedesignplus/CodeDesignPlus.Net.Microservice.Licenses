@@ -1,6 +1,7 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.ValueObjects.Financial;
+using CodeDesignPlus.Net.ValueObjects.User;
 using Microsoft.Extensions.Logging;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
@@ -11,8 +12,7 @@ public class PayOrderCommandHandler(
     IPubSub pubsub,
     IMapper mapper,
     IPaymentGrpc paymentGrpc,
-    ITenantGrpc tenantGrpc,
-    ILogger<PayOrderCommandHandler> logger
+    ITenantGrpc tenantGrpc
 ) : IRequestHandler<PayOrderCommand, PaymentResponse>
 {
     public const string MODULE = "Licenses";
@@ -25,7 +25,7 @@ public class PayOrderCommandHandler(
         ApplicationGuard.IsFalse(existLicense, Errors.LicenseNotFound);
 
         var existTenant = await tenantGrpc.ExistTenantAsync(request.TenantDetail.Id, cancellationToken);
-        ApplicationGuard.IsNotNull(existTenant, Errors.TenantAlreadyExists);
+        ApplicationGuard.IsTrue(existTenant, Errors.TenantAlreadyExists);
 
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
@@ -33,7 +33,13 @@ public class PayOrderCommandHandler(
         var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
-        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, request.Buyer, request.TenantDetail, user.IdUser);
+        var buyer = Buyer.Create(user.IdUser, request.Buyer.Name, request.Buyer.Phone, request.Buyer.Email, request.Buyer.TypeDocument, request.Buyer.Document);
+
+        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
+        
+        //buyer.SetBuyerId(user.IdUser);
+
+        var payment = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
 
         var responseGrpc = await PayLicenseAsync(order, license, request.TenantDetail.Location.Country.Currency, cancellationToken);
 
@@ -49,6 +55,9 @@ public class PayOrderCommandHandler(
     private async Task<InitiatePaymentResponse> PayLicenseAsync(OrderAggregate order, LicenseAggregate license, Currency tenantCurrency, CancellationToken cancellationToken)
     {
         var payRequest = mapper.Map<InitiatePaymentRequest>(order);
+
+        payRequest.Id = order.PaymentId.ToString();
+        payRequest.ReferenceId = order.Id.ToString();
 
         payRequest.Module = MODULE;
         payRequest.Provider = PaymentProvider.Payu;

@@ -2,7 +2,7 @@ using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.DomainEvents;
 
-[EventKey<OrderAggregate>(1, "PaymentResponseAssociatedDomainEvent", "ms-payment")]
+[EventKey("PaymentAggregate", 1, "PaymentResponseAssociatedDomainEvent", "ms-payments")]
 public class PaymentResponseAssociatedDomainEvent(
     Guid aggregateId,
     string module,

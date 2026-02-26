@@ -108,17 +108,16 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
         if (paymentStatus == PaymentStatus.Succeeded)
         {
-            var expirationDuration = License.BillingType == BillingTypeEnum.Monthly ? Duration.FromDays(30) : Duration.FromDays(365);
-            var expirationDate = SystemClock.Instance.GetCurrentInstant().Plus(expirationDuration);
-
+            IsSuccess = true;
+            
             var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
-                this.Id, 
+                this.Id,
                 TenantDetail,
                 LicenseTenant.Create(
                     License.Id,
                     License.Name,
-                    expirationDate,
                     SystemClock.Instance.GetCurrentInstant(),
+                    SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(License.BillingType == BillingTypeEnum.Monthly ? 30 : 365)),
                     metadata
                 ),
                 buyerId

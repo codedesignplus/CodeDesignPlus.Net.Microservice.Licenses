@@ -90,6 +90,9 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.GuidIsEmpty(createdBy, Errors.CreatedByLicenseIsRequired);
         DomainGuard.IsNull(icon, Errors.IconLicenseIsRequired);
 
+        DomainGuard.IsNull(modules, Errors.ModulesLicenseIsRequired);
+        DomainGuard.IsNull(attributes, Errors.AttributesLicenseIsRequired);
+
         var hasDuplicatePricingStrategies = prices
             .GroupBy(p => new { p.BasePrice.Currency, p.BillingModel, p.BillingType })
             .Any(g => g.Count() > 1);
@@ -101,9 +104,9 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
             Name = name,
             ShortDescription = shortDescription,
             Description = description,
-            Modules = modules ?? [],
+            Modules = modules,
             Prices = prices,
-            Attributes = attributes ?? [],
+            Attributes = attributes,
             Icon = icon,
             TermsOfService = TermsOfService,
             IsActive = isActive,
