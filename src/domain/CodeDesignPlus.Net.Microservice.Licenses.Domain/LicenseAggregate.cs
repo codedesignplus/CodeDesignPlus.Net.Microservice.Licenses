@@ -97,7 +97,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
             .GroupBy(p => new { p.BasePrice.Currency, p.BillingModel, p.BillingType })
             .Any(g => g.Count() > 1);
 
-        DomainGuard.IsFalse(hasDuplicatePricingStrategies, Errors.DuplicatePricingStrategyFound);
+        DomainGuard.IsTrue(hasDuplicatePricingStrategies, Errors.DuplicatePricingStrategyFound);
 
         var aggregate = new LicenseAggregate(id)
         {

@@ -6,11 +6,11 @@
 		<NoWarn>CS8669</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="CodeDesignPlus.Net.Generator" Version="0.13.0-beta.12731" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-		<PackageReference Include="CodeDesignPlus.Net.gRpc.Clients" Version="0.13.0-beta.12731" />
-		<PackageReference Include="CodeDesignPlus.Net.Redis.Abstractions" Version="0.13.0-beta.12731" />
-		<PackageReference Include="CodeDesignPlus.Net.PubSub.Abstractions" Version="0.13.0-beta.12731" />
-		<PackageReference Include="CodeDesignPlus.Net.Cache.Abstractions" Version="0.13.0-beta.12731" />
+		<PackageReference Include="CodeDesignPlus.Net.Generator" Version="0.13.0-beta.12737" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<PackageReference Include="CodeDesignPlus.Net.gRpc.Clients" Version="0.13.0-beta.12737" />
+		<PackageReference Include="CodeDesignPlus.Net.Redis.Abstractions" Version="0.13.0-beta.12737" />
+		<PackageReference Include="CodeDesignPlus.Net.PubSub.Abstractions" Version="0.13.0-beta.12737" />
+		<PackageReference Include="CodeDesignPlus.Net.Cache.Abstractions" Version="0.13.0-beta.12737" />
 		<PackageReference Include="Mapster" Version="7.4.0" />
 		<PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />
 		<PackageReference Include="MediatR" Version="13.0.0" />

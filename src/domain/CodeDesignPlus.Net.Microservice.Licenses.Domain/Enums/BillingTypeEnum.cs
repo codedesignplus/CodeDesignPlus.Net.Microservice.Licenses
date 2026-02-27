@@ -1,6 +1,6 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 
-public enum BillingTypeEnum
+public enum BillingType
 {
     None,
     Monthly,

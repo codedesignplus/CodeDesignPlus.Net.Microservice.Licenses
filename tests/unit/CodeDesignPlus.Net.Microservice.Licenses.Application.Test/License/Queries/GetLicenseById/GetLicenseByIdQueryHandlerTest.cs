@@ -19,8 +19,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         private readonly GetLicenseByIdQueryHandler handler;
 
 
-        private readonly Price PriceMonthly = Price.Create(BillingTypeEnum.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingTypeEnum.Annually, Money.FromLong(1000, "USD", 2), BillingModel.FlatRate, 0, 19);
+        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromLong(1000, "USD", 2), BillingModel.FlatRate, 0, 19);
 
 
         public GetLicenseByIdQueryHandlerTest()

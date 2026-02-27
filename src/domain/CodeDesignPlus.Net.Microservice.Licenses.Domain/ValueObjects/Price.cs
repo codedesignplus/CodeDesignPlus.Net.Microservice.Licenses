@@ -1,6 +1,6 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.ValueObjects.Financial;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -13,7 +13,7 @@ public sealed partial record Price
     /// <summary>
     /// The billing type for the license.
     /// </summary>
-    public BillingTypeEnum BillingType { get; private set; }
+    public BillingType BillingType { get; private set; }
     /// <summary>
     /// The billing model for the license.
     /// </summary>
@@ -56,7 +56,7 @@ public sealed partial record Price
 
 
     [JsonConstructor]
-    private Price(BillingTypeEnum billingType, Money basePrice, BillingModel billingModel, decimal discountPercentage, decimal taxPercentage)
+    private Price(BillingType billingType, Money basePrice, BillingModel billingModel, decimal discountPercentage, decimal taxPercentage)
     {
         DomainGuard.IsNull(basePrice, Errors.PriceLicenseIsRequired);
         DomainGuard.IsLessThan(discountPercentage, 0m, Errors.DiscountLicenseCannotBeLessThanZero);
@@ -81,7 +81,7 @@ public sealed partial record Price
     /// <param name="discountPercentage">The discount percentage.</param>
     /// <param name="taxPercentage">The tax percentage.</param>
     /// <returns>A new instance of the <see cref="Price"/> class.</returns>
-    public static Price Create(BillingTypeEnum billingType, Money basePrice, BillingModel billingModel, decimal discountPercentage, decimal taxPercentage)
+    public static Price Create(BillingType billingType, Money basePrice, BillingModel billingModel, decimal discountPercentage, decimal taxPercentage)
     {
         return new Price(billingType, basePrice, billingModel, discountPercentage, taxPercentage);
     }

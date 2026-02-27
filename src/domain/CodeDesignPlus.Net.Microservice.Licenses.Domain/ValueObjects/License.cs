@@ -39,7 +39,7 @@ public sealed record License
     /// <summary>
     /// Gets the billing type (e.g., Prepaid, Postpaid).
     /// </summary>
-    public BillingTypeEnum BillingType { get; private set; }
+    public BillingType BillingType { get; private set; }
 
     /// <summary>
     /// Gets the billing cycle model (e.g., Monthly, Yearly).
@@ -48,7 +48,7 @@ public sealed record License
 
 
     [JsonConstructor]
-    private License(Guid id, string name, Money total, Money tax, Money subTotal, BillingTypeEnum billingType, BillingModel billingModel)
+    private License(Guid id, string name, Money total, Money tax, Money subTotal, BillingType billingType, BillingModel billingModel)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdOfLicenseIsRequired);
         DomainGuard.IsNullOrEmpty(name, Errors.NameOfLicenseIsRequired);
@@ -79,7 +79,7 @@ public sealed record License
     /// <summary>
     /// Creates a new immutable snapshot of a purchased License.
     /// </summary>
-    public static License Create(Guid id, string name, Money total, Money tax, Money subTotal, BillingTypeEnum billingType, BillingModel billingModel)
+    public static License Create(Guid id, string name, Money total, Money tax, Money subTotal, BillingType billingType, BillingModel billingModel)
     {
         return new License(id, name, total, tax, subTotal, billingType, billingModel);
     }

@@ -4,7 +4,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 
 [DtoGenerator]
-public record UpdateLicenseCommand(Guid Id, string Name, string ShortDescription, string Description, List<ModuleDto> Modules, List<Price> Prices, Icon Icon, string TermsOfService, Dictionary<string, string> Attributes, bool IsActive, bool IsPopular, bool ShowInLandingPage) : IRequest;
+public record UpdateLicenseCommand(Guid Id, string Name, string ShortDescription, string Description, List<ModuleDto> Modules, List<PriceDto> Prices, Icon Icon, string TermsOfService, Dictionary<string, string> Attributes, bool IsActive, bool IsPopular, bool ShowInLandingPage) : IRequest;
 
 public class Validator : AbstractValidator<UpdateLicenseCommand>
 {
