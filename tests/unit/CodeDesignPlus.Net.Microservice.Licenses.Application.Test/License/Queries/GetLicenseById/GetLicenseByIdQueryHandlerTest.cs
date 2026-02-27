@@ -19,8 +19,26 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         private readonly GetLicenseByIdQueryHandler handler;
 
 
-        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromLong(1000, "USD", 2), BillingModel.FlatRate, 0, 19);
+        
+        private readonly PriceDto PriceMonthly = new()
+        {
+            BasePrice = 100,
+            Currency = "USD",
+            BillingType = BillingType.Monthly,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
+        
+        private readonly PriceDto PriceAnnualy = new()
+        {
+            BasePrice = 1000,
+            Currency = "USD",
+            BillingType = BillingType.Annually,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
 
 
         public GetLicenseByIdQueryHandlerTest()
@@ -56,7 +74,10 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
                 Name = "Test License",
                 Description = "Test Description",
                 Modules = [],
-                Prices = [PriceMonthly, PriceAnnualy],
+                Prices = [
+                    Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
+                    Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
+                ],
             };
             cacheManagerMock.Setup(x => x.ExistsAsync(request.Id.ToString())).ReturnsAsync(true);
             cacheManagerMock.Setup(x => x.GetAsync<LicenseDto>(request.Id.ToString())).ReturnsAsync(licenseDto);
@@ -76,7 +97,24 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         {
             // Arrange
             var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description","Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, false, Guid.NewGuid());
+            var license = LicenseAggregate.Create(
+                Guid.NewGuid(), 
+                "Test License", 
+                "Short Description",
+                "Test Description", 
+                [], 
+                    [
+                        Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
+                        Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
+                    ], 
+                Icon.Create("icon", "#FFFFFF"), 
+                "Test Terms of Service", 
+                    [], 
+                true, 
+                false, 
+                false, 
+                Guid.NewGuid()
+            );
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,

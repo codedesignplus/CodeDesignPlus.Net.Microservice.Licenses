@@ -25,8 +25,25 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
         private readonly Mock<IMapper> mapperMock;
         private readonly LicenseController controller;
 
-        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        private readonly PriceDto PriceMonthly = new()
+        {
+            BasePrice = 100,
+            Currency = "USD",
+            BillingType = BillingType.Monthly,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
+
+        private readonly PriceDto PriceAnnualy = new()
+        {
+            BasePrice = 1000,
+            Currency = "USD",
+            BillingType = BillingType.Annually,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
 
 
         public LicenseControllerTest()
@@ -67,7 +84,10 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                     Name = "Test License",
                     Description = "Test Description",
                     Modules = [],
-                    Prices = [PriceMonthly, PriceAnnualy],
+                    Prices = [
+                        Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
+                        Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
+                    ],
                     Icon = Icon.Create("icon", "#FFFFFF"),
                     TermsOfService = "Test Terms of Service",
                 });

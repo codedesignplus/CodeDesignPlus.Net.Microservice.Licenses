@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeDesignPlus.Net.Cache.Abstractions;
+using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
@@ -22,8 +23,26 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IMapper> mapperMock;
         private readonly UpdateLicenseCommandHandler handler;
 
-        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromLong(1000, "USD", 2), BillingModel.FlatRate, 0, 19);
+
+        private readonly PriceDto PriceMonthly = new()
+        {
+            BasePrice = 100,
+            Currency = "USD",
+            BillingType = BillingType.Monthly,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
+
+        private readonly PriceDto PriceAnnualy = new()
+        {
+            BasePrice = 1000,
+            Currency = "USD",
+            BillingType = BillingType.Annually,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
 
         public UpdateLicenseCommandHandlerTest()
         {
@@ -37,7 +56,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
                 userContextMock.Object,
                 pubSubMock.Object,
                 mapperMock.Object,
-                Mock.Of<ICacheManager>()
+                Mock.Of<ICacheManager>(),
+                Mock.Of<ICurrencyGrpc>()
             );
         }
 
@@ -79,7 +99,24 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_UpdatesLicense()
         {
             // Arrange
-            var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, Guid.NewGuid());
+            var license = LicenseAggregate.Create(
+                Guid.NewGuid(),
+                "Test License",
+                "Short Description",
+                "Test Description",
+                [],
+                    [
+                        Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage),
+                        Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
+                    ],
+                Icon.Create("icon", "#FFFFFF"),
+                "Test Terms of Service",
+                    [],
+                true,
+                false,
+                false,
+                Guid.NewGuid()
+            );
             var request = new UpdateLicenseCommand(license.Id, "Test New License", "Short Description", "Test New Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test New Terms of Service", [], true, false, false);
             var cancellationToken = CancellationToken.None;
 

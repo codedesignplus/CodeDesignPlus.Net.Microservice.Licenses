@@ -75,19 +75,19 @@ public class PayOrderCommandHandler(
         payRequest.SubTotal = new Amount
         {
             Currency = price.BasePrice.Currency, 
-            Value = price.SubTotal.ToLong(tenantCurrency.DecimalDigits)
+            Value = price.SubTotal.Amount
         };
 
         payRequest.Tax = new Amount
         {
             Currency = price.BasePrice.Currency,
-            Value = price.Tax.ToLong(tenantCurrency.DecimalDigits)
+            Value = price.Tax.Amount
         };
 
         payRequest.Total = new Amount
         {
             Currency = price.BasePrice.Currency,
-            Value = price.Total.ToLong(tenantCurrency.DecimalDigits)
+            Value = price.Total.Amount
         };
 
         payRequest.Description = $"Payment for license {license.Name} to tenant {order.TenantDetail.Name}.";

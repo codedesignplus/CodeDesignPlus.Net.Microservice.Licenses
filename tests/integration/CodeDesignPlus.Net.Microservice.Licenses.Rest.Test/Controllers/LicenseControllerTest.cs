@@ -15,8 +15,26 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
     }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-    private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-    private readonly Price PriceAnnualy = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+
+    private readonly PriceDto PriceMonthly = new()
+    {
+        BasePrice = 100,
+        Currency = "USD",
+        BillingType = BillingType.Monthly,
+        BillingModel = BillingModel.FlatRate,
+        DiscountPercentage = 0,
+        TaxPercentage = 19
+    };
+
+    private readonly PriceDto PriceAnnualy = new()
+    {
+        BasePrice = 1000,
+        Currency = "USD",
+        BillingType = BillingType.Annually,
+        BillingModel = BillingModel.FlatRate,
+        DiscountPercentage = 0,
+        TaxPercentage = 19
+    };
 
     private readonly ModuleDto module = new()
     {
@@ -57,27 +75,27 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
 
         Assert.NotNull(licenses);
         Assert.NotEmpty(licenses);
-       Assert.Contains(licenses, x =>
-            x.Id == license.Id
-            && x.Name == license.Name
-            && x.Description == license.Description
-            
-            && x.Prices.Any(o => 
-                o.BillingType == this.PriceMonthly.BillingType && 
-                o.BillingModel == this.PriceMonthly.BillingModel && 
-                o.BasePrice.Currency == this.PriceMonthly.BasePrice.Currency &&
-                o.BasePrice.Amount == this.PriceMonthly.BasePrice.Amount) 
-                
-            && x.Prices.Any(o => 
-                o.BillingType == this.PriceAnnualy.BillingType && 
-                o.BillingModel == this.PriceAnnualy.BillingModel && 
-                o.BasePrice.Currency == this.PriceAnnualy.BasePrice.Currency &&
-                o.BasePrice.Amount == this.PriceAnnualy.BasePrice.Amount) 
-                
-            && x.Icon.Name == "icon"
-            && x.TermsOfService == license.TermsOfService
-            && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
-        );
+        Assert.Contains(licenses, x =>
+             x.Id == license.Id
+             && x.Name == license.Name
+             && x.Description == license.Description
+
+             && x.Prices.Any(o =>
+                 o.BillingType == this.PriceMonthly.BillingType &&
+                 o.BillingModel == this.PriceMonthly.BillingModel &&
+                 o.BasePrice.Currency == this.PriceMonthly.Currency &&
+                 o.BasePrice.Amount == this.PriceMonthly.BasePrice)
+
+             && x.Prices.Any(o =>
+                 o.BillingType == this.PriceAnnualy.BillingType &&
+                 o.BillingModel == this.PriceAnnualy.BillingModel &&
+                 o.BasePrice.Currency == this.PriceAnnualy.Currency &&
+                 o.BasePrice.Amount == this.PriceAnnualy.BasePrice)
+
+             && x.Icon.Name == "icon"
+             && x.TermsOfService == license.TermsOfService
+             && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
+         );
     }
 
     [Fact]
@@ -141,14 +159,14 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Contains(license.Prices, o => o.BillingType == this.PriceMonthly.BillingType && 
-                o.BillingModel == this.PriceMonthly.BillingModel && 
-                o.BasePrice.Currency == this.PriceMonthly.BasePrice.Currency &&
-                o.BasePrice.Amount == this.PriceMonthly.BasePrice.Amount);
-        Assert.Contains(license.Prices, o => o.BillingType == this.PriceAnnualy.BillingType && 
-                o.BillingModel == this.PriceAnnualy.BillingModel && 
-                o.BasePrice.Currency == this.PriceAnnualy.BasePrice.Currency &&
-                o.BasePrice.Amount == this.PriceAnnualy.BasePrice.Amount);
+        Assert.Contains(license.Prices, o => o.BillingType == this.PriceMonthly.BillingType &&
+                o.BillingModel == this.PriceMonthly.BillingModel &&
+                o.BasePrice.Currency == this.PriceMonthly.Currency &&
+                o.BasePrice.Amount == this.PriceMonthly.BasePrice);
+        Assert.Contains(license.Prices, o => o.BillingType == this.PriceAnnualy.BillingType &&
+                o.BillingModel == this.PriceAnnualy.BillingModel &&
+                o.BasePrice.Currency == this.PriceAnnualy.Currency &&
+                o.BasePrice.Amount == this.PriceAnnualy.BasePrice);
         Assert.Equal(data.Icon, license.Icon);
         Assert.Equal(data.TermsOfService, license.TermsOfService);
         Assert.Contains(data.Modules, x =>

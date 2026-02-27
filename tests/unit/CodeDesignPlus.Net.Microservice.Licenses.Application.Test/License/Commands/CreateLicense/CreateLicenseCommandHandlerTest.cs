@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
@@ -18,8 +19,26 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IMapper> mapperMock;
         private readonly CreateLicenseCommandHandler handler;
 
-        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingType.Monthly, Money.FromLong(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        
+        private readonly PriceDto PriceMonthly = new()
+        {
+            BasePrice = 100,
+            Currency = "USD",
+            BillingType = BillingType.Monthly,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
+        
+        private readonly PriceDto PriceAnnualy = new()
+        {
+            BasePrice = 1000,
+            Currency = "USD",
+            BillingType = BillingType.Annually,
+            BillingModel = BillingModel.FlatRate,
+            DiscountPercentage = 0,
+            TaxPercentage = 19
+        };
 
         public CreateLicenseCommandHandlerTest()
         {
@@ -27,7 +46,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             userContextMock = new Mock<IUserContext>();
             pubSubMock = new Mock<IPubSub>();
             mapperMock = new Mock<IMapper>();
-            handler = new CreateLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, mapperMock.Object);
+            handler = new CreateLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, mapperMock.Object, Mock.Of<ICurrencyGrpc>());
         }
 
         [Fact]
