@@ -22,7 +22,7 @@ public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper m
 
         foreach (var price in license.Prices)
         {
-            var currency = await currencyGrpc.GetCurrencyAsync(code: price.BasePrice.Currency, cancellationToken: cancellationToken);
+            var currency = await currencyGrpc.GetCurrencyAsync(new gRpc.Clients.Services.Currencies.GetCurrencyRequest { Code = price.BasePrice.Currency }, cancellationToken);
 
             dto.Prices.Add(new PriceDto
             {
