@@ -69,6 +69,8 @@ public static class MapsterConfigLicense
                 }).ToList()
             });
 
+        
+
         //Module
         TypeAdapterConfig<ModuleDto, ModuleEntity>
             .NewConfig()

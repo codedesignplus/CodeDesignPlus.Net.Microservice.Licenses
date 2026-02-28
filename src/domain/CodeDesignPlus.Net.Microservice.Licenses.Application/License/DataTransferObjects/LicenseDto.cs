@@ -41,7 +41,7 @@ public class LicenseDto : IDtoBase
     /// Gets the list of available prices for this license. 
     /// Can contain multiple pricing models (e.g., monthly, annually) or currencies.
     /// </summary>
-    public List<Price> Prices { get; set; } = [];
+    public List<PriceDto> Prices { get; set; } = [];
 
     /// <summary>
     /// Gets a collection of custom key-value attributes associated with the license (e.g., "MaxUsers": "50").

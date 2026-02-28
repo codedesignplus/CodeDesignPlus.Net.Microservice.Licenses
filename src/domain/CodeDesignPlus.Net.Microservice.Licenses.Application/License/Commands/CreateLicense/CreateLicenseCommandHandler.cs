@@ -23,17 +23,8 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         }
 
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
-
-        var decimalDigitsByCurrency = await GetDecimalDigitsByCurrencyAsync(request, cancellationToken);
-
-        var prices = request.Prices.ConvertAll(x =>
-        {
-            var decimalDigits = decimalDigitsByCurrency[x.Currency];
-
-            var money = Money.FromDecimal(x.BasePrice, x.Currency, decimalDigits);
-
-            return Price.Create(x.BillingType, money, x.BillingModel, x.DiscountPercentage, x.TaxPercentage);
-        });
+        
+        var prices = await GetPricesAsync(request, cancellationToken);
 
         var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
 
@@ -42,20 +33,21 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
     }
 
-
-    private async Task<Dictionary<string, short>> GetDecimalDigitsByCurrencyAsync(CreateLicenseCommand request, CancellationToken cancellationToken)
+    private async Task<List<Price>> GetPricesAsync(CreateLicenseCommand request, CancellationToken cancellationToken)
     {
-        var uniqueCurrencyCodes = request.Prices.Select(p => p.Currency).Distinct().ToList();
+        var prices = new List<Price>();
 
-        var decimalDigitsByCurrency = new Dictionary<string, short>();
-
-        foreach (var code in uniqueCurrencyCodes)
+        foreach (var price in request.Prices)
         {
-            var currency = await currencyGrpc.GetCurrencyAsync(code: code, cancellationToken: cancellationToken);
+            var currency = await currencyGrpc.GetCurrencyAsync(code: price.Currency, cancellationToken: cancellationToken);
 
-            decimalDigitsByCurrency[code] = currency.DecimalDigits;
+            var decimalDigits = currency.DecimalDigits;
+
+            var money = Money.FromDecimal(price.BasePrice, price.Currency, decimalDigits);
+
+            prices.Add(Price.Create(price.BillingType, money, price.BillingModel, price.DiscountPercentage, price.TaxPercentage));
         }
 
-        return decimalDigitsByCurrency;
+        return prices;
     }
 }
