@@ -4,10 +4,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
+using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetAllLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using CodeDesignPlus.Net.ValueObjects.Financial;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Queries.GetAllLicense;
 
@@ -15,35 +16,41 @@ public class GetAAllLicenseQueryHandlerTest
 {
     private readonly Mock<ILicenseRepository> repositoryMock;
     private readonly Mock<IMapper> mapperMock;
+    private readonly Mock<ICurrencyGrpc> currencyMock;
     private readonly GetAllLicenseQueryHandler handler;
 
-    
-        private readonly PriceDto PriceMonthly = new()
-        {
-            BasePrice = 100,
-            Currency = "USD",
-            BillingType = BillingType.Monthly,
-            BillingModel = BillingModel.FlatRate,
-            DiscountPercentage = 0,
-            TaxPercentage = 19
-        };
-    
-        private readonly PriceDto PriceAnnualy = new()
-        {
-            BasePrice = 1000,
-            Currency = "USD",
-            BillingType = BillingType.Annually,
-            BillingModel = BillingModel.FlatRate,
-            DiscountPercentage = 0,
-            TaxPercentage = 19
-        };
+    private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+    private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 19);
 
+
+    private readonly PriceDto PriceMonthlyDto = new()
+    {
+        BasePrice = 100,
+        BillingModel = BillingModel.FlatRate,
+        BillingType = BillingType.Monthly,
+        Currency = "USD",
+        DiscountPercentage = 0,
+        TaxPercentage = 19
+    };
+
+
+    private readonly PriceDto PriceAnnualyDto = new()
+    {
+        BasePrice = 100,
+        BillingModel = BillingModel.FlatRate,
+        BillingType = BillingType.Annually,
+        Currency = "USD",
+        DiscountPercentage = 0,
+        TaxPercentage = 19
+    };
 
     public GetAAllLicenseQueryHandlerTest()
     {
         repositoryMock = new Mock<ILicenseRepository>();
         mapperMock = new Mock<IMapper>();
-        handler = new GetAllLicenseQueryHandler(repositoryMock.Object, mapperMock.Object);
+        currencyMock = new Mock<ICurrencyGrpc>();
+
+        handler = new GetAllLicenseQueryHandler(repositoryMock.Object, mapperMock.Object, currencyMock.Object);
     }
 
     [Fact]
@@ -67,31 +74,14 @@ public class GetAAllLicenseQueryHandlerTest
         // Arrange
         var request = new GetAllLicenseQuery(null!);
         var cancellationToken = CancellationToken.None;
-        var license = LicenseAggregate.Create(
-            Guid.NewGuid(), 
-            "Test License", 
-            "Short Description",
-            "Test Description", 
-            [], 
-                [
-                    Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
-                    Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
-                ], 
-            Icon.Create("icon", "#FFFFFF"), 
-            "Test Terms of Service", 
-                [], 
-            true, 
-            false, 
-            false, 
-            Guid.NewGuid()
-        );
+        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, Guid.NewGuid());
         var licenseDto = new LicenseDto()
         {
             Id = license.Id,
             Name = license.Name,
             Description = license.Description,
             Modules = [.. license.Modules.Select(module => new ModuleDto() { Id = module.Id, Name = module.Name, Description = module.Description })],
-            Prices = license.Prices,
+            Prices = [PriceMonthlyDto, PriceAnnualyDto],
             TermsOfService = license.TermsOfService,
             IsActive = license.IsActive,
         };

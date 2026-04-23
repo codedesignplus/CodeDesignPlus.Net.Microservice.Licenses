@@ -12,10 +12,7 @@ global using CodeDesignPlus.Net.Serializers;
 global using NodaTime;
 global using CodeDesignPlus.Net.Cache.Abstractions;
 
-global using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 global using CodeDesignPlus.Net.Microservice.Licenses.Domain;
 
 global using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 
-
-global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;

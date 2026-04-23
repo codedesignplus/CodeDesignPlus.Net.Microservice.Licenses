@@ -2,10 +2,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeDesignPlus.Net.Cache.Abstractions;
+using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetLicenseById;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using CodeDesignPlus.Net.ValueObjects.Financial;
 using Moq;
 using Xunit;
 
@@ -16,26 +17,29 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         private readonly Mock<ILicenseRepository> repositoryMock;
         private readonly Mock<IMapper> mapperMock;
         private readonly Mock<ICacheManager> cacheManagerMock;
+        private readonly Mock<ICurrencyGrpc> currencyMock;
         private readonly GetLicenseByIdQueryHandler handler;
 
+        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 19);
 
-        
-        private readonly PriceDto PriceMonthly = new()
+        private readonly PriceDto PriceMonthlyDto = new()
         {
             BasePrice = 100,
-            Currency = "USD",
-            BillingType = BillingType.Monthly,
             BillingModel = BillingModel.FlatRate,
+            BillingType = BillingType.Monthly,
+            Currency = "USD",
             DiscountPercentage = 0,
             TaxPercentage = 19
         };
-        
-        private readonly PriceDto PriceAnnualy = new()
+
+
+        private readonly PriceDto PriceAnnualyDto = new()
         {
-            BasePrice = 1000,
-            Currency = "USD",
-            BillingType = BillingType.Annually,
+            BasePrice = 100,
             BillingModel = BillingModel.FlatRate,
+            BillingType = BillingType.Annually,
+            Currency = "USD",
             DiscountPercentage = 0,
             TaxPercentage = 19
         };
@@ -46,7 +50,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
             repositoryMock = new Mock<ILicenseRepository>();
             mapperMock = new Mock<IMapper>();
             cacheManagerMock = new Mock<ICacheManager>();
-            handler = new GetLicenseByIdQueryHandler(repositoryMock.Object, mapperMock.Object, cacheManagerMock.Object);
+            currencyMock = new Mock<ICurrencyGrpc>();
+
+            handler = new GetLicenseByIdQueryHandler(repositoryMock.Object, mapperMock.Object, cacheManagerMock.Object, currencyMock.Object);
         }
 
         [Fact]
@@ -74,10 +80,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
                 Name = "Test License",
                 Description = "Test Description",
                 Modules = [],
-                Prices = [
-                    Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
-                    Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
-                ],
+                Prices = [PriceMonthlyDto, PriceAnnualyDto],
             };
             cacheManagerMock.Setup(x => x.ExistsAsync(request.Id.ToString())).ReturnsAsync(true);
             cacheManagerMock.Setup(x => x.GetAsync<LicenseDto>(request.Id.ToString())).ReturnsAsync(licenseDto);
@@ -97,31 +100,14 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         {
             // Arrange
             var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(
-                Guid.NewGuid(), 
-                "Test License", 
-                "Short Description",
-                "Test Description", 
-                [], 
-                    [
-                        Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
-                        Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
-                    ], 
-                Icon.Create("icon", "#FFFFFF"), 
-                "Test Terms of Service", 
-                    [], 
-                true, 
-                false, 
-                false, 
-                Guid.NewGuid()
-            );
+            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, false, Guid.NewGuid());
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,
                 Name = license.Name,
                 Description = license.Description,
                 Modules = [],
-                Prices = license.Prices,
+                Prices = [PriceAnnualyDto, PriceMonthlyDto],
                 Icon = license.Icon,
                 TermsOfService = license.TermsOfService,
                 Attributes = license.Attributes,

@@ -21,4 +21,6 @@ public class Errors: IErrorCodes
     public const string PriceInvalid ="210 : The price for the selected billing type and model is not available.";
 
     public const string InvalidCurrency = "211 : The order currency does not match the tenant's country currency.";
+
+    public const string PriceNotFoundBecauseBillingTypeIsNotAvailableInTheLicense = "212 : The price for the selected billing type is not available in the license.";
 }

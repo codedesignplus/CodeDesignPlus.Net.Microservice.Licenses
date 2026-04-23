@@ -2,7 +2,6 @@ using System;
 using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using CodeDesignPlus.Net.ValueObjects.Financial;
 using NodaTime.Serialization.SystemTextJson;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers;
@@ -15,26 +14,27 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
     }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-
-    private readonly PriceDto PriceMonthly = new()
+    private readonly PriceDto PriceMonthlyDto = new()
     {
         BasePrice = 100,
-        Currency = "USD",
-        BillingType = BillingType.Monthly,
         BillingModel = BillingModel.FlatRate,
+        BillingType = BillingType.Monthly,
+        Currency = "USD",
         DiscountPercentage = 0,
         TaxPercentage = 19
     };
 
-    private readonly PriceDto PriceAnnualy = new()
+
+    private readonly PriceDto PriceAnnualyDto = new()
     {
-        BasePrice = 1000,
-        Currency = "USD",
-        BillingType = BillingType.Annually,
+        BasePrice = 100,
         BillingModel = BillingModel.FlatRate,
+        BillingType = BillingType.Annually,
+        Currency = "USD",
         DiscountPercentage = 0,
         TaxPercentage = 19
     };
+
 
     private readonly ModuleDto module = new()
     {
@@ -76,26 +76,15 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.NotNull(licenses);
         Assert.NotEmpty(licenses);
         Assert.Contains(licenses, x =>
-             x.Id == license.Id
-             && x.Name == license.Name
-             && x.Description == license.Description
-
-             && x.Prices.Any(o =>
-                 o.BillingType == this.PriceMonthly.BillingType &&
-                 o.BillingModel == this.PriceMonthly.BillingModel &&
-                 o.BasePrice.Currency == this.PriceMonthly.Currency &&
-                 o.BasePrice.Amount == this.PriceMonthly.BasePrice)
-
-             && x.Prices.Any(o =>
-                 o.BillingType == this.PriceAnnualy.BillingType &&
-                 o.BillingModel == this.PriceAnnualy.BillingModel &&
-                 o.BasePrice.Currency == this.PriceAnnualy.Currency &&
-                 o.BasePrice.Amount == this.PriceAnnualy.BasePrice)
-
-             && x.Icon.Name == "icon"
-             && x.TermsOfService == license.TermsOfService
-             && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
-         );
+            x.Id == license.Id
+            && x.Name == license.Name
+            && x.Description == license.Description
+            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceMonthlyDto.BillingType && o.Currency == this.PriceMonthlyDto.Currency) != null
+            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceAnnualyDto.BillingType && o.Currency == this.PriceAnnualyDto.Currency) != null
+            && x.Icon.Name == "icon"
+            && x.TermsOfService == license.TermsOfService
+            && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
+        );
     }
 
     [Fact]
@@ -137,8 +126,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             },
             Prices =
             [
-                PriceMonthly,
-                PriceAnnualy
+                PriceMonthlyDto,
+                PriceAnnualyDto
             ],
             Icon = Icon.Create("icon", "#FFFFFF"),
             TermsOfService = "Terms of service for License Test",
@@ -159,14 +148,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Contains(license.Prices, o => o.BillingType == this.PriceMonthly.BillingType &&
-                o.BillingModel == this.PriceMonthly.BillingModel &&
-                o.BasePrice.Currency == this.PriceMonthly.Currency &&
-                o.BasePrice.Amount == this.PriceMonthly.BasePrice);
-        Assert.Contains(license.Prices, o => o.BillingType == this.PriceAnnualy.BillingType &&
-                o.BillingModel == this.PriceAnnualy.BillingModel &&
-                o.BasePrice.Currency == this.PriceAnnualy.Currency &&
-                o.BasePrice.Amount == this.PriceAnnualy.BasePrice);
+        Assert.Contains(license.Prices, x => x.BasePrice == PriceMonthlyDto.BasePrice && x.BillingType == PriceMonthlyDto.BillingType && x.Currency == PriceMonthlyDto.Currency);
+        Assert.Contains(license.Prices, x => x.BasePrice == PriceAnnualyDto.BasePrice && x.BillingType == PriceAnnualyDto.BillingType && x.Currency == PriceAnnualyDto.Currency);
         Assert.Equal(data.Icon, license.Icon);
         Assert.Equal(data.TermsOfService, license.TermsOfService);
         Assert.Contains(data.Modules, x =>
@@ -304,8 +287,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             },
             Prices =
             [
-                PriceMonthly,
-                PriceAnnualy
+                PriceMonthlyDto,
+                PriceAnnualyDto
             ],
             Icon = Icon.Create("icon", "#FFFFFF"),
             TermsOfService = "Terms of service for License Test",

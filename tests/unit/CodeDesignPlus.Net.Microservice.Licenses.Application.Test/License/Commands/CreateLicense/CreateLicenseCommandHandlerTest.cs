@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
@@ -17,25 +18,29 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<IUserContext> userContextMock;
         private readonly Mock<IPubSub> pubSubMock;
         private readonly Mock<IMapper> mapperMock;
+        private readonly Mock<ICurrencyGrpc> currencyGrpcMock;
         private readonly CreateLicenseCommandHandler handler;
 
-        
+        // private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        // private readonly Price PriceAnnualy = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
+
         private readonly PriceDto PriceMonthly = new()
         {
             BasePrice = 100,
-            Currency = "USD",
-            BillingType = BillingType.Monthly,
             BillingModel = BillingModel.FlatRate,
+            BillingType = BillingType.Monthly,
+            Currency = "USD",
             DiscountPercentage = 0,
             TaxPercentage = 19
         };
+
         
         private readonly PriceDto PriceAnnualy = new()
         {
-            BasePrice = 1000,
-            Currency = "USD",
-            BillingType = BillingType.Annually,
+            BasePrice = 100,
             BillingModel = BillingModel.FlatRate,
+            BillingType = BillingType.Annually,
+            Currency = "USD",
             DiscountPercentage = 0,
             TaxPercentage = 19
         };
@@ -46,7 +51,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             userContextMock = new Mock<IUserContext>();
             pubSubMock = new Mock<IPubSub>();
             mapperMock = new Mock<IMapper>();
-            handler = new CreateLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, mapperMock.Object, Mock.Of<ICurrencyGrpc>());
+            currencyGrpcMock = new Mock<ICurrencyGrpc>();
+
+            handler = new CreateLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, mapperMock.Object, currencyGrpcMock.Object);
         }
 
         [Fact]

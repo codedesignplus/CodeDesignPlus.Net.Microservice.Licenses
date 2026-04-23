@@ -25,22 +25,23 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
         private readonly Mock<IMapper> mapperMock;
         private readonly LicenseController controller;
 
-        private readonly PriceDto PriceMonthly = new()
+        private readonly PriceDto PriceMonthlyDto = new()
         {
             BasePrice = 100,
-            Currency = "USD",
-            BillingType = BillingType.Monthly,
             BillingModel = BillingModel.FlatRate,
+            BillingType = BillingType.Monthly,
+            Currency = "USD",
             DiscountPercentage = 0,
             TaxPercentage = 19
         };
 
-        private readonly PriceDto PriceAnnualy = new()
+
+        private readonly PriceDto PriceAnnualyDto = new()
         {
-            BasePrice = 1000,
-            Currency = "USD",
-            BillingType = BillingType.Annually,
+            BasePrice = 100,
             BillingModel = BillingModel.FlatRate,
+            BillingType = BillingType.Annually,
+            Currency = "USD",
             DiscountPercentage = 0,
             TaxPercentage = 19
         };
@@ -84,10 +85,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                     Name = "Test License",
                     Description = "Test Description",
                     Modules = [],
-                    Prices = [
-                        Price.Create(PriceMonthly.BillingType, Money.FromDecimal(PriceMonthly.BasePrice, PriceMonthly.Currency, 2), PriceMonthly.BillingModel, PriceMonthly.DiscountPercentage, PriceMonthly.TaxPercentage), 
-                        Price.Create(PriceAnnualy.BillingType, Money.FromDecimal(PriceAnnualy.BasePrice, PriceAnnualy.Currency, 2), PriceAnnualy.BillingModel, PriceAnnualy.DiscountPercentage, PriceAnnualy.TaxPercentage)
-                    ],
+                    Prices = [PriceMonthlyDto, PriceAnnualyDto],
                     Icon = Icon.Create("icon", "#FFFFFF"),
                     TermsOfService = "Test Terms of Service",
                 });
@@ -110,13 +108,13 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                 Name = "Test License",
                 Description = "Test Description",
                 Modules = [],
-                Prices = [PriceMonthly, PriceAnnualy],
+                Prices = [PriceMonthlyDto, PriceAnnualyDto],
                 Icon = Icon.Create("icon", "#FFFFFF"),
                 TermsOfService = "Test Terms of Service",
             };
             mapperMock
                 .Setup(m => m.Map<CreateLicenseCommand>(It.IsAny<CreateLicenseDto>()))
-                .Returns(new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false, false));
+                .Returns(new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceAnnualyDto, PriceMonthlyDto], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false, false));
 
             // Act
             var result = await controller.CreateLicense(createLicenseDto, CancellationToken.None);
@@ -150,7 +148,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
             var updateLicenseDto = new UpdateLicenseDto();
             mapperMock
                 .Setup(m => m.Map<UpdateLicenseCommand>(It.IsAny<UpdateLicenseDto>()))
-                .Returns(new UpdateLicenseCommand(licenseId, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false, false));
+                .Returns(new UpdateLicenseCommand(licenseId, "Test License", "Short Description", "Test Description", [], [PriceAnnualyDto, PriceMonthlyDto], Icon.Create("icon", "#FFFFFF"), "Term of service", [], true, false, false));
 
             // Act
             var result = await controller.UpdateLicense(licenseId, updateLicenseDto, CancellationToken.None);

@@ -50,7 +50,7 @@ public sealed partial record Tenant
     /// <summary>
     /// The location of the tenant.
     /// </summary>
-    public Location Location { get; private set; }
+    public Net.ValueObjects.Location.Location Location { get; private set; }
 
     [JsonConstructor]
     private Tenant(Guid id, string name, string? web, TypeDocument typeDocument, string numberDocument, string phone, string email, Location location)

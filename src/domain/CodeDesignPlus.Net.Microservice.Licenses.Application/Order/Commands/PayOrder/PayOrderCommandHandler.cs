@@ -1,5 +1,6 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 using CodeDesignPlus.Net.ValueObjects.User;
 using Microsoft.Extensions.Logging;
@@ -30,20 +31,21 @@ public class PayOrderCommandHandler(
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
 
-        var license = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
-        ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
+        var licenseAggregate = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
+        ApplicationGuard.IsNull(licenseAggregate, Errors.LicenseNotFound);
+
+        var price = licenseAggregate.Prices.FirstOrDefault(x => x.BillingType == request.License.BillingType);
+        ApplicationGuard.IsNull(price, Errors.PriceNotFoundBecauseBillingTypeIsNotAvailableInTheLicense);
 
         var buyer = Buyer.Create(user.IdUser, request.Buyer.Name, request.Buyer.Phone, request.Buyer.Email, request.Buyer.TypeDocument, request.Buyer.Document);
 
-        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
-        
-        //buyer.SetBuyerId(user.IdUser);
+        var license = Domain.ValueObjects.License.Create(licenseAggregate.Id, licenseAggregate.Name, price.Total, price.Tax, price.SubTotal, price.BillingType, price.BillingModel);
 
-        var payment = OrderAggregate.Create(request.Id, Guid.NewGuid(), request.License, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
+        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
 
-        var responseGrpc = await PayLicenseAsync(order, license, request.TenantDetail.Location.Country.Currency, cancellationToken);
+        var responseGrpc = await PayLicenseAsync(order, licenseAggregate, request.TenantDetail.Location.Country.Currency, cancellationToken);
 
-        var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
+        var paymentResponse = mapper.Map<PaymentResponse>(null!);
 
         await repository.CreateAsync(order, cancellationToken);
 

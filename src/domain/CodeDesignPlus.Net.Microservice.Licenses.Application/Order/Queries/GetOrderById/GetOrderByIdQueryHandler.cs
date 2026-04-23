@@ -1,3 +1,5 @@
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
+
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderById;
 
 public class GetOrderByIdQueryHandler(IOrderRepository repository, IMapper mapper) : IRequestHandler<GetOrderByIdQuery, OrderDto>

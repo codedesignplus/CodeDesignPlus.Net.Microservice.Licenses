@@ -37,12 +37,12 @@ public sealed record License
     public Money SubTotal { get; private set; }
 
     /// <summary>
-    /// Gets the billing type (e.g., Prepaid, Postpaid).
+    /// Gets the billing type (e.g., Monthly, Yearly).
     /// </summary>
     public BillingType BillingType { get; private set; }
 
     /// <summary>
-    /// Gets the billing cycle model (e.g., Monthly, Yearly).
+    /// Gets the billing cycle model (e.g., FlatRate, PerUser, PerActiveUser).
     /// </summary>
     public BillingModel BillingModel { get; private set; } 
 

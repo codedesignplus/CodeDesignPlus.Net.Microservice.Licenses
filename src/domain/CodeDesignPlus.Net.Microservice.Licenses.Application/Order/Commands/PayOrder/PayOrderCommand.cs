@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Payment;
 using CodeDesignPlus.Net.ValueObjects.User;
@@ -5,7 +6,7 @@ using CodeDesignPlus.Net.ValueObjects.User;
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 
 [DtoGenerator]
-public record PayOrderCommand(Guid Id, Buyer Buyer, Domain.ValueObjects.License License, PaymentMethod PaymentMethod, Tenant TenantDetail) : IRequest<PaymentResponse>;
+public record PayOrderCommand(Guid Id, BuyerDto Buyer, DataTransferObjects.LicenseDto License, PaymentMethod PaymentMethod, Tenant TenantDetail) : IRequest<PaymentResponse>;
 
 public class Validator : AbstractValidator<PayOrderCommand>
 {

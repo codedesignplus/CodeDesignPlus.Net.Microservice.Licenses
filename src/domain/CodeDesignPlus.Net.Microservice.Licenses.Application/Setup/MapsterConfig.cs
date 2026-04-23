@@ -14,9 +14,9 @@ public static class MapsterConfigLicense
     public static void Configure()
     {
         //OrderAggreate
-        TypeAdapterConfig<OrderAggregate, OrderDto>
+        TypeAdapterConfig<OrderAggregate, Order.DataTransferObjects.OrderDto>
             .NewConfig()
-            .MapWith(src => new OrderDto
+            .MapWith(src => new Order.DataTransferObjects.OrderDto
             {
                 Id = src.Id,
                 Buyer = src.Buyer,
@@ -47,9 +47,9 @@ public static class MapsterConfigLicense
                 src.TenantDetail
             ));
 
-        TypeAdapterConfig<LicenseAggregate, LicenseDto>
+        TypeAdapterConfig<LicenseAggregate, License.DataTransferObjects.LicenseDto>
             .NewConfig()
-            .MapWith(src => new LicenseDto
+            .MapWith(src => new License.DataTransferObjects.LicenseDto
             {
                 Id = src.Id,
                 Name = src.Name,
@@ -61,7 +61,7 @@ public static class MapsterConfigLicense
                 IsActive = src.IsActive,
                 IsPopular = src.IsPopular,
                 ShowInLandingPage = src.ShowInLandingPage,
-                Modules = src.Modules.Select(x => new ModuleDto
+                Modules = src.Modules.Select(x => new License.DataTransferObjects.ModuleDto
                 {
                     Id = x.Id,
                     Name = x.Name,
@@ -72,7 +72,7 @@ public static class MapsterConfigLicense
         
 
         //Module
-        TypeAdapterConfig<ModuleDto, ModuleEntity>
+        TypeAdapterConfig<License.DataTransferObjects.ModuleDto, ModuleEntity>
             .NewConfig()
             .TwoWays();
 
@@ -107,9 +107,9 @@ public static class MapsterConfigLicense
                } : null
            });
 
-        TypeAdapterConfig<InitiatePaymentResponse, PaymentResponse>
+        TypeAdapterConfig<InitiatePaymentResponse, Order.DataTransferObjects.PaymentResponse>
             .NewConfig()
-            .MapWith(src => new PaymentResponse
+            .MapWith(src => new Order.DataTransferObjects.PaymentResponse
             {
                 Success = src.Success,
                 PaymentId = Guid.Parse(src.PaymentId),

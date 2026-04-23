@@ -1,4 +1,5 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
@@ -23,8 +24,8 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         }
 
         var modules = mapper.Map<List<ModuleEntity>>(request.Modules);
-        
-        var prices = await GetPricesAsync(request, cancellationToken);
+
+        var prices = await GetPricesAsync(request.Prices, cancellationToken);
 
         var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
 
@@ -33,11 +34,11 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
     }
 
-    private async Task<List<Price>> GetPricesAsync(CreateLicenseCommand request, CancellationToken cancellationToken)
+    private async Task<List<Price>> GetPricesAsync(List<PriceDto> data, CancellationToken cancellationToken)
     {
         var prices = new List<Price>();
 
-        foreach (var price in request.Prices)
+        foreach (var price in data)
         {
             var currency = await currencyGrpc.GetCurrencyAsync(code: price.Currency, cancellationToken: cancellationToken);
 
