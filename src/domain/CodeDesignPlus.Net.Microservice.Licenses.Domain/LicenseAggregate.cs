@@ -124,7 +124,6 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     /// <summary>
     /// Updates the license's information and registers the update domain event.
     /// </summary>
-    // ... (parameters match the properties being updated)
     public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
@@ -138,7 +137,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
             .GroupBy(p => new { p.BasePrice.Currency, p.BillingModel, p.BillingType })
             .Any(g => g.Count() > 1);
 
-        DomainGuard.IsFalse(hasDuplicatePricingStrategies, Errors.DuplicatePricingStrategyFound);
+        DomainGuard.IsTrue(hasDuplicatePricingStrategies, Errors.DuplicatePricingStrategyFound);
 
         this.Name = name;
         this.Description = description;

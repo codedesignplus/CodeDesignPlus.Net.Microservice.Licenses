@@ -45,7 +45,7 @@ public class PayOrderCommandHandler(
 
         var responseGrpc = await PayLicenseAsync(order, licenseAggregate, request.TenantDetail.Location.Country.Currency, cancellationToken);
 
-        var paymentResponse = mapper.Map<PaymentResponse>(null!);
+        var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
 
         await repository.CreateAsync(order, cancellationToken);
 

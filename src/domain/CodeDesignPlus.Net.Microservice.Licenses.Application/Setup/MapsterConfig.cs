@@ -115,7 +115,8 @@ public static class MapsterConfigLicense
                 PaymentId = Guid.Parse(src.PaymentId),
                 NextAction = (Order.DataTransferObjects.NextActionType)src.NextAction,
                 Metadata = src.Metadata.ToDictionary(k => k.Key, v => v.Value),
-                RedirectUrl = src.RedirectUrl
+                RedirectUrl = src.RedirectUrl,
+                
             });
 
         TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>
