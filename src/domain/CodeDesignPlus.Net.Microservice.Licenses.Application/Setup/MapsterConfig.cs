@@ -93,10 +93,10 @@ public static class MapsterConfigLicense
                Type = src.PaymentMethod.Code,
                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
                {
-                   Number = src.PaymentMethod.CreditCard.Token,
-                   ExpirationDate = src.PaymentMethod.CreditCard.Last4Digits,
-                   SecurityCode = src.PaymentMethod.CreditCard.ExpirationDate,
-                   Name = src.PaymentMethod.CreditCard.CardHolderName,
+                   CreditCardTokenId = src.PaymentMethod.CreditCard.Token,
+                   ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
+                   Last4Digits = src.PaymentMethod.CreditCard.Last4Digits,
+                   CardHolderName = src.PaymentMethod.CreditCard.CardHolderName,
                    InstallmentsNumber = 1
                } : null,
                Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
