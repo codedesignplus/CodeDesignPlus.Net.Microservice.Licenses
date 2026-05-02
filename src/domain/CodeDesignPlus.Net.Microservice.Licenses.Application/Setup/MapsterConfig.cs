@@ -19,6 +19,7 @@ public static class MapsterConfigLicense
             .MapWith(src => new Order.DataTransferObjects.OrderDto
             {
                 Id = src.Id,
+                PaymentId = src.PaymentId,
                 Buyer = src.Buyer,
                 PaymentMethod = src.PaymentMethod,
                 License = src.License,
@@ -69,7 +70,7 @@ public static class MapsterConfigLicense
                 }).ToList()
             });
 
-        
+
 
         //Module
         TypeAdapterConfig<License.DataTransferObjects.ModuleDto, ModuleEntity>
@@ -80,20 +81,34 @@ public static class MapsterConfigLicense
         TypeAdapterConfig<OrderAggregate, InitiatePaymentRequest>
            .NewConfig()
            .Map(dest => dest.Module, src => "Licenses")
-           .Map(dest => dest.Payer, src => new Payer
+           .Map(dest => dest.Buyer, src => new Buyer
            {
-               FullName = src.Buyer.Name,
-               ContactPhone = src.Buyer.Phone,
-               DniNumber = src.Buyer.Document,
-               DniType = src.Buyer.TypeDocument.Code,
-               EmailAddress = src.Buyer.Email
+               BuyerId = src.Buyer.BuyerId.ToString(),
+               Name = src.Buyer.Name,
+               Phone = src.Buyer.Phone,
+               Document = src.Buyer.Document,
+               TypeDocument = new gRpc.Clients.Services.Payment.TypeDocument()
+               {
+                   Code = src.Buyer.TypeDocument!.Code,
+                   Name = src.Buyer.TypeDocument.Name,
+               },
+               Email = src.Buyer.Email,
+               ShippingAddress = src.Buyer.ShippingAddress != null ? new Address()
+               {
+                   City = src.Buyer.ShippingAddress.City,
+                   Country = src.Buyer.ShippingAddress.Country,
+                   PostalCode = src.Buyer.ShippingAddress.PostalCode,
+                   State = src.Buyer.ShippingAddress.State,
+                   Street = src.Buyer.ShippingAddress.Street
+               } : null
            })
            .Map(dest => dest.PaymentMethod, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.PaymentMethod
            {
-               Type = src.PaymentMethod.Code,
+               Type = src.PaymentMethod.Type,
                CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
                {
                    CreditCardTokenId = src.PaymentMethod.CreditCard.Token,
+                   SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
                    ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
                    Last4Digits = src.PaymentMethod.CreditCard.Last4Digits,
                    CardHolderName = src.PaymentMethod.CreditCard.CardHolderName,
@@ -116,7 +131,7 @@ public static class MapsterConfigLicense
                 NextAction = (Order.DataTransferObjects.NextActionType)src.NextAction,
                 Metadata = src.Metadata.ToDictionary(k => k.Key, v => v.Value),
                 RedirectUrl = src.RedirectUrl,
-                
+
             });
 
         TypeAdapterConfig<Domain.ValueObjects.Tenant, CreateTenantRequest>

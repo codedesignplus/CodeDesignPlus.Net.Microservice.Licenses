@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using CodeDesignPlus.Net.Cache.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.RemoveModule;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
@@ -16,6 +17,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<ILicenseRepository> repositoryMock;
         private readonly Mock<IUserContext> userContextMock;
         private readonly Mock<IPubSub> pubSubMock;
+        private readonly Mock<ICacheManager> cacheManagerMock;
         private readonly RemoveModuleCommandHandler handler;
 
         private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
@@ -26,7 +28,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             repositoryMock = new Mock<ILicenseRepository>();
             userContextMock = new Mock<IUserContext>();
             pubSubMock = new Mock<IPubSub>();
-            handler = new RemoveModuleCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object);
+            cacheManagerMock = new Mock<ICacheManager>();
+            handler = new RemoveModuleCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, cacheManagerMock.Object);
         }
 
         [Fact]

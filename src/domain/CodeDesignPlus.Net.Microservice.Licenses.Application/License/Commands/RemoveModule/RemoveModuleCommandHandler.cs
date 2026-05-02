@@ -1,6 +1,6 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.RemoveModule;
 
-public class RemoveModuleCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub) : IRequestHandler<RemoveModuleCommand>
+public class RemoveModuleCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, ICacheManager cacheManager) : IRequestHandler<RemoveModuleCommand>
 {
     public async Task Handle(RemoveModuleCommand request, CancellationToken cancellationToken)
     {        
@@ -15,5 +15,7 @@ public class RemoveModuleCommandHandler(ILicenseRepository repository, IUserCont
         await repository.UpdateAsync(license, cancellationToken);
 
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
+
+        await cacheManager.RemoveAsync(license.Id.ToString());
     }
 }

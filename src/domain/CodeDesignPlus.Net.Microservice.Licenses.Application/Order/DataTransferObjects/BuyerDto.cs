@@ -28,4 +28,8 @@ public class BuyerDto
     /// Gets the document number of the buyer.
     /// </summary>
     public string Document { get; set; } = null!;
+    /// <summary>
+    /// Gets the shipping address of the buyer.
+    /// </summary>
+    public Net.ValueObjects.User.Address ShippingAddress { get; set; } = null!;
 }

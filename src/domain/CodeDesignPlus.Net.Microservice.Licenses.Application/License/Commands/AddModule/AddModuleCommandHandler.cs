@@ -1,6 +1,6 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.AddModule;
 
-public class AddModuleCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub) : IRequestHandler<AddModuleCommand>
+public class AddModuleCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, ICacheManager cacheManager) : IRequestHandler<AddModuleCommand>
 {
     public async Task Handle(AddModuleCommand request, CancellationToken cancellationToken)
     {        
@@ -15,5 +15,7 @@ public class AddModuleCommandHandler(ILicenseRepository repository, IUserContext
         await repository.UpdateAsync(license, cancellationToken);
 
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
+
+        await cacheManager.RemoveAsync(license.Id.ToString());
     }
 }

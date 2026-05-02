@@ -2,8 +2,6 @@ using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
-using CodeDesignPlus.Net.ValueObjects.User;
-using Microsoft.Extensions.Logging;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 
@@ -37,7 +35,7 @@ public class PayOrderCommandHandler(
         var price = licenseAggregate.Prices.FirstOrDefault(x => x.BillingType == request.License.BillingType);
         ApplicationGuard.IsNull(price, Errors.PriceNotFoundBecauseBillingTypeIsNotAvailableInTheLicense);
 
-        var buyer = Buyer.Create(user.IdUser, request.Buyer.Name, request.Buyer.Phone, request.Buyer.Email, request.Buyer.TypeDocument, request.Buyer.Document);
+        var buyer = Net.ValueObjects.User.Buyer.Create(user.IdUser, request.Buyer.Name, request.Buyer.Phone, request.Buyer.Email, request.Buyer.TypeDocument, request.Buyer.Document, request.Buyer.ShippingAddress);
 
         var license = Domain.ValueObjects.License.Create(licenseAggregate.Id, licenseAggregate.Name, price.Total, price.Tax, price.SubTotal, price.BillingType, price.BillingModel);
 
