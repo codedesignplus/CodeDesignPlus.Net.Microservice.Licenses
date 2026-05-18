@@ -1,4 +1,4 @@
-using System.Security.Cryptography.X509Certificates;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Payment;
@@ -15,15 +15,20 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain;
 public class OrderAggregate(Guid id) : AggregateRootBase(id)
 {
     /// <summary>
-    /// Gets the unique identifier of the transaction provided by the external payment gateway (e.g., Stripe, PayPal).
+    /// Gets the unique identifier of the transaction provided by the external payment gateway.
     /// </summary>
     public Guid PaymentId { get; private set; }
 
     /// <summary>
-    /// Gets the snapshot of the license details purchased in this order.
-    /// This is an immutable copy and will not change even if the main License catalog is updated later.
+    /// Gets the snapshot of the license details (price, billing type) purchased in this order.
     /// </summary>
     public License License { get; private set; } = null!;
+
+    /// <summary>
+    /// Gets the snapshot of the modules included in the license at the time of purchase.
+    /// Immutable — reflects what the customer actually bought, regardless of later catalog changes.
+    /// </summary>
+    public List<LicenseModule> LicenseModules { get; private set; } = [];
 
     /// <summary>
     /// Gets the snapshot of the payment method used by the buyer for this order.
@@ -41,33 +46,41 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public Tenant TenantDetail { get; private set; } = null!;
 
     /// <summary>
-    /// Gets the error message if the payment or order processing failed. Null if successful or pending.
+    /// Gets the error message if the payment or order processing failed.
     /// </summary>
     public string? Error { get; private set; }
 
     /// <summary>
-    /// Indicates whether the entire order process (payment and internal validation) was successful.
+    /// Indicates whether the order process was successful.
     /// </summary>
     public bool IsSuccess { get; private set; }
 
     /// <summary>
-    /// Gets the current state of the payment (e.g., Initiated, Pending, Succeeded, Failed).
+    /// Gets the current state of the payment.
     /// </summary>
     public PaymentStatus PaymentStatus { get; private set; }
 
     /// <summary>
-    /// Creates a new Order instance with the initial status of 'Initiated'.
-    /// Captures the immutable snapshots of the license, buyer, and tenant.
+    /// Returns the immutable LicenseTenant snapshot from this order.
+    /// Used by the gRPC service to return license info to the Security middleware.
     /// </summary>
-    /// <param name="id">The unique identifier to assign to the order.</param>
-    /// <param name="paymentId">The external payment gateway transaction ID.</param>
-    /// <param name="license">The snapshot of the purchased license.</param>
-    /// <param name="paymentMethod">The payment method details.</param>
-    /// <param name="buyer">The buyer's information.</param>
-    /// <param name="tenantDetail">The tenant details to be provisioned.</param>
-    /// <param name="createdBy">The identifier of the user or system creating the order.</param>
-    /// <returns>A new <see cref="OrderAggregate"/> instance.</returns>
-    /// <exception cref="DomainException">Thrown if any required parameter is missing or invalid.</exception>
+    public LicenseTenant GetLicenseTenant()
+    {
+        DomainGuard.IsFalse(IsSuccess, Errors.OrderIsNotSucceeded);
+
+        return LicenseTenant.Create(
+            License.Id,
+            License.Name,
+            CreatedAt,
+            CreatedAt.Plus(Duration.FromDays(License.BillingType == BillingType.Monthly ? 30 : 365)),
+            LicenseModules,
+            new Dictionary<string, string>()
+        );
+    }
+
+    /// <summary>
+    /// Creates a new Order instance with the initial status of 'Initiated'.
+    /// </summary>
     public static OrderAggregate Create(Guid id, Guid paymentId, License license, PaymentMethod paymentMethod, Buyer buyer, Tenant tenantDetail, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdOrderIsRequired);
@@ -86,7 +99,6 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
             PaymentStatus = PaymentStatus.Initiated,
             TenantDetail = tenantDetail,
             IsActive = true,
-
             CreatedAt = SystemClock.Instance.GetCurrentInstant(),
             CreatedBy = createdBy
         };
@@ -95,21 +107,25 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     }
 
     /// <summary>
-    /// Updates the payment status of the order (usually called via a webhook from the payment gateway).
-    /// If the status is 'Succeeded', it calculates the license expiration date and dispatches the 
-    /// domain event to begin tenant provisioning.
+    /// Updates the payment status. When succeeded, captures the license modules snapshot
+    /// and dispatches the provisioning domain event.
     /// </summary>
-    /// <param name="paymentStatus">The new status of the payment.</param>
-    /// <param name="metadata">Additional data provided by the payment gateway (e.g., receipt URL, external references).</param>
-    /// <param name="buyerId">The identifier of the buyer triggering this update.</param>
-    public void SetPaymentStatus(PaymentStatus paymentStatus, Dictionary<string, string> metadata, Guid buyerId)
+    /// <param name="paymentStatus">The new payment status.</param>
+    /// <param name="metadata">Additional gateway metadata.</param>
+    /// <param name="buyerId">The buyer's identifier.</param>
+    /// <param name="licenseModules">Modules of the purchased license (snapshot at purchase time).</param>
+    public void SetPaymentStatus(PaymentStatus paymentStatus, Dictionary<string, string> metadata, Guid buyerId, List<ModuleEntity> licenseModules)
     {
         PaymentStatus = paymentStatus;
 
         if (paymentStatus == PaymentStatus.Succeeded)
         {
             IsSuccess = true;
-            
+
+            LicenseModules = (licenseModules ?? [])
+                .Select(m => new LicenseModule(m.Id, m.Name, m.Description))
+                .ToList();
+
             var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
                 this.Id,
                 TenantDetail,
@@ -118,6 +134,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
                     License.Name,
                     SystemClock.Instance.GetCurrentInstant(),
                     SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(License.BillingType == BillingType.Monthly ? 30 : 365)),
+                    LicenseModules,
                     metadata
                 ),
                 buyerId

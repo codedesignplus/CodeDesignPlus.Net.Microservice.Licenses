@@ -12,7 +12,7 @@ public class UpdateStateOrderCommandHandler(IOrderRepository orderRepository, IL
         var license = await licenseRepository.FindAsync<LicenseAggregate>(order.License.Id, cancellationToken);
         ApplicationGuard.IsNull(license, Errors.LicenseNotFound);
 
-        order.SetPaymentStatus(request.PaymentStatus, license.Attributes, order.Buyer.BuyerId);
+        order.SetPaymentStatus(request.PaymentStatus, license.Attributes, order.Buyer.BuyerId, license.Modules);
 
         await orderRepository.UpdateAsync(order, cancellationToken);
 

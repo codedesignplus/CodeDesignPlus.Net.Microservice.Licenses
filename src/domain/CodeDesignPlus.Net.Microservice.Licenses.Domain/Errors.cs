@@ -108,5 +108,6 @@ public class Errors : IErrorCodes
 
     public const string ModulesLicenseIsRequired = "201 : The modules of the license are required.";
     public const string AttributesLicenseIsRequired = "202 : The attributes of the license are required.";
+    public const string OrderIsNotSucceeded = "203 : Cannot get license tenant from an order that has not succeeded.";
 }
 
