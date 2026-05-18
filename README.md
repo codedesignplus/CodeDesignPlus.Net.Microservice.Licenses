@@ -12,7 +12,7 @@ A production-ready microservice for managing software licenses, pricing tiers, a
 
 ## What is this microservice?
 
-The Licenses microservice manages the subscription plans that organizations purchase to use the Kappali platform. It defines what each plan includes (which modules are available, pricing per currency, billing period) and drives the commercial funnel from plan selection through payment to automatic tenant provisioning. Potential customers interact with it indirectly when browsing available plans on the landing page, and the system uses it during the purchase flow to determine what features the new organization will have access to. It connects directly with the Payments microservice (to process purchases) and the Tenants microservice (to provision new organizations after payment).
+The Licenses microservice manages the subscription plans that organizations purchase to use the platform. It defines what each plan includes (which modules are available, pricing per currency, billing period) and drives the commercial funnel from plan selection through payment to automatic tenant provisioning. Potential customers interact with it indirectly when browsing available plans on the landing page, and the system uses it during the purchase flow to determine what features the new organization will have access to. It connects directly with the Payments microservice (to process purchases) and the Tenants microservice (to provision new organizations after payment).
 
 ---
 
