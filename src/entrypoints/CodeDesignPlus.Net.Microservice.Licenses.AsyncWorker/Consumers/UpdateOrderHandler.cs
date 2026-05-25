@@ -2,12 +2,13 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrd
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.UpdateStateOrder;
 using CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using MediatR;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Consumers;
 
 [QueueName<OrderAggregate>("UpdateOrderHandler")]
-public class UpdateOrderHandler(ILogger<UpdateOrderHandler> logger, IMediator mediator) : IEventHandler<PaymentResponseAssociatedDomainEvent>
+public class UpdateOrderHandler(ILogger<UpdateOrderHandler> logger, IMediator mediator, IOrderRepository orderRepository) : IEventHandler<PaymentResponseAssociatedDomainEvent>
 {
     public async Task HandleAsync(PaymentResponseAssociatedDomainEvent data, CancellationToken cancellationToken)
     {
@@ -19,13 +20,14 @@ public class UpdateOrderHandler(ILogger<UpdateOrderHandler> logger, IMediator me
             return;
         }
 
-        try
+        var exists = await orderRepository.ExistsAsync<OrderAggregate>(data.ReferenceId, cancellationToken);
+
+        if (!exists)
         {
-            await mediator.Send(new UpdateStateOrderCommand(data.ReferenceId, (PaymentStatus)data.Status), cancellationToken);
+            logger.LogInformation("Order {Id} not found. Skipping update.", data.ReferenceId);
+            return;
         }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to update order state for {ReferenceId}. Order may already be in final state. Skipping.", data.ReferenceId);
-        }
+
+        await mediator.Send(new UpdateStateOrderCommand(data.ReferenceId, (PaymentStatus)data.Status), cancellationToken);
     }
 }
