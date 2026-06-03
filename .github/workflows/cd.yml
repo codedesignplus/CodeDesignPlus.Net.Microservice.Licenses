@@ -30,7 +30,6 @@ jobs:
 
   container:
     needs: version
-    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/rc' || github.ref == 'refs/heads/dev' }}
     uses: codedesignplus/workflows/.github/workflows/container-image.yaml@main
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
@@ -40,7 +39,6 @@ jobs:
   
   deploy:
     needs: container
-    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/rc' || github.ref == 'refs/heads/dev' }}
     uses: codedesignplus/workflows/.github/workflows/deploy-self-host.yaml@main
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
