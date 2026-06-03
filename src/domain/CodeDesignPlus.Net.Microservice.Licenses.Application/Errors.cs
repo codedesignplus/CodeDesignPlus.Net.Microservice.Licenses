@@ -23,4 +23,6 @@ public class Errors: IErrorCodes
     public const string InvalidCurrency = "211 : The order currency does not match the tenant's country currency.";
 
     public const string PriceNotFoundBecauseBillingTypeIsNotAvailableInTheLicense = "212 : The price for the selected billing type is not available in the license.";
+
+    public const string TenantIdIsRequired = "213 : The tenant ID is required.";
 }

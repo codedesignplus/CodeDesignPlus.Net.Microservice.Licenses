@@ -37,7 +37,23 @@ public class PayOrderCommandHandler(
 
         var buyer = Net.ValueObjects.User.Buyer.Create(user.IdUser, request.Buyer.Name, request.Buyer.Phone, request.Buyer.Email, request.Buyer.TypeDocument, request.Buyer.Document, request.Buyer.ShippingAddress);
 
-        var license = Domain.ValueObjects.License.Create(licenseAggregate.Id, licenseAggregate.Name, price.Total, price.Tax, price.SubTotal, price.BillingType, price.BillingModel);
+        var license = Domain.ValueObjects.License.Create(
+            licenseAggregate.Id,
+            licenseAggregate.Name,
+            price.Total,
+            price.Tax,
+            price.SubTotal,
+            price.BillingType,
+            price.BillingModel,
+            licenseAggregate.Description,
+            licenseAggregate.ShortDescription,
+            licenseAggregate.Icon,
+            licenseAggregate.TermsOfService,
+            licenseAggregate.IsPopular,
+            licenseAggregate.ShowInLandingPage,
+            licenseAggregate.Attributes,
+            licenseAggregate.Modules.Select(m => new Domain.ValueObjects.LicenseModule(m.Id, m.Name, m.Description)).ToList()
+        );
 
         var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
 

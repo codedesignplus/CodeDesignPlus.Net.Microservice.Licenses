@@ -93,13 +93,17 @@ public class GetAAllLicenseQueryHandlerTest
             .Setup(repo => repo.MatchingAsync<LicenseAggregate>(request.Criteria, cancellationToken))
             .ReturnsAsync(pagination);
         mapperMock
-            .Setup(mapper => mapper.Map<Pagination<LicenseDto>>(pagination))
-            .Returns(Pagination<LicenseDto>.Create(licenseDtos, 1, 10, 0));
+            .Setup(mapper => mapper.Map<LicenseDto>(It.IsAny<LicenseAggregate>()))
+            .Returns(licenseDto);
+        currencyMock
+            .Setup(x => x.GetCurrencyAsync(It.IsAny<gRpc.Clients.Services.Currencies.GetCurrencyRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CodeDesignPlus.Net.ValueObjects.Financial.Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$", 2, 840));
 
         // Act
         var result = await handler.Handle(request, cancellationToken);
 
         // Assert
-        Assert.Equal(licenseDtos, result.Data);
+        Assert.Single(result.Data);
+        Assert.Equal(1, result.TotalCount);
     }
 }

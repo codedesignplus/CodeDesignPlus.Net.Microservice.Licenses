@@ -20,15 +20,10 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public Guid PaymentId { get; private set; }
 
     /// <summary>
-    /// Gets the snapshot of the license details (price, billing type) purchased in this order.
+    /// Gets the complete immutable snapshot of the license (including modules, attributes, descriptions) purchased in this order.
+    /// This snapshot reflects exactly what the customer bought, regardless of later catalog changes.
     /// </summary>
     public License License { get; private set; } = null!;
-
-    /// <summary>
-    /// Gets the snapshot of the modules included in the license at the time of purchase.
-    /// Immutable — reflects what the customer actually bought, regardless of later catalog changes.
-    /// </summary>
-    public List<LicenseModule> LicenseModules { get; private set; } = [];
 
     /// <summary>
     /// Gets the snapshot of the payment method used by the buyer for this order.
@@ -73,8 +68,8 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
             License.Name,
             CreatedAt,
             CreatedAt.Plus(Duration.FromDays(License.BillingType == BillingType.Monthly ? 30 : 365)),
-            LicenseModules,
-            new Dictionary<string, string>()
+            License.Modules,
+            License.Attributes
         );
     }
 
@@ -107,24 +102,18 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     }
 
     /// <summary>
-    /// Updates the payment status. When succeeded, captures the license modules snapshot
-    /// and dispatches the provisioning domain event.
+    /// Updates the payment status. When succeeded, dispatches the provisioning domain event.
+    /// The license snapshot (including modules and attributes) is already complete from order creation.
     /// </summary>
     /// <param name="paymentStatus">The new payment status.</param>
-    /// <param name="metadata">Additional gateway metadata.</param>
     /// <param name="buyerId">The buyer's identifier.</param>
-    /// <param name="licenseModules">Modules of the purchased license (snapshot at purchase time).</param>
-    public void SetPaymentStatus(PaymentStatus paymentStatus, Dictionary<string, string> metadata, Guid buyerId, List<ModuleEntity> licenseModules)
+    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId)
     {
         PaymentStatus = paymentStatus;
 
         if (paymentStatus == PaymentStatus.Succeeded)
         {
             IsSuccess = true;
-
-            LicenseModules = (licenseModules ?? [])
-                .Select(m => new LicenseModule(m.Id, m.Name, m.Description))
-                .ToList();
 
             var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
                 this.Id,
@@ -134,8 +123,8 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
                     License.Name,
                     SystemClock.Instance.GetCurrentInstant(),
                     SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromDays(License.BillingType == BillingType.Monthly ? 30 : 365)),
-                    LicenseModules,
-                    metadata
+                    License.Modules,
+                    License.Attributes
                 ),
                 buyerId
             );

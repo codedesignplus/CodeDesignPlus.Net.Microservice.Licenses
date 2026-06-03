@@ -1,6 +1,8 @@
-using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
+using CodeDesignPlus.Net.Microservice.Licenses.Application;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetTenantLicense;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using MediatR;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.gRpc.Services;
 
@@ -10,7 +12,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.gRpc.Services;
 /// el caché del tenant con los módulos de la licencia comprada.
 /// </summary>
 public class LicenseGrpcService(
-    IOrderRepository orderRepository,
+    IMediator mediator,
     ILogger<LicenseGrpcService> logger) : LicenseService.LicenseServiceBase
 {
     /// <summary>
@@ -28,38 +30,44 @@ public class LicenseGrpcService(
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid tenant ID format."));
         }
 
-        var order = await orderRepository.FindSucceededOrderByTenantAsync(tenantId, context.CancellationToken);
+        try
+        {
+            var query = new GetTenantLicenseQuery(tenantId);
+            var license = await mediator.Send(query, context.CancellationToken);
 
-        if (order is null)
+            var response = new GetTenantLicenseResponse
+            {
+                LicenseId = license.Id.ToString(),
+                Name = license.Name,
+                StartDate = Timestamp.FromDateTimeOffset(license.StartDate.ToDateTimeOffset()),
+                EndDate = Timestamp.FromDateTimeOffset(license.EndDate.ToDateTimeOffset()),
+            };
+
+            response.Modules.AddRange(license.Modules.Select(m => new LicenseModuleResponse
+            {
+                Id = m.Id.ToString(),
+                Name = m.Name,
+                Description = m.Description
+            }));
+
+            foreach (var kv in license.Metadata)
+                response.Metadata[kv.Key] = kv.Value;
+
+            logger.LogInformation(
+                "GetTenantLicense: Returned license {LicenseName} with {ModuleCount} modules for tenant {TenantId}",
+                license.Name, license.Modules.Count, tenantId);
+
+            return response;
+        }
+        catch (ApplicationException ex) when (ex.Message.Contains(Errors.OrderNotFound))
         {
             logger.LogWarning("GetTenantLicense: No successful order found for tenant {TenantId}", tenantId);
             throw new RpcException(new Status(StatusCode.NotFound, $"No active license found for tenant {tenantId}."));
         }
-
-        var license = order.GetLicenseTenant();
-
-        var response = new GetTenantLicenseResponse
+        catch (Exception ex)
         {
-            LicenseId = license.Id.ToString(),
-            Name = license.Name,
-            StartDate = Timestamp.FromDateTimeOffset(license.StartDate.ToDateTimeOffset()),
-            EndDate = Timestamp.FromDateTimeOffset(license.EndDate.ToDateTimeOffset()),
-        };
-
-        response.Modules.AddRange(license.Modules.Select(m => new LicenseModuleResponse
-        {
-            Id = m.Id.ToString(),
-            Name = m.Name,
-            Description = m.Description
-        }));
-
-        foreach (var kv in license.Metadata)
-            response.Metadata[kv.Key] = kv.Value;
-
-        logger.LogInformation(
-            "GetTenantLicense: Returned license {LicenseName} with {ModuleCount} modules for tenant {TenantId}",
-            license.Name, license.Modules.Count, tenantId);
-
-        return response;
+            logger.LogError(ex, "GetTenantLicense: Unexpected error for tenant {TenantId}", tenantId);
+            throw new RpcException(new Status(StatusCode.Internal, "An unexpected error occurred."));
+        }
     }
 }

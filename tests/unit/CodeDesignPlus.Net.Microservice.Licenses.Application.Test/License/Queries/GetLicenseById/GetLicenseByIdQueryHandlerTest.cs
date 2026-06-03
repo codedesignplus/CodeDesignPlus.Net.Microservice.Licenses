@@ -116,13 +116,16 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
             cacheManagerMock.Setup(x => x.ExistsAsync(request.Id.ToString())).ReturnsAsync(false);
             repositoryMock.Setup(x => x.FindAsync<LicenseAggregate>(request.Id, It.IsAny<CancellationToken>())).ReturnsAsync(license);
             mapperMock.Setup(x => x.Map<LicenseDto>(license)).Returns(licenseDto);
+            currencyMock.Setup(x => x.GetCurrencyAsync(It.IsAny<gRpc.Clients.Services.Currencies.GetCurrencyRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CodeDesignPlus.Net.ValueObjects.Financial.Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$", 2, 840));
 
             // Act
             var result = await handler.Handle(request, CancellationToken.None);
 
             // Assert
-            Assert.Equal(licenseDto, result);
-            cacheManagerMock.Verify(x => x.SetAsync(request.Id.ToString(), license, It.IsAny<TimeSpan?>()), Times.Once);
+            Assert.Equal(licenseDto.Id, result.Id);
+            Assert.Equal(licenseDto.Name, result.Name);
+            cacheManagerMock.Verify(x => x.SetAsync(request.Id.ToString(), It.IsAny<LicenseDto>(), It.IsAny<TimeSpan?>()), Times.Once);
         }
 
         [Fact]

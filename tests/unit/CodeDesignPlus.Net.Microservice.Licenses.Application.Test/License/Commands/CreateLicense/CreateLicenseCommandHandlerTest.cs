@@ -99,6 +99,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             repositoryMock.Setup(x => x.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken)).ReturnsAsync(false);
             mapperMock.Setup(x => x.Map<List<ModuleEntity>>(request.Modules)).Returns([]);
             userContextMock.Setup(x => x.IdUser).Returns(userId);
+            currencyGrpcMock.Setup(x => x.GetCurrencyAsync(null, It.IsAny<string>(), null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CodeDesignPlus.Net.ValueObjects.Financial.Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$", 2, 840));
 
             // Act
             await handler.Handle(request, cancellationToken);

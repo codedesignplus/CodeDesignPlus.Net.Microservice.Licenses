@@ -120,6 +120,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             userContextMock.Setup(user => user.IdUser)
                 .Returns(Guid.NewGuid());
 
+            currencyGrpcMock.Setup(x => x.GetCurrencyAsync(null, It.IsAny<string>(), null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CodeDesignPlus.Net.ValueObjects.Financial.Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$", 2, 840));
+
             // Act
             await handler.Handle(request, cancellationToken);
 
