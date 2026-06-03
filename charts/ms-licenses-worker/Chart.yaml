@@ -1,6 +1,6 @@
 apiVersion: v2
-name: ms-licenses-rest
-description: This is a Helm chart for the ms-licenses REST service
+name: ms-licenses-worker
+description: This is a Helm chart for the ms-licenses Worker service
 type: application
 version: 0.0.1
 appVersion: "0.0.1"
