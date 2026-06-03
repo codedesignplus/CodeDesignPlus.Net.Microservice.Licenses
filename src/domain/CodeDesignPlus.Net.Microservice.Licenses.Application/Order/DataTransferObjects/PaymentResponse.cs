@@ -8,6 +8,10 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransfe
 public enum NextActionType
 {
     /// <summary>
+    /// No se requiere ninguna acción adicional.
+    /// </summary>
+    None,
+    /// <summary>
     /// Redirigir al usuario a una URL específica proporcionada por el proveedor de pagos.
     /// </summary>
     Redirect,
