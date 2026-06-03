@@ -23,14 +23,6 @@
     <PackageReference Include="CodeDesignPlus.Net.Security" Version="0.13.0-beta.12850" />
     <PackageReference Include="CodeDesignPlus.Net.Observability" Version="0.13.0-beta.12850" />
     <PackageReference Include="CodeDesignPlus.Net.Redis.Cache" Version="0.13.0-beta.12850" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.72.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf Include="Protos\licenses.proto" GrpcServices="Server" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CodeDesignPlus.Net.Microservice.Licenses.Rest.Test" />

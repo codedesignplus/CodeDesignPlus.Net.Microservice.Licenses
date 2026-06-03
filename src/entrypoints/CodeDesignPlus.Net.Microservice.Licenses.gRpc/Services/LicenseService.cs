@@ -1,10 +1,8 @@
-using CodeDesignPlus.Net.Microservice.Licenses.Rest.Grpc;
-using CodeDesignPlus.Net.Microservice.Licenses.Domain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 
-namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Services;
+namespace CodeDesignPlus.Net.Microservice.Licenses.gRpc.Services;
 
 /// <summary>
 /// Servicio gRPC que expone información de licencias para el ecosistema de microservicios.

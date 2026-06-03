@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option csharp_namespace = "CodeDesignPlus.Net.Microservice.Licenses.Rest.Grpc";
+option csharp_namespace = "CodeDesignPlus.Net.Microservice.Licenses.gRpc";
 
 package license_service;
 

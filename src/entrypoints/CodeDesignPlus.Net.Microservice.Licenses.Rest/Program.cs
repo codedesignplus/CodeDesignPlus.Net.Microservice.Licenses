@@ -8,7 +8,6 @@ using CodeDesignPlus.Net.Microservice.Commons.HealthChecks;
 using CodeDesignPlus.Net.Microservice.Commons.MediatR;
 using CodeDesignPlus.Net.Redis.Cache.Extensions;
 using CodeDesignPlus.Net.Vault.Extensions;
-using CodeDesignPlus.Net.Microservice.Licenses.Rest.Services;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 using NodaTime.Serialization.SystemTextJson;
@@ -47,7 +46,6 @@ builder.Services.AddCache(builder.Configuration);
 builder.Services.AddResources<Program>(builder.Configuration);
 builder.Services.AddHealthChecksServices();
 builder.Services.AddGrpcClients(builder.Configuration);
-builder.Services.AddGrpc();
 
 var app = builder.Build();
 
@@ -68,7 +66,6 @@ app.UseHttpsRedirection();
 app.UseAuth();
 
 app.MapControllers().RequireAuthorization();
-app.MapGrpcService<LicenseGrpcService>();
 
 await app.RunAsync();
 
