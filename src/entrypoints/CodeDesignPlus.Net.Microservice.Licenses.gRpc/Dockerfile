@@ -16,6 +16,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/domain/", "domain/"]
 COPY ["src/entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/", "entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/"]
+COPY ["nuget.config", "nuget.config"]
 RUN dotnet restore "./entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/CodeDesignPlus.Net.Microservice.Licenses.gRpc.csproj"
 
 WORKDIR "/src/entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc"

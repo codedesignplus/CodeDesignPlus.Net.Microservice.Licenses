@@ -406,10 +406,80 @@ All REST endpoints return RFC 7807 Problem Details on error. List responses use 
 
 - **Choreography over orchestration:** The payment saga uses event-driven choreography rather than a centralized orchestrator. Each service reacts to events from its predecessors, reducing coupling.
 
+## Email Integration Standard
+
+After a successful payment, ms-licenses sends a purchase confirmation email with PDF receipt by publishing a **generic domain event** to ms-emails. This follows the platform-wide standard for email communication between microservices.
+
+### How it works
+
+Instead of calling ms-emails via gRPC (synchronous), ms-licenses publishes a `SendEmailWithPdfDomainEvent` to RabbitMQ. The ms-emails AsyncWorker consumes the event, generates the PDF from the template, and sends the email asynchronously.
+
+```csharp
+// In ms-licenses AsyncWorker (after payment succeeds):
+var emailEvent = new SendEmailWithPdfDomainEvent(
+    aggregateId: order.Id,
+    templateName: "PurchaseConfirmation",     // Template for email body
+    pdfTemplateName: "PurchaseReceipt",       // Template to render as PDF
+    to: [order.BuyerEmail],
+    cc: [],
+    bcc: [],
+    variables: new Dictionary<string, string>
+    {
+        ["organization_name"] = order.Organization.Name,
+        ["buyer_name"] = order.BuyerName,
+        ["license_name"] = order.LicenseName,
+        ["subtotal"] = order.Subtotal.ToString("C"),
+        ["tax"] = order.Tax.ToString("C"),
+        ["total"] = order.Total.ToString("C"),
+        ["currency"] = order.Currency,
+        ["purchase_date"] = order.PurchaseDate.ToString("dd/MM/yyyy"),
+        ["current_year"] = DateTime.UtcNow.Year.ToString()
+    },
+    attachments: [],    // Optional: FileStorage references for additional attachments
+    tenant: order.Tenant
+);
+
+await pubsub.PublishAsync([emailEvent], cancellationToken);
+```
+
+### Event Contract
+
+The event must use the **exact same `[EventKey]`** as defined by ms-emails:
+
+```csharp
+[EventKey("EmailAggregate", 1, "SendEmailWithPdfDomainEvent", "ms-emails")]
+public class SendEmailWithPdfDomainEvent(...) : DomainEvent(...)
+```
+
+This ensures the event is routed to the same RabbitMQ exchange that ms-emails consumers listen to. The `appName = "ms-emails"` parameter is critical for correct routing.
+
+### FileAttachment ValueObject
+
+If additional files need to be attached (beyond the generated PDF), upload them to FileStorage first, then pass the references:
+
+```csharp
+public sealed partial class FileAttachment
+{
+    public Guid Id { get; }       // FileStorage aggregate ID
+    public string Name { get; }   // Original filename
+    public string Target { get; } // Storage folder/path
+}
+```
+
+### Benefits over gRPC
+
+| Aspect | gRPC (before) | Events (now) |
+|--------|---------------|--------------|
+| Coupling | Direct dependency on ms-emails availability | Fire-and-forget, eventual delivery |
+| Blocking | Payment transaction waits for email + PDF | Payment completes immediately |
+| Retry | Caller must handle retries | RabbitMQ DLQ handles failures automatically |
+| Scalability | ms-emails must scale with ms-licenses load | ms-emails processes at its own pace |
+
 ## Related Microservices
 
 | Microservice | Direction | Integration Point |
 | --- | --- | --- |
 | Payments | Outbound (gRPC) / Inbound (event) | gRPC `InitiatePayment` to start payment; consumes `PaymentResponseAssociatedDomainEvent` for result |
 | Tenants | Outbound (event) | Produces `OrderPaidAndReadyForProvisioningDomainEvent` to trigger workspace creation |
+| Emails | Outbound (event) | Publishes `SendEmailWithPdfDomainEvent` for purchase confirmation with PDF receipt |
 | All microservices | Inbound (gRPC) | Serves `GetTenantLicense` to LicenseMiddleware for module authorization |

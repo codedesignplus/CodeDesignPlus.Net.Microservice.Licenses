@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.File.Storage.Extensions;
 using CodeDesignPlus.Net.gRpc.Clients.Extensions;
 using CodeDesignPlus.Net.Logger.Extensions;
 using CodeDesignPlus.Net.Microservice.Commons.FluentValidation;
@@ -32,6 +33,7 @@ builder.Services.AddMediatR<CodeDesignPlus.Net.Microservice.Licenses.Application
 builder.Services.AddHealthChecksServices();
 builder.Services.AddObservability(builder.Configuration, builder.Environment);
 builder.Services.AddGrpcClients(builder.Configuration);
+builder.Services.AddFileStorage(builder.Configuration);
 
 var app = builder.Build();
 

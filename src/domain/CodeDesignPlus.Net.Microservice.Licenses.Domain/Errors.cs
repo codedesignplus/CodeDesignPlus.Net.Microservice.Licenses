@@ -114,5 +114,9 @@ public class Errors : IErrorCodes
     public const string ShortDescriptionOfLicenseIsRequired = "215 : The short description of the license is required.";
     public const string TermsOfServiceOfLicenseIsRequired = "217 : The terms of service of the license is required.";
     public const string NameModuleIsRequired = "220 : The name of the module is required.";
+
+    public const string FileAttachmentIdIsInvalid = "221 : The file attachment id is invalid.";
+    public const string FileAttachmentNameIsInvalid = "222 : The file attachment name is invalid.";
+    public const string FileAttachmentTargetIsInvalid = "223 : The file attachment target is invalid.";
 }
 

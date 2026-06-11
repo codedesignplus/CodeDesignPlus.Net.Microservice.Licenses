@@ -7,6 +7,7 @@ using CodeDesignPlus.Net.Microservice.Commons.MediatR;
 using CodeDesignPlus.Net.Microservice.Licenses.gRpc.Services;
 using CodeDesignPlus.Net.Mongo.Extensions;
 using CodeDesignPlus.Net.Observability.Extensions;
+using CodeDesignPlus.Net.Observability.Interceptors;
 using CodeDesignPlus.Net.RabbitMQ.Extensions;
 using CodeDesignPlus.Net.Redis.Cache.Extensions;
 using CodeDesignPlus.Net.Redis.Extensions;
@@ -24,6 +25,7 @@ builder.Configuration.AddVault();
 builder.Services.AddGrpc(options =>
 {
     options.Interceptors.Add<ErrorInterceptor>();
+    options.Interceptors.Add<TraceContextInterceptor>();
 });
 builder.Services.AddGrpcReflection();
 
