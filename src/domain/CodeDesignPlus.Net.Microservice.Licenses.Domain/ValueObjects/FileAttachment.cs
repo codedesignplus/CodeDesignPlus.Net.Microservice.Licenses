@@ -1,6 +1,6 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
-public sealed class FileAttachment
+public sealed partial class FileAttachment
 {
     public Guid Id { get; private set; }
     public string Name { get; private set; } = null!;

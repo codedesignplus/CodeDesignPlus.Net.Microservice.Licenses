@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.File.Storage.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Emails.gRpc;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
@@ -10,7 +11,8 @@ public class UpdateStateOrderCommandHandler(
     IOrderRepository orderRepository,
     IPubSub pubsub,
     INotificationGrpc notification,
-    IEmailGrpc emailGrpc
+    IEmailGrpc emailGrpc,
+    IFileStorage fileStorage
 ) : IRequestHandler<UpdateStateOrderCommand>
 {
     public async Task Handle(UpdateStateOrderCommand request, CancellationToken cancellationToken)
@@ -31,11 +33,12 @@ public class UpdateStateOrderCommandHandler(
         if (request.PaymentStatus == PaymentStatus.Succeeded)
         {
             var variables = BuildVariables(order);
+            var tenant = order.TenantDetail.Id;
 
             var pdfRequest = new GeneratePdfRequest
             {
                 TemplateType = "PurchaseReceipt",
-                Tenant = order.TenantDetail.Id.ToString()
+                Tenant = tenant.ToString()
             };
             foreach (var kvp in variables)
                 pdfRequest.Values.Add(kvp.Key, kvp.Value);
@@ -44,10 +47,17 @@ public class UpdateStateOrderCommandHandler(
 
             if (pdfResult.Success)
             {
-                receiptUrl = pdfResult.SignedUrl;
+                var fileId = Guid.NewGuid();
+                var fileName = $"PurchaseReceipt-{fileId}.pdf";
+                var target = $"licenses-pdf/{tenant}";
 
-                var fileId = Guid.Parse(pdfResult.Id);
-                var attachment = new FileAttachment(fileId, pdfResult.Name, pdfResult.Target);
+                using var stream = new MemoryStream(pdfResult.PdfContent.ToByteArray());
+                await fileStorage.UploadAsync(stream, fileName, target, false, tenant, cancellationToken);
+
+                var signedResponse = await fileStorage.GetSignedUrlAsync(fileName, target, TimeSpan.FromDays(7), tenant, cancellationToken);
+                receiptUrl = signedResponse?.Success == true ? signedResponse.File.Detail.SignedUrl.ToString() : string.Empty;
+
+                var attachment = new FileAttachment(fileId, fileName, target);
 
                 var sendEmailEvent = new SendEmailDomainEvent(
                     Guid.NewGuid(),
@@ -57,7 +67,7 @@ public class UpdateStateOrderCommandHandler(
                     bcc: [],
                     variables: variables,
                     attachments: [attachment],
-                    tenant: order.TenantDetail.Id
+                    tenant: tenant
                 );
 
                 await pubsub.PublishAsync(sendEmailEvent, cancellationToken);

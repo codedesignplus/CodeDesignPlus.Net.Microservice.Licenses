@@ -17,11 +17,11 @@ public class SendEmailDomainEvent(
     Dictionary<string, object>? metadata = null
 ) : DomainEvent(aggregateId, eventId, occurredAt, metadata)
 {
-    public string TemplateName { get; } = templateName;
-    public List<string> To { get; } = to;
-    public List<string> Cc { get; } = cc;
-    public List<string> Bcc { get; } = bcc;
-    public Dictionary<string, string> Variables { get; } = variables;
-    public List<FileAttachment> Attachments { get; } = attachments;
-    public Guid Tenant { get; } = tenant;
+    public string TemplateName { get; private set; } = templateName;
+    public List<string> To { get; private set; } = to;
+    public List<string> Cc { get; private set; } = cc;
+    public List<string> Bcc { get; private set; } = bcc;
+    public Dictionary<string, string> Variables { get; private set; } = variables;
+    public List<FileAttachment> Attachments { get; private set; } = attachments;
+    public Guid Tenant { get; private set; } = tenant;
 }
