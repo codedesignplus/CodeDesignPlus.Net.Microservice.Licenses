@@ -14,6 +14,8 @@ public class OrderDto : IDtoBase
     public Domain.ValueObjects.License License { get; set; } = null!;
     public Tenant TenantDetail { get; set; } = null!;
     public PaymentStatus PaymentStatus { get; set; }
+    public ProvisioningStatus ProvisioningStatus { get; set; }
+    public List<Domain.ValueObjects.ProvisioningStep> ProvisioningHistory { get; set; } = [];
     public Instant CreatedAt { get; set; }
     public bool IsActive { get; set; }
 }

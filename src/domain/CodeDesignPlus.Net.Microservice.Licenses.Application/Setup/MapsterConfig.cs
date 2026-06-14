@@ -29,6 +29,7 @@ public static class MapsterConfigLicense
                 PaymentStatus = src.PaymentStatus
             });
 
+
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()

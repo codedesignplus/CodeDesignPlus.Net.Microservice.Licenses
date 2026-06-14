@@ -9,9 +9,10 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 /// </summary>
 /// <param name="mediator">Mediator instance for sending commands and queries.</param>
 /// <param name="mapper">Mapper instance for mapping between DTOs and commands/queries.</param>
+/// <param name="userContext">User context for accessing the authenticated user's tenant.</param>
 [Route("api/[controller]")]
 [ApiController]
-public class OrderController(IMediator mediator, IMapper mapper) : ControllerBase
+public class OrderController(IMediator mediator, IMapper mapper, IUserContext userContext) : ControllerBase
 {
     /// <summary>
     /// Get a paginated list of Orders for the authenticated user.
@@ -62,7 +63,31 @@ public class OrderController(IMediator mediator, IMapper mapper) : ControllerBas
     }
 
     /// <summary>
-    /// Pay for a License by its ID. 
+    /// Get the active subscription for the authenticated tenant.
+    /// Returns the full license snapshot from the successful order.
+    /// </summary>
+    /// <param name="licenseId">The license ID assigned to the tenant.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <response code="200">Returns the active subscription details.</response>
+    /// <response code="400">If the request is invalid.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If no active subscription is found.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpGet("subscription")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SubscriptionDto))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> GetSubscription([FromQuery] Guid licenseId, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetSubscriptionQuery(userContext.Tenant, licenseId), cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Pay for a License by its ID.
     /// </summary>
     /// <param name="id">The unique identifier of the License.</param>
     /// <param name="data">Data for paying the License.</param>

@@ -12,7 +12,8 @@ public class UpdateStateOrderCommandHandler(
     IPubSub pubsub,
     INotificationGrpc notification,
     IEmailGrpc emailGrpc,
-    IFileStorage fileStorage
+    IFileStorage fileStorage,
+    ICurrencyGrpc currencyGrpc
 ) : IRequestHandler<UpdateStateOrderCommand>
 {
     public async Task Handle(UpdateStateOrderCommand request, CancellationToken cancellationToken)
@@ -28,11 +29,10 @@ public class UpdateStateOrderCommandHandler(
 
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
-        var receiptUrl = string.Empty;
-
         if (request.PaymentStatus == PaymentStatus.Succeeded)
         {
-            var variables = BuildVariables(order);
+            var currency = await currencyGrpc.GetCurrencyAsync(code: order.License.Total.Currency, cancellationToken: cancellationToken);
+            var variables = BuildVariables(order, currency.DecimalDigits);
             var tenant = order.TenantDetail.Id;
 
             var pdfRequest = new GeneratePdfRequest
@@ -55,7 +55,7 @@ public class UpdateStateOrderCommandHandler(
                 await fileStorage.UploadAsync(stream, fileName, target, false, tenant, cancellationToken);
 
                 var signedResponse = await fileStorage.GetSignedUrlAsync(fileName, target, TimeSpan.FromDays(7), tenant, cancellationToken);
-                receiptUrl = signedResponse?.Success == true ? signedResponse.File.Detail.SignedUrl.ToString() : string.Empty;
+                var receiptUrl = signedResponse?.Success == true ? signedResponse.File.Detail.SignedUrl.ToString() : string.Empty;
 
                 var attachment = new FileAttachment(fileId, fileName, target);
 
@@ -72,23 +72,24 @@ public class UpdateStateOrderCommandHandler(
 
                 await pubsub.PublishAsync(sendEmailEvent, cancellationToken);
             }
-        }
 
-        await notification.SendToUserAsync(new gRpc.Clients.Services.Notification.NotificationUserRequest
-        {
-            UserId = order.Buyer.BuyerId.ToString(),
-            EventName = "OrderPaymentCompleted",
-            Id = order.Id.ToString(),
-            SentBy = order.Buyer.BuyerId.ToString(),
-            Tenant = order.TenantDetail.Id.ToString(),
-            JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+            await notification.SendToUserAsync(new gRpc.Clients.Services.Notification.NotificationUserRequest
             {
-                receiptUrl
-            })
-        }, cancellationToken);
+                UserId = order.Buyer.BuyerId.ToString(),
+                EventName = "OrderPaymentSucceeded",
+                Id = order.Id.ToString(),
+                SentBy = order.Buyer.BuyerId.ToString(),
+                Tenant = order.TenantDetail.Id.ToString(),
+                JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+                {
+                    orderId = order.Id,
+                    status = "PaymentSucceeded"
+                })
+            }, cancellationToken);
+        }
     }
 
-    private static Dictionary<string, string> BuildVariables(OrderAggregate order) => new()
+    private static Dictionary<string, string> BuildVariables(OrderAggregate order, short decimalDigits) => new()
     {
         ["organization_name"] = order.TenantDetail.Name,
         ["organization_email"] = order.TenantDetail.Email,
@@ -98,9 +99,9 @@ public class UpdateStateOrderCommandHandler(
         ["buyer_email"] = order.Buyer.Email,
         ["license_name"] = order.License.Name,
         ["billing_type"] = order.License.BillingType.ToString(),
-        ["subtotal"] = order.License.SubTotal.Amount.ToString("N2"),
-        ["tax"] = order.License.Tax.Amount.ToString("N2"),
-        ["total"] = order.License.Total.Amount.ToString("N2"),
+        ["subtotal"] = order.License.SubTotal.ToDecimal(decimalDigits).ToString("N2"),
+        ["tax"] = order.License.Tax.ToDecimal(decimalDigits).ToString("N2"),
+        ["total"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
         ["currency"] = order.License.Total.Currency,
         ["purchase_date"] = SystemClock.Instance.GetCurrentInstant().ToString(),
         ["current_year"] = DateTime.UtcNow.Year.ToString(),

@@ -1,3 +1,6 @@
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 
 /// <summary>
@@ -15,4 +18,20 @@ public interface IOrderRepository : IRepositoryBase
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns>La orden exitosa más reciente, o null si no existe.</returns>
     Task<OrderAggregate?> FindSucceededOrderByTenantAsync(Guid tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Busca la orden exitosa activa para un tenant y una licencia específica.
+    /// Retorna la más reciente si existen múltiples órdenes (upgrades/renovaciones).
+    /// </summary>
+    /// <param name="tenantId">El identificador del tenant.</param>
+    /// <param name="licenseId">El identificador de la licencia.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>La orden exitosa más reciente para la combinación tenant+licencia, o null si no existe.</returns>
+    Task<OrderAggregate?> FindActiveSubscriptionAsync(Guid tenantId, Guid licenseId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Completa un paso de provisioning de forma atómica usando FindOneAndUpdate.
+    /// Evita race conditions cuando múltiples handlers actualizan la misma orden concurrentemente.
+    /// </summary>
+    Task<OrderAggregate?> CompleteProvisioningStepAtomicAsync(Guid orderId, string stepName, CancellationToken cancellationToken);
 }

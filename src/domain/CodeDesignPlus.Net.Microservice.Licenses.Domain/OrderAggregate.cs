@@ -3,6 +3,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Payment;
 using CodeDesignPlus.Net.ValueObjects.User;
+using ProvisioningStep = CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects.ProvisioningStep;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain;
 
@@ -56,6 +57,16 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public PaymentStatus PaymentStatus { get; private set; }
 
     /// <summary>
+    /// Gets the overall provisioning status of the order.
+    /// </summary>
+    public ProvisioningStatus ProvisioningStatus { get; private set; }
+
+    /// <summary>
+    /// Gets the history of provisioning steps with their statuses.
+    /// </summary>
+    public List<ProvisioningStep> ProvisioningHistory { get; private set; } = [];
+
+    /// <summary>
     /// Returns the immutable LicenseTenant snapshot from this order.
     /// Used by the gRPC service to return license info to the Security middleware.
     /// </summary>
@@ -92,6 +103,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
             PaymentMethod = paymentMethod,
             Buyer = buyer,
             PaymentStatus = PaymentStatus.Initiated,
+            ProvisioningStatus = ProvisioningStatus.PaymentPending,
             TenantDetail = tenantDetail,
             IsActive = true,
             CreatedAt = SystemClock.Instance.GetCurrentInstant(),
@@ -114,6 +126,12 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         if (paymentStatus == PaymentStatus.Succeeded)
         {
             IsSuccess = true;
+            ProvisioningStatus = ProvisioningStatus.InProgress;
+
+            var now = SystemClock.Instance.GetCurrentInstant();
+            ProvisioningHistory.Add(new ProvisioningStep("Payment", ProvisioningStepStatus.Completed, now));
+            ProvisioningHistory.Add(new ProvisioningStep("TenantProvisioning", ProvisioningStepStatus.Pending, now));
+            ProvisioningHistory.Add(new ProvisioningStep("UserProvisioning", ProvisioningStepStatus.Pending, now));
 
             var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
                 this.Id,
@@ -131,7 +149,56 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
             AddEvent(@event);
         }
+        else if (paymentStatus == PaymentStatus.Failed || paymentStatus == PaymentStatus.Expired)
+        {
+            var now = SystemClock.Instance.GetCurrentInstant();
+            ProvisioningStatus = ProvisioningStatus.PaymentFailed;
+            ProvisioningHistory.Add(new ProvisioningStep("Payment", ProvisioningStepStatus.Failed, now));
+        }
 
         UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+    }
+
+    public void CompleteProvisioningStep(string stepName, Guid updatedBy)
+    {
+        var existingCompleted = ProvisioningHistory.Any(s => s.StepName == stepName && s.Status == ProvisioningStepStatus.Completed);
+        if (existingCompleted) return;
+
+        ProvisioningHistory.Add(new ProvisioningStep(stepName, ProvisioningStepStatus.Completed, SystemClock.Instance.GetCurrentInstant()));
+        UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+        EvaluateCompletion();
+    }
+
+    public void FailProvisioningStep(string stepName, string error, Guid updatedBy)
+    {
+        ProvisioningHistory.Add(new ProvisioningStep(stepName, ProvisioningStepStatus.Failed, SystemClock.Instance.GetCurrentInstant(), error));
+        ProvisioningStatus = ProvisioningStatus.PartiallyFailed;
+        UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+        AddEvent(OrderProvisioningFailedDomainEvent.Create(Id, stepName, error, updatedBy));
+    }
+
+    public void SetProvisioningCompleted()
+    {
+        if (ProvisioningStatus == ProvisioningStatus.Completed)
+            return;
+
+        ProvisioningStatus = ProvisioningStatus.Completed;
+        UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+        AddEvent(OrderProvisioningCompletedDomainEvent.Create(Id, Buyer.BuyerId, TenantDetail.Id));
+    }
+
+    private void EvaluateCompletion()
+    {
+        var required = new[] { "TenantProvisioning", "UserProvisioning" };
+        var completed = ProvisioningHistory
+            .Where(s => s.Status == ProvisioningStepStatus.Completed)
+            .Select(s => s.StepName)
+            .ToHashSet();
+
+        if (required.All(completed.Contains))
+        {
+            ProvisioningStatus = ProvisioningStatus.Completed;
+            AddEvent(OrderProvisioningCompletedDomainEvent.Create(Id, Buyer.BuyerId, TenantDetail.Id));
+        }
     }
 }
