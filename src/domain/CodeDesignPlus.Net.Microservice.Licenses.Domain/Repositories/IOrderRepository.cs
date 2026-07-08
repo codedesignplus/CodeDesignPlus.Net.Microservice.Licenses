@@ -1,5 +1,7 @@
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using C = CodeDesignPlus.Net.Core.Abstractions.Models;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 
@@ -45,4 +47,13 @@ public interface IOrderRepository : IRepositoryBase
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns>A list of stuck orders ordered by UpdatedAt ascending.</returns>
     Task<List<OrderAggregate>> FindStuckOrdersAsync(ProvisioningStatus status, Duration stuckDuration, int limit, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Retrieves all orders across all tenants with criteria-based filtering, sorting, and pagination.
+    /// Bypasses tenant isolation for administrative views.
+    /// </summary>
+    /// <param name="criteria">The criteria for filtering, sorting, and paginating orders.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>A paginated list of orders.</returns>
+    Task<Pagination<OrderAggregate>> GetAllOrdersAsync(C.Criteria criteria, CancellationToken cancellationToken);
 }

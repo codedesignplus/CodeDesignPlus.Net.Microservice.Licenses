@@ -15,6 +15,29 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 public class OrderController(IMediator mediator, IMapper mapper, IUserContext userContext) : ControllerBase
 {
     /// <summary>
+    /// Get a paginated list of all Orders across all tenants (admin view).
+    /// </summary>
+    /// <param name="criteria">The criteria for filtering and paginating the Orders.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <response code="200">Returns a paginated list of Orders.</response>
+    /// <response code="400">If the request is invalid.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user does not have permission to access the Orders.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpGet("all")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Pagination<OrderDto>))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> GetAllOrders([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetAllOrdersQuery(criteria), cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Get a paginated list of Orders for the authenticated user.
     /// </summary>
     /// <param name="criteria">The criteria for filtering and paginating the Orders.</param>

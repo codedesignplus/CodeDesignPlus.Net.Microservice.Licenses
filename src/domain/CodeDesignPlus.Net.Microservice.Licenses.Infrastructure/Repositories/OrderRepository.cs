@@ -1,5 +1,9 @@
+using CodeDesignPlus.Net.Core.Abstractions.Models.Criteria;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
+using CodeDesignPlus.Net.Criteria.Extensions;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using C = CodeDesignPlus.Net.Core.Abstractions.Models;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Repositories;
 
@@ -98,5 +102,40 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
             .Sort(sort)
             .Limit(limit)
             .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<Pagination<OrderAggregate>> GetAllOrdersAsync(C.Criteria criteria, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var filterExpression = criteria.GetFilterExpression<OrderAggregate>();
+        var sortBy = criteria.GetSortByExpression<OrderAggregate>();
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Where(filterExpression),
+            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true)
+        );
+
+        var totalCount = await collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+
+        var query = collection.Find(filter);
+
+        if (sortBy != null)
+        {
+            query = criteria.OrderType == OrderTypes.Ascending
+                ? query.SortBy(sortBy)
+                : query.SortByDescending(sortBy);
+        }
+
+        if (criteria.Skip.HasValue)
+            query = query.Skip(criteria.Skip.Value);
+
+        if (criteria.Limit.HasValue)
+            query = query.Limit(criteria.Limit.Value);
+
+        var data = await query.ToListAsync(cancellationToken);
+
+        return Pagination<OrderAggregate>.Create(data, totalCount, criteria.Skip, criteria.Limit);
     }
 }
