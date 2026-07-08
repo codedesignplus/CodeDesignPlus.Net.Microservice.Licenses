@@ -6,8 +6,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CodeDesignPlus.Net.Serializers" Version="1.0.0-beta.12907" />
-    <PackageReference Include="CodeDesignPlus.Net.xUnit.Microservice" Version="1.0.0-beta.12907" />
+    <PackageReference Include="CodeDesignPlus.Net.Serializers" Version="1.0.0-beta.12910" />
+    <PackageReference Include="CodeDesignPlus.Net.xUnit.Microservice" Version="1.0.0-beta.12910" />
     <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

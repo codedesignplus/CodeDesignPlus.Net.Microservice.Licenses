@@ -1,5 +1,6 @@
 using CodeDesignPlus.Net.File.Storage.Extensions;
 using CodeDesignPlus.Net.gRpc.Clients.Extensions;
+using CodeDesignPlus.Net.Hangfire.Extensions;
 using CodeDesignPlus.Net.Logger.Extensions;
 using CodeDesignPlus.Net.Microservice.Commons.FluentValidation;
 using CodeDesignPlus.Net.Microservice.Commons.HealthChecks;
@@ -34,10 +35,12 @@ builder.Services.AddHealthChecksServices();
 builder.Services.AddObservability(builder.Configuration, builder.Environment);
 builder.Services.AddGrpcClients(builder.Configuration);
 builder.Services.AddFileStorage(builder.Configuration);
+builder.Services.AddHangfire<Program>(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseHealthChecks();
+app.UseHangfireDashboard<Program>(builder.Configuration);
     
 var home = app.MapGroup("/");
 

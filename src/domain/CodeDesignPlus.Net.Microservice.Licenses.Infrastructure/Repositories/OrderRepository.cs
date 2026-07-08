@@ -78,4 +78,25 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
 
         return await collection.FindOneAndUpdateAsync(filter, update, options, cancellationToken);
     }
+
+    /// <inheritdoc/>
+    public async Task<List<OrderAggregate>> FindStuckOrdersAsync(ProvisioningStatus status, Duration stuckDuration, int limit, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+        var cutoff = SystemClock.Instance.GetCurrentInstant().Minus(stuckDuration);
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.ProvisioningStatus, status),
+            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true),
+            Builders<OrderAggregate>.Filter.Lt(x => x.UpdatedAt, cutoff)
+        );
+
+        var sort = Builders<OrderAggregate>.Sort.Ascending(x => x.UpdatedAt);
+
+        return await collection
+            .Find(filter)
+            .Sort(sort)
+            .Limit(limit)
+            .ToListAsync(cancellationToken);
+    }
 }

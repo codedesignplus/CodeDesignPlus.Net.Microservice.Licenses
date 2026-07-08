@@ -57,11 +57,11 @@ public class PayOrderCommandHandler(
 
         var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
 
+        await repository.CreateAsync(order, cancellationToken);
+
         var responseGrpc = await PayLicenseAsync(order, licenseAggregate, request.TenantDetail.Location.Country.Currency, cancellationToken);
 
         var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
-
-        await repository.CreateAsync(order, cancellationToken);
 
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 

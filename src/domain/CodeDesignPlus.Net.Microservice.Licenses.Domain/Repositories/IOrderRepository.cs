@@ -34,4 +34,15 @@ public interface IOrderRepository : IRepositoryBase
     /// Evita race conditions cuando múltiples handlers actualizan la misma orden concurrentemente.
     /// </summary>
     Task<OrderAggregate?> CompleteProvisioningStepAtomicAsync(Guid orderId, string stepName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Finds orders stuck in a given provisioning status for longer than the specified duration.
+    /// Used by the reconciliation job to detect and recover failed provisioning flows.
+    /// </summary>
+    /// <param name="status">The provisioning status to filter by.</param>
+    /// <param name="stuckDuration">The minimum time the order must have been stuck.</param>
+    /// <param name="limit">The maximum number of orders to return.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>A list of stuck orders ordered by UpdatedAt ascending.</returns>
+    Task<List<OrderAggregate>> FindStuckOrdersAsync(ProvisioningStatus status, Duration stuckDuration, int limit, CancellationToken cancellationToken);
 }

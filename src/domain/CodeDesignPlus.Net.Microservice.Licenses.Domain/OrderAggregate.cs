@@ -121,6 +121,10 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// <param name="buyerId">The buyer's identifier.</param>
     public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId)
     {
+        // Idempotent: if already at this status, skip (message redelivery)
+        if (PaymentStatus == paymentStatus)
+            return;
+
         PaymentStatus = paymentStatus;
 
         if (paymentStatus == PaymentStatus.Succeeded)

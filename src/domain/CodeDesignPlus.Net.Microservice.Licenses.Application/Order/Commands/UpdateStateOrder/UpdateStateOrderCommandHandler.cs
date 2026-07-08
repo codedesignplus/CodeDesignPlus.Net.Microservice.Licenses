@@ -13,7 +13,8 @@ public class UpdateStateOrderCommandHandler(
     INotificationGrpc notification,
     IEmailGrpc emailGrpc,
     IFileStorage fileStorage,
-    ICurrencyGrpc currencyGrpc
+    ICurrencyGrpc currencyGrpc,
+    ILogger<UpdateStateOrderCommandHandler> logger
 ) : IRequestHandler<UpdateStateOrderCommand>
 {
     public async Task Handle(UpdateStateOrderCommand request, CancellationToken cancellationToken)
@@ -31,61 +32,76 @@ public class UpdateStateOrderCommandHandler(
 
         if (request.PaymentStatus == PaymentStatus.Succeeded)
         {
-            var currency = await currencyGrpc.GetCurrencyAsync(code: order.License.Total.Currency, cancellationToken: cancellationToken);
-            var variables = BuildVariables(order, currency.DecimalDigits);
-            var tenant = order.TenantDetail.Id;
-
-            var pdfRequest = new GeneratePdfRequest
+            try
             {
-                TemplateType = "PurchaseReceipt",
-                Tenant = tenant.ToString()
-            };
-            foreach (var kvp in variables)
-                pdfRequest.Values.Add(kvp.Key, kvp.Value);
-
-            var pdfResult = await emailGrpc.GeneratePdfAsync(pdfRequest, cancellationToken);
-
-            if (pdfResult.Success)
+                await notification.SendToUserAsync(new gRpc.Clients.Services.Notification.NotificationUserRequest
+                {
+                    UserId = order.Buyer.BuyerId.ToString(),
+                    EventName = "OrderPaymentSucceeded",
+                    Id = order.Id.ToString(),
+                    SentBy = order.Buyer.BuyerId.ToString(),
+                    Tenant = order.TenantDetail.Id.ToString(),
+                    JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+                    {
+                        orderId = order.Id,
+                        status = "PaymentSucceeded"
+                    })
+                }, cancellationToken);
+            }
+            catch (Exception ex)
             {
-                var fileId = Guid.NewGuid();
-                var fileName = $"PurchaseReceipt-{fileId}.pdf";
-                var target = $"licenses-pdf/{tenant}";
-
-                using var stream = new MemoryStream(pdfResult.PdfContent.ToByteArray());
-                await fileStorage.UploadAsync(stream, fileName, target, false, tenant, cancellationToken);
-
-                var signedResponse = await fileStorage.GetSignedUrlAsync(fileName, target, TimeSpan.FromDays(7), tenant, cancellationToken);
-                var receiptUrl = signedResponse?.Success == true ? signedResponse.File.Detail.SignedUrl.ToString() : string.Empty;
-
-                var attachment = new FileAttachment(fileId, fileName, target);
-
-                var sendEmailEvent = new SendEmailDomainEvent(
-                    Guid.NewGuid(),
-                    templateName: "PurchaseConfirmation",
-                    to: [order.Buyer.Email],
-                    cc: [],
-                    bcc: [],
-                    variables: variables,
-                    attachments: [attachment],
-                    tenant: tenant
-                );
-
-                await pubsub.PublishAsync(sendEmailEvent, cancellationToken);
+                logger.LogWarning(ex, "Failed to send SignalR notification for Order {OrderId}. Non-critical.", order.Id);
             }
 
-            await notification.SendToUserAsync(new gRpc.Clients.Services.Notification.NotificationUserRequest
+            try
             {
-                UserId = order.Buyer.BuyerId.ToString(),
-                EventName = "OrderPaymentSucceeded",
-                Id = order.Id.ToString(),
-                SentBy = order.Buyer.BuyerId.ToString(),
-                Tenant = order.TenantDetail.Id.ToString(),
-                JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+                var currency = await currencyGrpc.GetCurrencyAsync(code: order.License.Total.Currency, cancellationToken: cancellationToken);
+                var variables = BuildVariables(order, currency.DecimalDigits);
+                var tenant = order.TenantDetail.Id;
+
+                var pdfRequest = new GeneratePdfRequest
                 {
-                    orderId = order.Id,
-                    status = "PaymentSucceeded"
-                })
-            }, cancellationToken);
+                    TemplateType = "PurchaseReceipt",
+                    Tenant = tenant.ToString()
+                };
+
+                foreach (var kvp in variables)
+                    pdfRequest.Values.Add(kvp.Key, kvp.Value);
+
+                var pdfResult = await emailGrpc.GeneratePdfAsync(pdfRequest, cancellationToken);
+
+                if (pdfResult.Success)
+                {
+                    var fileId = Guid.NewGuid();
+                    var fileName = $"PurchaseReceipt-{fileId}.pdf";
+                    var target = $"licenses-pdf/{tenant}";
+
+                    using var stream = new MemoryStream(pdfResult.PdfContent.ToByteArray());
+                    await fileStorage.UploadAsync(stream, fileName, target, false, tenant, cancellationToken);
+
+                    var signedResponse = await fileStorage.GetSignedUrlAsync(fileName, target, TimeSpan.FromDays(7), tenant, cancellationToken);
+                    var receiptUrl = signedResponse?.Success == true ? signedResponse.File.Detail.SignedUrl.ToString() : string.Empty;
+
+                    var attachment = new FileAttachment(fileId, fileName, target);
+
+                    var sendEmailEvent = new SendEmailDomainEvent(
+                        Guid.NewGuid(),
+                        templateName: "PurchaseConfirmation",
+                        to: [order.Buyer.Email],
+                        cc: [],
+                        bcc: [],
+                        variables: variables,
+                        attachments: [attachment],
+                        tenant: tenant
+                    );
+
+                    await pubsub.PublishAsync(sendEmailEvent, cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to generate/send receipt email for Order {OrderId}. Non-critical.", order.Id);
+            }
         }
     }
 

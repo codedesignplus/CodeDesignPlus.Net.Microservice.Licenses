@@ -11,6 +11,7 @@ global using CodeDesignPlus.Net.Core.Abstractions;
 global using CodeDesignPlus.Net.Serializers;
 global using NodaTime;
 global using CodeDesignPlus.Net.Cache.Abstractions;
+global using Microsoft.Extensions.Logging;
 
 global using CodeDesignPlus.Net.Microservice.Licenses.Domain;
 
