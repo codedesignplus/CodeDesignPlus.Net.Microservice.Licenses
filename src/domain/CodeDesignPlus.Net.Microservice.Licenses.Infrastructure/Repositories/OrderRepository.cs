@@ -105,7 +105,7 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
     }
 
     /// <inheritdoc/>
-    public async Task<Pagination<OrderAggregate>> GetAllOrdersAsync(C.Criteria criteria, CancellationToken cancellationToken)
+    public async Task<Pagination<OrderAggregate>> GetAllOrdersAsync(CodeDesignPlus.Net.Core.Abstractions.Models.Criteria.Criteria criteria, CancellationToken cancellationToken)
     {
         var collection = GetCollection<OrderAggregate>();
 

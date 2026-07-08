@@ -1,7 +1,6 @@
 using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using C = CodeDesignPlus.Net.Core.Abstractions.Models;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 
@@ -55,5 +54,5 @@ public interface IOrderRepository : IRepositoryBase
     /// <param name="criteria">The criteria for filtering, sorting, and paginating orders.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns>A paginated list of orders.</returns>
-    Task<Pagination<OrderAggregate>> GetAllOrdersAsync(C.Criteria criteria, CancellationToken cancellationToken);
+    Task<Pagination<OrderAggregate>> GetAllOrdersAsync(CodeDesignPlus.Net.Core.Abstractions.Models.Criteria.Criteria criteria, CancellationToken cancellationToken);
 }
