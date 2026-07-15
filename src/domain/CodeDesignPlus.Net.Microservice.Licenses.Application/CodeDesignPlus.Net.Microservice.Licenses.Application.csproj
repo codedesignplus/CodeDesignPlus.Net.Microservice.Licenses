@@ -7,11 +7,11 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="CodeDesignPlus.Net.Generator" Version="1.0.0-beta.12910" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-		<PackageReference Include="CodeDesignPlus.Net.gRpc.Clients" Version="1.0.0-beta.12911" />
-		<PackageReference Include="CodeDesignPlus.Net.Redis.Abstractions" Version="1.0.0-beta.12911" />
-		<PackageReference Include="CodeDesignPlus.Net.PubSub.Abstractions" Version="1.0.0-beta.12911" />
-		<PackageReference Include="CodeDesignPlus.Net.Cache.Abstractions" Version="1.0.0-beta.12911" />
-		<PackageReference Include="CodeDesignPlus.Net.File.Storage" Version="1.0.0-beta.12911" />
+		<PackageReference Include="CodeDesignPlus.Net.gRpc.Clients" Version="1.0.0-beta.12912" />
+		<PackageReference Include="CodeDesignPlus.Net.Redis.Abstractions" Version="1.0.0-beta.12912" />
+		<PackageReference Include="CodeDesignPlus.Net.PubSub.Abstractions" Version="1.0.0-beta.12912" />
+		<PackageReference Include="CodeDesignPlus.Net.Cache.Abstractions" Version="1.0.0-beta.12912" />
+		<PackageReference Include="CodeDesignPlus.Net.File.Storage" Version="1.0.0-beta.12912" />
 		<PackageReference Include="Mapster" Version="7.4.0" />
 		<PackageReference Include="Mapster.DependencyInjection" Version="1.0.1" />
 		<PackageReference Include="MediatR" Version="13.0.0" />
