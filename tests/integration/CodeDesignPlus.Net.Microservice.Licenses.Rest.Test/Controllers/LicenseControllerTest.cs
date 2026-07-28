@@ -14,26 +14,13 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
     }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-    private readonly PriceDto PriceMonthlyDto = new()
-    {
-        BasePrice = 100,
-        BillingModel = BillingModel.FlatRate,
-        BillingType = BillingType.Monthly,
-        Currency = "USD",
-        DiscountPercentage = 0,
-        TaxPercentage = 19
-    };
+    // 100 USD en unidad mayor -> 10000 centavos. Afirmarlo verifica que el backend convirtio.
+    private const long ExpectedBasePriceMinor = 10000;
+
+    private readonly PriceInput PriceMonthlyDto = new(BillingType.Monthly, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
 
 
-    private readonly PriceDto PriceAnnualyDto = new()
-    {
-        BasePrice = 100,
-        BillingModel = BillingModel.FlatRate,
-        BillingType = BillingType.Annually,
-        Currency = "USD",
-        DiscountPercentage = 0,
-        TaxPercentage = 19
-    };
+    private readonly PriceInput PriceAnnualyDto = new(BillingType.Annually, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
 
 
     private readonly ModuleDto module = new()
@@ -79,8 +66,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             x.Id == license.Id
             && x.Name == license.Name
             && x.Description == license.Description
-            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceMonthlyDto.BillingType && o.Currency == this.PriceMonthlyDto.Currency) != null
-            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceAnnualyDto.BillingType && o.Currency == this.PriceAnnualyDto.Currency) != null
+            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceMonthlyDto.BillingType && o.Currency == this.PriceMonthlyDto.BasePrice.Currency) != null
+            && x.Prices.FirstOrDefault(o => o.BillingType == this.PriceAnnualyDto.BillingType && o.Currency == this.PriceAnnualyDto.BasePrice.Currency) != null
             && x.Icon.Name == "icon"
             && x.TermsOfService == license.TermsOfService
             && x.Modules.Any(y => y.Id == module.Id && y.Name == module.Name)
@@ -148,8 +135,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         Assert.Equal(data.Id, license.Id);
         Assert.Equal(data.Name, license.Name);
         Assert.Equal(data.Description, license.Description);
-        Assert.Contains(license.Prices, x => x.BasePrice == PriceMonthlyDto.BasePrice && x.BillingType == PriceMonthlyDto.BillingType && x.Currency == PriceMonthlyDto.Currency);
-        Assert.Contains(license.Prices, x => x.BasePrice == PriceAnnualyDto.BasePrice && x.BillingType == PriceAnnualyDto.BillingType && x.Currency == PriceAnnualyDto.Currency);
+        Assert.Contains(license.Prices, x => x.BasePrice == ExpectedBasePriceMinor && x.BillingType == PriceMonthlyDto.BillingType && x.Currency == PriceMonthlyDto.BasePrice.Currency);
+        Assert.Contains(license.Prices, x => x.BasePrice == ExpectedBasePriceMinor && x.BillingType == PriceAnnualyDto.BillingType && x.Currency == PriceAnnualyDto.BasePrice.Currency);
         Assert.Equal(data.Icon, license.Icon);
         Assert.Equal(data.TermsOfService, license.TermsOfService);
         Assert.Contains(data.Modules, x =>

@@ -1,13 +1,9 @@
-using CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Seeds;
-using Microsoft.Extensions.Hosting;
-
 namespace CodeDesignPlus.Net.Microservice.Licenses.Infrastructure
 {
     public class Startup : IStartup
     {
         public void Initialize(IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHostedService<LicenseSeedService>();
         }
     }
 }

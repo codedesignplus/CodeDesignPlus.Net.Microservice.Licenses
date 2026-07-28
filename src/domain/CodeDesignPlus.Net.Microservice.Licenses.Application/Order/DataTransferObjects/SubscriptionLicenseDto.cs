@@ -5,7 +5,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransfe
 
 /// <summary>
 /// Flattened DTO for the License snapshot within a Subscription response.
-/// Money amounts are converted from minor units to decimal for REST consumers.
+/// Money amounts are expressed in MINOR units (cents). The client converts for display.
 /// </summary>
 public class SubscriptionLicenseDto
 {
@@ -22,17 +22,17 @@ public class SubscriptionLicenseDto
     /// <summary>
     /// The final total cost including taxes, expressed in the main currency unit (e.g., 150000.00 for COP).
     /// </summary>
-    public decimal Total { get; set; }
+    public long Total { get; set; }
 
     /// <summary>
     /// The applied tax amount, expressed in the main currency unit.
     /// </summary>
-    public decimal Tax { get; set; }
+    public long Tax { get; set; }
 
     /// <summary>
     /// The base cost before taxes, expressed in the main currency unit.
     /// </summary>
-    public decimal SubTotal { get; set; }
+    public long SubTotal { get; set; }
 
     /// <summary>
     /// The ISO 4217 currency code (e.g., "COP", "USD").

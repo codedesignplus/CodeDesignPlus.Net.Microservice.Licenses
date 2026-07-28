@@ -25,26 +25,15 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
         private readonly Mock<IMapper> mapperMock;
         private readonly LicenseController controller;
 
-        private readonly PriceDto PriceMonthlyDto = new()
-        {
-            BasePrice = 100,
-            BillingModel = BillingModel.FlatRate,
-            BillingType = BillingType.Monthly,
-            Currency = "USD",
-            DiscountPercentage = 0,
-            TaxPercentage = 19
-        };
+        private readonly PriceInput PriceMonthlyDto = new(BillingType.Monthly, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
 
 
-        private readonly PriceDto PriceAnnualyDto = new()
-        {
-            BasePrice = 100,
-            BillingModel = BillingModel.FlatRate,
-            BillingType = BillingType.Annually,
-            Currency = "USD",
-            DiscountPercentage = 0,
-            TaxPercentage = 19
-        };
+        private readonly PriceInput PriceAnnualyDto = new(BillingType.Annually, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
+
+        // Contraparte de lectura: unidad menor y basis points.
+        private readonly PriceDto PriceMonthlyRead = new() { BillingType = BillingType.Monthly, BillingModel = BillingModel.FlatRate, BasePrice = 10000, Currency = "USD", DiscountBasisPoints = 0, TaxBasisPoints = 1900, Discount = 0, SubTotal = 10000, Tax = 1900, Total = 11900 };
+
+        private readonly PriceDto PriceAnnualyRead = new() { BillingType = BillingType.Annually, BillingModel = BillingModel.FlatRate, BasePrice = 10000, Currency = "USD", DiscountBasisPoints = 0, TaxBasisPoints = 1900, Discount = 0, SubTotal = 10000, Tax = 1900, Total = 11900 };
 
 
         public LicenseControllerTest()
@@ -85,7 +74,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Test.Controllers
                     Name = "Test License",
                     Description = "Test Description",
                     Modules = [],
-                    Prices = [PriceMonthlyDto, PriceAnnualyDto],
+                    Prices = [PriceMonthlyRead, PriceAnnualyRead],
                     Icon = Icon.Create("icon", "#FFFFFF"),
                     TermsOfService = "Test Terms of Service",
                 });

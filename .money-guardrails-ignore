@@ -1,0 +1,17 @@
+# Excepciones al guardrail del estandar de dinero.
+#
+# Cada linea es un patron literal que se compara contra "archivo:linea:contenido".
+# Toda excepcion lleva encima el porque. Si no sabe por que esta una linea aqui, no la imite:
+# averigue primero.
+
+# ─── Plantilla de correo de la orden ────────────────────────────────────────────
+#
+# Estas conversiones no devuelven importes a un cliente de la API: arman el cuerpo de un correo,
+# donde el destinatario es una persona y el importe tiene que leerse en pesos, no en centavos.
+# Es el mismo caso del adaptador de la pasarela de pago.
+#
+# La regla general sigue en pie: un command no convierte a unidad mayor salvo para entregarle el
+# importe a un tercero que lo espera asi.
+Order/Commands/UpdateStateOrder/UpdateStateOrderCommandHandler.cs:118:        ["subtotal"] = order.License.SubTotal.ToDecimal(decimalDigits).ToString("N2"),
+Order/Commands/UpdateStateOrder/UpdateStateOrderCommandHandler.cs:119:        ["tax"] = order.License.Tax.ToDecimal(decimalDigits).ToString("N2"),
+Order/Commands/UpdateStateOrder/UpdateStateOrderCommandHandler.cs:120:        ["total"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),

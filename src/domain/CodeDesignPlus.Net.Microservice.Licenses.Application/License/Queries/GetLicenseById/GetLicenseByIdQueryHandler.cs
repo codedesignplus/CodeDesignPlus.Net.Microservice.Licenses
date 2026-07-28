@@ -1,10 +1,9 @@
-using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Queries.GetLicenseById;
 
-public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper mapper, ICacheManager cacheManager, ICurrencyGrpc currencyGrpc) : IRequestHandler<GetLicenseByIdQuery, LicenseDto>
+public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper mapper, ICacheManager cacheManager) : IRequestHandler<GetLicenseByIdQuery, LicenseDto>
 {
     public async Task<LicenseDto> Handle(GetLicenseByIdQuery request, CancellationToken cancellationToken)
     {
@@ -23,19 +22,8 @@ public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper m
 
         foreach (var price in license.Prices)
         {
-            var currency = await currencyGrpc.GetCurrencyAsync(new gRpc.Clients.Services.Currencies.GetCurrencyRequest { Code = price.BasePrice.Currency }, cancellationToken);
-
-            dto.Prices.Add(new PriceDto
-            {
-                BasePrice = price.BasePrice.ToDecimal(currency.DecimalDigits),
-                DiscountPercentage = price.DiscountPercentage,
-                BillingModel = price.BillingModel,
-                BillingType = price.BillingType,
-                Currency = price.BasePrice.Currency,
-                TaxPercentage = price.TaxPercentage
-            });
-        };
-
+            dto.Prices.Add(PriceDto.FromDomain(price));
+        }
 
         await cacheManager.SetAsync(request.Id.ToString(), dto);
 

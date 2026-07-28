@@ -1,4 +1,4 @@
-using CodeDesignPlus.Net.File.Storage.Abstractions;
+﻿using CodeDesignPlus.Net.File.Storage.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Emails.gRpc;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
@@ -34,19 +34,17 @@ public class UpdateStateOrderCommandHandler(
         {
             try
             {
-                await notification.SendToUserAsync(new gRpc.Clients.Services.Notification.NotificationUserRequest
-                {
-                    UserId = order.Buyer.BuyerId.ToString(),
-                    EventName = "OrderPaymentSucceeded",
-                    Id = order.Id.ToString(),
-                    SentBy = order.Buyer.BuyerId.ToString(),
-                    Tenant = order.TenantDetail.Id.ToString(),
-                    JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+                await notification.NotifyUserAsync(
+                    order.Buyer.BuyerId,
+                    "OrderPaymentSucceeded",
+                    new
                     {
                         orderId = order.Id,
                         status = "PaymentSucceeded"
-                    })
-                }, cancellationToken);
+                    },
+                    order.TenantDetail.Id,
+                    order.Buyer.BuyerId,
+                    cancellationToken);
             }
             catch (Exception ex)
             {

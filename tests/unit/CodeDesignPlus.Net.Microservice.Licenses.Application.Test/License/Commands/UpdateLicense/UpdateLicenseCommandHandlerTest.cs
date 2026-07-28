@@ -28,26 +28,10 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Price PriceMonthlyVO = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
         private readonly Price PriceAnnualyVO = Price.Create(BillingType.Annually, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
 
-        private readonly PriceDto PriceMonthly = new()
-        {
-            BasePrice = 100,
-            BillingModel = BillingModel.FlatRate,
-            BillingType = BillingType.Monthly,
-            Currency = "USD",
-            DiscountPercentage = 0,
-            TaxPercentage = 19
-        };
+        private readonly PriceInput PriceMonthly = new(BillingType.Monthly, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
 
         
-        private readonly PriceDto PriceAnnualy = new()
-        {
-            BasePrice = 100,
-            BillingModel = BillingModel.FlatRate,
-            BillingType = BillingType.Annually,
-            Currency = "USD",
-            DiscountPercentage = 0,
-            TaxPercentage = 19
-        };
+        private readonly PriceInput PriceAnnualy = new(BillingType.Annually, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
         
         public UpdateLicenseCommandHandlerTest()
         {

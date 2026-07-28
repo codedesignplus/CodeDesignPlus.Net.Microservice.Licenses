@@ -1,4 +1,4 @@
-using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+﻿using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.FailProvisioningStep;
 
@@ -22,19 +22,17 @@ public class FailProvisioningStepCommandHandler(
         await orderRepository.UpdateAsync(order, cancellationToken);
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
-        await notification.SendToUserAsync(new CodeDesignPlus.Net.gRpc.Clients.Services.Notification.NotificationUserRequest
-        {
-            UserId = order.Buyer.BuyerId.ToString(),
-            EventName = "OrderProvisioningFailed",
-            Id = order.Id.ToString(),
-            SentBy = order.Buyer.BuyerId.ToString(),
-            Tenant = order.TenantDetail.Id.ToString(),
-            JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+        await notification.NotifyUserAsync(
+            order.Buyer.BuyerId,
+            "OrderProvisioningFailed",
+            new
             {
                 orderId = order.Id,
                 stepName = request.StepName,
                 message = $"Provisioning step '{request.StepName}' failed: {request.Error}"
-            })
-        }, cancellationToken);
+            },
+            order.TenantDetail.Id,
+            order.Buyer.BuyerId,
+            cancellationToken);
     }
 }

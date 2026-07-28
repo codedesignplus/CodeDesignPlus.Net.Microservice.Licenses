@@ -16,41 +16,46 @@ public class GetAAllLicenseQueryHandlerTest
 {
     private readonly Mock<ILicenseRepository> repositoryMock;
     private readonly Mock<IMapper> mapperMock;
-    private readonly Mock<ICurrencyGrpc> currencyMock;
     private readonly GetAllLicenseQueryHandler handler;
 
-    private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 19);
-    private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 19);
+    private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 1900);
+    private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 1900);
 
 
     private readonly PriceDto PriceMonthlyDto = new()
     {
-        BasePrice = 100,
+        BasePrice = 10000,
         BillingModel = BillingModel.FlatRate,
         BillingType = BillingType.Monthly,
         Currency = "USD",
-        DiscountPercentage = 0,
-        TaxPercentage = 19
+        DiscountBasisPoints = 0,
+        TaxBasisPoints = 1900,
+        Discount = 0,
+        SubTotal = 10000,
+        Tax = 1900,
+        Total = 11900
     };
 
 
     private readonly PriceDto PriceAnnualyDto = new()
     {
-        BasePrice = 100,
+        BasePrice = 10000,
         BillingModel = BillingModel.FlatRate,
         BillingType = BillingType.Annually,
         Currency = "USD",
-        DiscountPercentage = 0,
-        TaxPercentage = 19
+        DiscountBasisPoints = 0,
+        TaxBasisPoints = 1900,
+        Discount = 0,
+        SubTotal = 10000,
+        Tax = 1900,
+        Total = 11900
     };
 
     public GetAAllLicenseQueryHandlerTest()
     {
         repositoryMock = new Mock<ILicenseRepository>();
         mapperMock = new Mock<IMapper>();
-        currencyMock = new Mock<ICurrencyGrpc>();
-
-        handler = new GetAllLicenseQueryHandler(repositoryMock.Object, mapperMock.Object, currencyMock.Object);
+        handler = new GetAllLicenseQueryHandler(repositoryMock.Object, mapperMock.Object);
     }
 
     [Fact]
@@ -95,9 +100,6 @@ public class GetAAllLicenseQueryHandlerTest
         mapperMock
             .Setup(mapper => mapper.Map<LicenseDto>(It.IsAny<LicenseAggregate>()))
             .Returns(licenseDto);
-        currencyMock
-            .Setup(x => x.GetCurrencyAsync(It.IsAny<gRpc.Clients.Services.Currencies.GetCurrencyRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CodeDesignPlus.Net.ValueObjects.Financial.Currency.Create(Guid.NewGuid(), "United States Dollar", "USD", "$", 2, 840));
 
         // Act
         var result = await handler.Handle(request, cancellationToken);

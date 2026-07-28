@@ -1,4 +1,4 @@
-using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+﻿using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 
@@ -41,18 +41,16 @@ public class CompleteProvisioningStepCommandHandler(
         await orderRepository.UpdateAsync(order, cancellationToken);
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
-        await notification.SendToUserAsync(new CodeDesignPlus.Net.gRpc.Clients.Services.Notification.NotificationUserRequest
-        {
-            UserId = order.Buyer.BuyerId.ToString(),
-            EventName = "OrderFullyProvisioned",
-            Id = order.Id.ToString(),
-            SentBy = order.Buyer.BuyerId.ToString(),
-            Tenant = order.TenantDetail.Id.ToString(),
-            JsonPayload = CodeDesignPlus.Net.Serializers.JsonSerializer.Serialize(new
+        await notification.NotifyUserAsync(
+            order.Buyer.BuyerId,
+            "OrderFullyProvisioned",
+            new
             {
                 orderId = order.Id,
                 tenantId = order.TenantDetail.Id
-            })
-        }, cancellationToken);
+            },
+            order.TenantDetail.Id,
+            order.Buyer.BuyerId,
+            cancellationToken);
     }
 }

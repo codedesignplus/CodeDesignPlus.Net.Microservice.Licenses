@@ -36,19 +36,17 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         await cacheManager.RemoveAsync(request.Id.ToString());
     }
 
-    private async Task<List<Price>> GetPricesAsync(List<PriceDto> data, CancellationToken cancellationToken)
+    private async Task<List<Price>> GetPricesAsync(List<PriceInput> data, CancellationToken cancellationToken)
     {
         var prices = new List<Price>();
 
         foreach (var price in data)
         {
-            var currency = await currencyGrpc.GetCurrencyAsync(code: price.Currency, cancellationToken: cancellationToken);
+            var currency = await currencyGrpc.GetCurrencyAsync(code: price.BasePrice.Currency, cancellationToken: cancellationToken);
 
-            var decimalDigits = currency.DecimalDigits;
+            var money = price.BasePrice.ToMoney(currency.DecimalDigits);
 
-            var money = Money.FromDecimal(price.BasePrice, price.Currency, decimalDigits);
-
-            prices.Add(Price.Create(price.BillingType, money, price.BillingModel, price.DiscountPercentage, price.TaxPercentage));
+            prices.Add(Price.Create(price.BillingType, money, price.BillingModel, BasisPoints.FromPercentage(price.DiscountPercentage), BasisPoints.FromPercentage(price.TaxPercentage)));
         }
 
         return prices;
