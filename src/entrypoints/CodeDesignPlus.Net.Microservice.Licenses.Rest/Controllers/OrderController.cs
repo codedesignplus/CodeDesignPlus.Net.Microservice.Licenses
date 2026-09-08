@@ -1,5 +1,6 @@
 using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderReceiptUrl;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
@@ -83,6 +84,32 @@ public class OrderController(IMediator mediator, IMapper mapper, IUserContext us
         var result = await mediator.Send(new GetOrderByIdQuery(id), cancellationToken);
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Get a freshly signed URL for the purchase receipt of an Order.
+    /// </summary>
+    /// <param name="id">The unique identifier of the Order.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <remarks>
+    /// Es un endpoint aparte y no un campo del DTO a proposito: la firma de ms-filestorage caduca, asi que
+    /// una URL persistida o cacheada seria un enlace roto con fecha. Devuelve 204 cuando la orden todavia no
+    /// tiene recibo, que es un estado legitimo mientras el pago no se confirma.
+    /// </remarks>
+    /// <response code="200">Returns the signed URL of the receipt.</response>
+    /// <response code="204">If the Order has no receipt yet.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpGet("{id}/receipt-url")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> GetOrderReceiptUrl(Guid id, CancellationToken cancellationToken)
+    {
+        var url = await mediator.Send(new GetOrderReceiptUrlQuery(id), cancellationToken);
+
+        return string.IsNullOrEmpty(url) ? NoContent() : Ok(url);
     }
 
     /// <summary>
