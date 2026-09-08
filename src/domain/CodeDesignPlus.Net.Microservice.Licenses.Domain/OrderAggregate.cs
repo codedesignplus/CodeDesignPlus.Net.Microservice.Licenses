@@ -67,6 +67,15 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public List<ProvisioningStep> ProvisioningHistory { get; private set; } = [];
 
     /// <summary>
+    /// La referencia en ms-filestorage del PDF del recibo de compra, una vez generado.
+    /// </summary>
+    /// <remarks>
+    /// Se guarda la referencia y **no la URL firmada**: la firma que devuelve ms-filestorage caduca a los
+    /// 7 dias, asi que persistirla dejaria un enlace roto con fecha. Quien lo muestre pide una firma nueva.
+    /// </remarks>
+    public FileAttachment? Receipt { get; private set; }
+
+    /// <summary>
     /// Returns the immutable LicenseTenant snapshot from this order.
     /// Used by the gRPC service to return license info to the Security middleware.
     /// </summary>
@@ -179,6 +188,29 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         ProvisioningStatus = ProvisioningStatus.PartiallyFailed;
         UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         AddEvent(OrderProvisioningFailedDomainEvent.Create(Id, stepName, error, updatedBy));
+    }
+
+    /// <summary>
+    /// Asocia el recibo de compra generado tras el pago.
+    /// </summary>
+    /// <param name="fileId">El identificador del fichero en ms-filestorage.</param>
+    /// <param name="fileName">El nombre con el que se subio, ej. <c>PurchaseReceipt-{id}.pdf</c>.</param>
+    /// <param name="target">El contenedor donde vive, ej. <c>licenses-pdf/{tenant}</c>.</param>
+    /// <param name="updatedBy">El identificador del usuario o proceso que lo asocia.</param>
+    /// <remarks>
+    /// El PDF ya se generaba y se subia, pero la referencia solo viajaba adjunta al correo: la pantalla de
+    /// compra no tenia de donde sacarla y su boton de "ver recibo" no aparecia nunca.
+    /// <para>
+    /// Si el recibo se regenera —el webhook de la pasarela reentrega— la referencia apunta al ultimo, o el
+    /// boton abriria un PDF huerfano.
+    /// </para>
+    /// </remarks>
+    public void AttachReceipt(Guid fileId, string fileName, string target, Guid updatedBy)
+    {
+        Receipt = new FileAttachment(fileId, fileName, target);
+
+        UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+        UpdatedBy = updatedBy;
     }
 
     public void SetProvisioningCompleted()

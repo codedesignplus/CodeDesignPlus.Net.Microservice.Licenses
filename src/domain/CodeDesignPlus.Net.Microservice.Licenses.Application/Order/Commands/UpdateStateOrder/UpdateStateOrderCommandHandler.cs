@@ -77,10 +77,13 @@ public class UpdateStateOrderCommandHandler(
                     using var stream = new MemoryStream(pdfResult.PdfContent.ToByteArray());
                     await fileStorage.UploadAsync(stream, fileName, target, false, tenant, cancellationToken);
 
-                    var signedResponse = await fileStorage.GetSignedUrlAsync(fileName, target, TimeSpan.FromDays(7), tenant, cancellationToken);
-                    var receiptUrl = signedResponse?.Success == true ? signedResponse.File.Detail.SignedUrl.ToString() : string.Empty;
-
                     var attachment = new FileAttachment(fileId, fileName, target);
+
+                    // La referencia se guarda en la orden, no la URL firmada: la firma caduca a los 7 dias.
+                    // Antes solo viajaba adjunta al correo y aqui se calculaba una `receiptUrl` que nadie leia,
+                    // asi que la pantalla de compra no tenia de donde sacar el recibo.
+                    order.AttachReceipt(fileId, fileName, target, order.Buyer.BuyerId);
+                    await orderRepository.UpdateAsync(order, cancellationToken);
 
                     var sendEmailEvent = new SendEmailDomainEvent(
                         Guid.NewGuid(),

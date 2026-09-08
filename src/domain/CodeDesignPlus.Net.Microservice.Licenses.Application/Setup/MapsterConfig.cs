@@ -16,6 +16,10 @@ public static class MapsterConfigLicense
         //OrderAggreate
         TypeAdapterConfig<OrderAggregate, Order.DataTransferObjects.OrderDto>
             .NewConfig()
+            // El mapeo es manual, asi que un campo que se anade al DTO y no se anade aqui **no viaja** y no
+            // rompe nada: simplemente llega con su valor por defecto. Asi es como `recoverOrderState()` en
+            // /purchase/processing leyo durante meses un `provisioningStatus` que nunca llego, dejando la
+            // pantalla dependiendo por completo de que el evento de SignalR no se perdiera.
             .MapWith(src => new Order.DataTransferObjects.OrderDto
             {
                 Id = src.Id,
@@ -26,7 +30,10 @@ public static class MapsterConfigLicense
                 TenantDetail = src.TenantDetail,
                 CreatedAt = src.CreatedAt,
                 IsActive = src.IsActive,
-                PaymentStatus = src.PaymentStatus
+                PaymentStatus = src.PaymentStatus,
+                ProvisioningStatus = src.ProvisioningStatus,
+                ProvisioningHistory = src.ProvisioningHistory,
+                Receipt = src.Receipt
             });
 
 
