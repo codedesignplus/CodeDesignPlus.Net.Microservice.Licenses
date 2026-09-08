@@ -17,7 +17,11 @@ public sealed partial record Icon
     /// </summary>
     public string Color { get; private set; } = null!;
 
+    // Lleva los dos atributos a proposito: la API serializa con Newtonsoft y hay consumidores —el cliente de
+    // los tests de integracion, entre ellos— que deserializan con System.Text.Json. Con uno solo, el otro
+    // serializador no sabe construir el objeto y revienta en tiempo de ejecucion.
     [JsonConstructor]
+    [System.Text.Json.Serialization.JsonConstructor]
     private Icon(string name, string color)
     {
         DomainGuard.IsNullOrEmpty(name, Errors.IconLicenseIsRequired);

@@ -42,6 +42,9 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             x.Add("RabbitMQ:UserName", "guest");
             x.Add("RabbitMQ:Password", "guest");
             x.Add("Security:ValidAudiences:0", Guid.NewGuid().ToString());
+            // SecurityOptions marca ValidIssuer como [Required] y el appsettings del REST lo trae vacio: en
+            // el cluster lo inyecta el chart, asi que el host de pruebas tiene que ponerlo el mismo.
+            x.Add("Security:ValidIssuer", "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000/v2.0");
         };
     }
 
@@ -106,6 +109,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             Id = Guid.NewGuid(),
             Name = "License Test",
             Description = "License Test Description",
+            ShortDescription = "License Test Short",
             Attributes = new Dictionary<string, string>()
             {
                 { "UserLimit", "3" },
@@ -154,6 +158,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         {
             IdModule = Guid.NewGuid(),
             Name = "Module Test New",
+            // Description se volvio obligatoria en el comando despues de escribirse este test.
+            Description = "Module Test New Description",
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(moduleNew, this.options);
@@ -187,6 +193,16 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             Id = licenseCreated.Id,
             Name = "License Test Updated",
             Description = "License Test Description Updated",
+            ShortDescription = "License Test Short Updated",
+            // Prices, Icon y TermsOfService se volvieron obligatorios en el comando despues de escribirse este
+            // test, que llevaba desde entonces devolviendo 400 sin que nadie lo mirara.
+            Prices =
+            [
+                PriceMonthlyDto,
+                PriceAnnualyDto
+            ],
+            Icon = Icon.Create("icon-updated", "#000000"),
+            TermsOfService = "Terms of service for License Test Updated",
             Modules = [module]
         };
 
@@ -232,6 +248,8 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
         {
             IdModule = Guid.NewGuid(),
             Name = "Module Test New",
+            // Description se volvio obligatoria en el comando despues de escribirse este test.
+            Description = "Module Test New Description",
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(moduleNew, this.options);
@@ -267,6 +285,7 @@ public class LicenseControllerTest : ServerBase<Program>, IClassFixture<Server<P
             Id = Guid.NewGuid(),
             Name = "License Test",
             Description = "License Test Description",
+            ShortDescription = "License Test Short",
             Attributes = new Dictionary<string, string>()
             {
                 { "UserLimit", "3" },

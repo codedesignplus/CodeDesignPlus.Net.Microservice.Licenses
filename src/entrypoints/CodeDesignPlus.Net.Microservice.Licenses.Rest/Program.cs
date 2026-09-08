@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.File.Storage.Extensions;
 using CodeDesignPlus.Net.Observability.Extensions;
 using CodeDesignPlus.Net.gRpc.Clients.Extensions;
 using CodeDesignPlus.Net.Microservice.Commons.Application;
@@ -47,6 +48,9 @@ builder.Services.AddCache(builder.Configuration);
 builder.Services.AddResources<Program>(builder.Configuration);
 builder.Services.AddHealthChecksServices();
 builder.Services.AddGrpcClients(builder.Configuration);
+// El endpoint del recibo emite una firma nueva contra ms-filestorage, asi que el REST tambien lo necesita:
+// hasta ahora solo lo registraba el AsyncWorker.
+builder.Services.AddFileStorage(builder.Configuration);
 
 var app = builder.Build();
 
