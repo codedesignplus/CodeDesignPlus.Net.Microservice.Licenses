@@ -7,7 +7,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.Co
 public class CompleteProvisioningStepCommandHandler(
     IOrderRepository orderRepository,
     IPubSub pubsub,
-    INotificationGrpc notification
+    ILiveChannelGrpc liveChannel
 ) : IRequestHandler<CompleteProvisioningStepCommand>
 {
     private static readonly string[] RequiredSteps = ["TenantProvisioning", "UserProvisioning"];
@@ -41,7 +41,10 @@ public class CompleteProvisioningStepCommandHandler(
         await orderRepository.UpdateAsync(order, cancellationToken);
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
-        await notification.NotifyUserAsync(
+        // Efimero: la fase 1 hizo consultable la compra. /purchase/processing reconcilia contra
+        // GET Order/{id}, que ya trae PaymentStatus, ProvisioningStatus y el recibo, asi que quien
+        // cierre el navegador se entera igual al volver.
+        await liveChannel.PushToUserAsync(
             order.Buyer.BuyerId,
             "OrderFullyProvisioned",
             new
@@ -50,7 +53,6 @@ public class CompleteProvisioningStepCommandHandler(
                 tenantId = order.TenantDetail.Id
             },
             order.TenantDetail.Id,
-            order.Buyer.BuyerId,
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

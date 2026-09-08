@@ -5,7 +5,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.Fa
 public class FailProvisioningStepCommandHandler(
     IOrderRepository orderRepository,
     IPubSub pubsub,
-    INotificationGrpc notification
+    ILiveChannelGrpc liveChannel
 ) : IRequestHandler<FailProvisioningStepCommand>
 {
     public async Task Handle(FailProvisioningStepCommand request, CancellationToken cancellationToken)
@@ -22,7 +22,10 @@ public class FailProvisioningStepCommandHandler(
         await orderRepository.UpdateAsync(order, cancellationToken);
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
-        await notification.NotifyUserAsync(
+        // Efimero: la fase 1 hizo consultable la compra. /purchase/processing reconcilia contra
+        // GET Order/{id}, que ya trae PaymentStatus, ProvisioningStatus y el recibo, asi que quien
+        // cierre el navegador se entera igual al volver.
+        await liveChannel.PushToUserAsync(
             order.Buyer.BuyerId,
             "OrderProvisioningFailed",
             new
@@ -32,7 +35,6 @@ public class FailProvisioningStepCommandHandler(
                 message = $"Provisioning step '{request.StepName}' failed: {request.Error}"
             },
             order.TenantDetail.Id,
-            order.Buyer.BuyerId,
-            cancellationToken);
+            cancellationToken: cancellationToken);
     }
 }

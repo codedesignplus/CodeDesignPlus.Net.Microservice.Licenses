@@ -10,7 +10,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.Up
 public class UpdateStateOrderCommandHandler(
     IOrderRepository orderRepository,
     IPubSub pubsub,
-    INotificationGrpc notification,
+    ILiveChannelGrpc liveChannel,
     IEmailGrpc emailGrpc,
     IFileStorage fileStorage,
     ICurrencyGrpc currencyGrpc,
@@ -34,7 +34,9 @@ public class UpdateStateOrderCommandHandler(
         {
             try
             {
-                await notification.NotifyUserAsync(
+                // Efimero: la fase 1 hizo consultable la compra. /purchase/processing reconcilia
+                // contra GET Order/{id}, que ya trae PaymentStatus, ProvisioningStatus y el recibo.
+                await liveChannel.PushToUserAsync(
                     order.Buyer.BuyerId,
                     "OrderPaymentSucceeded",
                     new
@@ -43,8 +45,7 @@ public class UpdateStateOrderCommandHandler(
                         status = "PaymentSucceeded"
                     },
                     order.TenantDetail.Id,
-                    order.Buyer.BuyerId,
-                    cancellationToken);
+                    cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
