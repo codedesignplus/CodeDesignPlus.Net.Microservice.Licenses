@@ -4,6 +4,7 @@ using CodeDesignPlus.Net.Microservice.Emails.gRpc;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.UpdateStateOrder;
 
@@ -55,7 +56,7 @@ public class UpdateStateOrderCommandHandler(
             try
             {
                 var currency = await currencyGrpc.GetCurrencyAsync(code: order.License.Total.Currency, cancellationToken: cancellationToken);
-                var variables = BuildVariables(order, currency.DecimalDigits);
+                var variables = ReceiptEmailVariables.Build(order, currency.DecimalDigits);
                 var tenant = order.TenantDetail.Id;
 
                 var pdfRequest = new GeneratePdfRequest
@@ -106,24 +107,4 @@ public class UpdateStateOrderCommandHandler(
             }
         }
     }
-
-    private static Dictionary<string, string> BuildVariables(OrderAggregate order, short decimalDigits) => new()
-    {
-        ["organization_name"] = order.TenantDetail.Name,
-        ["organization_email"] = order.TenantDetail.Email,
-        ["organization_phone"] = order.TenantDetail.Phone,
-        ["organization_document"] = $"{order.TenantDetail.TypeDocument}: {order.TenantDetail.NumberDocument}",
-        ["buyer_name"] = order.Buyer.Name,
-        ["buyer_email"] = order.Buyer.Email,
-        ["license_name"] = order.License.Name,
-        ["billing_type"] = order.License.BillingType.ToString(),
-        ["subtotal"] = order.License.SubTotal.ToDecimal(decimalDigits).ToString("N2"),
-        ["tax"] = order.License.Tax.ToDecimal(decimalDigits).ToString("N2"),
-        ["total"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
-        ["currency"] = order.License.Total.Currency,
-        ["purchase_date"] = SystemClock.Instance.GetCurrentInstant().ToString(),
-        ["current_year"] = DateTime.UtcNow.Year.ToString(),
-        ["order_id"] = order.Id.ToString(),
-        ["modules_list"] = string.Join(", ", order.License.Modules.Select(m => m.Name))
-    };
 }
