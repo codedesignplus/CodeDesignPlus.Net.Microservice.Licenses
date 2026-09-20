@@ -1,4 +1,4 @@
-using CodeDesignPlus.Net.File.Storage.Extensions;
+﻿using CodeDesignPlus.Net.File.Storage.Extensions;
 using CodeDesignPlus.Net.Observability.Extensions;
 using CodeDesignPlus.Net.gRpc.Clients.Extensions;
 using CodeDesignPlus.Net.Microservice.Commons.Application;
@@ -39,6 +39,7 @@ builder.Services.AddMongo<CodeDesignPlus.Net.Microservice.Licenses.Infrastructur
 builder.Services.AddObservability(builder.Configuration, builder.Environment);
 builder.Services.AddLogger(builder.Configuration);
 builder.Services.AddRabbitMQ<CodeDesignPlus.Net.Microservice.Licenses.Domain.Startup>(builder.Configuration);
+builder.Services.AddServiceBus<CodeDesignPlus.Net.Microservice.Licenses.Domain.Startup>(builder.Configuration);
 builder.Services.AddMapster();
 builder.Services.AddFluentValidation();
 builder.Services.AddMediatR<CodeDesignPlus.Net.Microservice.Licenses.Application.Startup>();
