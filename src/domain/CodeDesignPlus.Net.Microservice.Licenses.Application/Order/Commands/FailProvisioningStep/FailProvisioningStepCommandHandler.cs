@@ -6,19 +6,18 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.Fa
 /// Marca un paso del aprovisionamiento como fallido y deja el pedido en <c>PartiallyFailed</c>.
 /// </summary>
 /// <remarks>
-/// <b>Hoy no lo llama nadie, y es a proposito.</b> Lo invocaban dos consumidores suscritos a eventos que
-/// ningun micro publica —nunca se llegaron a construir— y se retiraron con el pendiente 52: una cola viva
-/// sobre un camino muerto hace perder una tarde el dia que algo no llega.
+/// <b>Esto esta vivo.</b> Lo llaman los dos consumidores de aprovisionamiento fallido, y los eventos que
+/// escuchan se publican de verdad: ms-tenants emite el suyo en <c>CreateTenantHandler</c> cuando falla la
+/// creacion de la copropiedad, y ms-users el suyo en <c>CompleteOrderHandler</c>.
 /// <para>
-/// La capacidad se conserva porque es la que usara la compensacion cuando se rehaga el motor de pagos: ahi
-/// hay que decidir que pasa con el dinero cobrado de una compra que no se pudo entregar, y esa decision
-/// depende del proveedor nuevo. Lo que <b>no</b> depende de el es que hoy
-/// <c>OrderReconciliationJob</c> reintente el aprovisionamiento cada cinco minutos <b>sin rendirse nunca</b>:
-/// sin contador de intentos ni escalado, un fallo permanente se reintenta para siempre y nadie se entera.
+/// Se deja escrito porque <b>ya se dieron por muertos una vez</b>: el guardarrail de gemelos los reporta como
+/// colgados, y no lo estan. La causa es que ms-tenants declara su evento en la carpeta <c>DomainEvents</c>
+/// del <c>AsyncWorker</c> en vez de en su capa de dominio, y el guardarrail entiende eso como un gemelo sin
+/// publicador. Es un falso positivo del detector, no un consumidor huerfano.
 /// </para>
 /// <para>
-/// Cuidado al retirarla del todo: <c>ProvisioningStatus.PartiallyFailed</c> y
-/// <c>ProvisioningStepStatus.Failed</c> son estado persistido.
+/// El otro camino hasta aqui es <c>OrderReconciliationJob</c>, que llama a este mismo comando al agotar los
+/// cinco intentos de reaprovisionamiento. Uno rinde por fallo declarado y el otro por insistencia inutil.
 /// </para>
 /// </remarks>
 public class FailProvisioningStepCommandHandler(
