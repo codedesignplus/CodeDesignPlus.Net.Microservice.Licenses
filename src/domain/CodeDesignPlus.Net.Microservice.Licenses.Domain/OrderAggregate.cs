@@ -67,6 +67,30 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public List<ProvisioningStep> ProvisioningHistory { get; private set; } = [];
 
     /// <summary>
+    /// Cuantas veces se ha reintentado el aprovisionamiento de este pedido.
+    /// </summary>
+    /// <remarks>
+    /// No es argumento del constructor a proposito: el driver de Mongo exige que todos los argumentos del
+    /// creador esten presentes, y los pedidos ya guardados no traen este campo. Ver regla 31.
+    /// </remarks>
+    public int ProvisioningAttempts { get; private set; }
+
+    /// <summary>
+    /// Cuantos reintentos se conceden antes de darse por vencido.
+    /// </summary>
+    /// <remarks>
+    /// El reintento es la red que salva los fallos transitorios —un pod que se reinicia, un Mongo lento—,
+    /// pero sin tope convierte un fallo <b>permanente</b> en un bucle infinito y silencioso sobre un pedido
+    /// <b>ya cobrado</b>. Pendiente 139.
+    /// </remarks>
+    public const int MaxProvisioningAttempts = 5;
+
+    /// <summary>
+    /// Indica si ya se agotaron los reintentos concedidos.
+    /// </summary>
+    public bool HasExhaustedProvisioningAttempts => ProvisioningAttempts >= MaxProvisioningAttempts;
+
+    /// <summary>
     /// La referencia en ms-filestorage del PDF del recibo de compra, una vez generado.
     /// </summary>
     /// <remarks>
@@ -180,6 +204,21 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         ProvisioningHistory.Add(new ProvisioningStep(stepName, ProvisioningStepStatus.Completed, SystemClock.Instance.GetCurrentInstant()));
         UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         EvaluateCompletion();
+    }
+
+    /// <summary>
+    /// Anota un reintento del aprovisionamiento y devuelve cuantos van.
+    /// </summary>
+    /// <remarks>
+    /// Lo llama <c>OrderReconciliationJob</c> antes de republicar el evento. Mueve <c>UpdatedAt</c> porque
+    /// el propio job usa esa marca para no reprocesar el mismo pedido en el ciclo siguiente.
+    /// </remarks>
+    public int RegisterProvisioningAttempt()
+    {
+        ProvisioningAttempts++;
+        UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+
+        return ProvisioningAttempts;
     }
 
     public void FailProvisioningStep(string stepName, string error, Guid updatedBy)

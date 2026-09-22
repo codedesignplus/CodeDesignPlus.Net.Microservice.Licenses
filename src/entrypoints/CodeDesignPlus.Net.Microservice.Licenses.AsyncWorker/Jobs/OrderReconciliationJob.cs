@@ -13,7 +13,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Jobs;
 /// <summary>
 /// Recurring job (every 3 minutes) that detects and recovers stuck license orders.
 /// - PaymentPending orders stuck > 10 min: queries ms-payments gRPC for actual payment status.
-/// - InProgress orders stuck > 5 min: re-publishes provisioning event for downstream consumers.
+/// - InProgress orders stuck > 5 min: re-publishes provisioning event for downstream consumers,
+///   hasta un maximo de OrderAggregate.MaxProvisioningAttempts; agotados, marca PartiallyFailed.
 /// </summary>
 [RecurringJobOptions("*/3 * * * *", jobId: "order-reconciliation-job")]
 public class OrderReconciliationJob(
@@ -101,8 +102,34 @@ public class OrderReconciliationJob(
                     continue;
                 }
 
-                logger.LogWarning("Reconciling stuck InProgress order {OrderId}. Missing steps: {Missing}",
-                    order.Id, string.Join(", ", required.Except(completedSteps)));
+                var missing = string.Join(", ", required.Except(completedSteps));
+
+                // Rendirse tambien es parte del trabajo. Sin tope, un fallo permanente --un dato invalido,
+                // una colision de nombre, una cuota agotada-- se reintenta cada cinco minutos para siempre
+                // sobre un pedido YA COBRADO, y nadie se entera. PartiallyFailed saca el pedido de este
+                // bucle, porque el job solo recoge PaymentPending e InProgress, y lo deja visible en
+                // /management/system/orders filtrando por estado. Pendiente 139.
+                if (order.HasExhaustedProvisioningAttempts)
+                {
+                    logger.LogError(
+                        "Order {OrderId} exhausted its {Max} provisioning attempts. Missing steps: {Missing}. Giving up.",
+                        order.Id, OrderAggregate.MaxProvisioningAttempts, missing);
+
+                    order.FailProvisioningStep(
+                        "Provisioning",
+                        $"El aprovisionamiento no pudo completarse tras {OrderAggregate.MaxProvisioningAttempts} intentos. Pasos pendientes: {missing}.",
+                        order.Buyer.BuyerId);
+
+                    await orderRepository.UpdateAsync(order, cancellationToken);
+                    await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
+
+                    continue;
+                }
+
+                var attempt = order.RegisterProvisioningAttempt();
+
+                logger.LogWarning("Reconciling stuck InProgress order {OrderId}, attempt {Attempt} of {Max}. Missing steps: {Missing}",
+                    order.Id, attempt, OrderAggregate.MaxProvisioningAttempts, missing);
 
                 var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
                     order.Id,
@@ -120,8 +147,8 @@ public class OrderReconciliationJob(
 
                 await pubsub.PublishAsync(@event, cancellationToken);
 
-                // Touch UpdatedAt so we don't re-process on next cycle if still stuck
-                order.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+                // RegisterProvisioningAttempt ya movio UpdatedAt, que es lo que evita reprocesar el mismo
+                // pedido en el ciclo siguiente.
                 await orderRepository.UpdateAsync(order, cancellationToken);
 
                 logger.LogInformation("Re-published provisioning event for stuck order {OrderId}.", order.Id);
