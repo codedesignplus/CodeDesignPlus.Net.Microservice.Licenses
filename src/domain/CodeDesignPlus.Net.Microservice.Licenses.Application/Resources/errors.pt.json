@@ -1,0 +1,20 @@
+{
+  "language": "pt",
+  "errors": {
+    "200": "Erro desconhecido.",
+    "201": "A requisição não é válida.",
+    "202": "Essa licença já existe.",
+    "203": "Não encontramos essa licença.",
+    "204": "Essa popularidade de licença já existe.",
+    "205": "O preço da licença mudou ou não é válido.",
+    "206": "O pagamento falhou porque {0}",
+    "207": "Não encontramos esse pedido.",
+    "208": "Esse condomínio já existe.",
+    "209": "Esse pedido já existe.",
+    "210": "Não há preço para o tipo de faturamento e o modelo escolhidos.",
+    "211": "A moeda do pedido não corresponde à do país do condomínio.",
+    "212": "A licença não tem preço para o tipo de faturamento escolhido.",
+    "213": "O identificador do condomínio é obrigatório.",
+    "214": "O identificador da licença é obrigatório."
+  }
+}

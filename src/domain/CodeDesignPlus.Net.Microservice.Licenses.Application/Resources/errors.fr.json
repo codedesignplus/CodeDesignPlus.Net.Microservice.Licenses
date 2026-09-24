@@ -1,0 +1,20 @@
+{
+  "language": "fr",
+  "errors": {
+    "200": "Erreur inconnue.",
+    "201": "La requête n'est pas valide.",
+    "202": "Cette licence existe déjà.",
+    "203": "Licence introuvable.",
+    "204": "Cette popularité de licence existe déjà.",
+    "205": "Le prix de la licence a changé ou n'est pas valide.",
+    "206": "Le paiement a échoué car {0}",
+    "207": "Commande introuvable.",
+    "208": "Cette copropriété existe déjà.",
+    "209": "Cette commande existe déjà.",
+    "210": "Aucun prix disponible pour le type de facturation et le modèle choisis.",
+    "211": "La devise de la commande ne correspond pas à celle du pays de la copropriété.",
+    "212": "La licence n'a pas de prix pour le type de facturation choisi.",
+    "213": "L'identifiant de la copropriété est obligatoire.",
+    "214": "L'identifiant de la licence est obligatoire."
+  }
+}

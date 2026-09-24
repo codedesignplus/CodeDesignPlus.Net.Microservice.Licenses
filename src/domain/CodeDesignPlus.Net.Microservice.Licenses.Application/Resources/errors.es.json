@@ -1,20 +1,20 @@
 {
   "language": "es",
   "errors": {
-    "200": "",
-    "201": "",
-    "202": "",
-    "203": "",
-    "204": "",
-    "205": "",
-    "206": "",
-    "207": "",
-    "208": "",
-    "209": "",
-    "210": "",
-    "211": "",
-    "212": "",
-    "213": "",
-    "214": ""
+    "200": "Error desconocido.",
+    "201": "La petición no es válida.",
+    "202": "Esa licencia ya existe.",
+    "203": "No encontramos esa licencia.",
+    "204": "Esa popularidad de licencia ya existe.",
+    "205": "El precio de la licencia cambio o no es válido.",
+    "206": "El pago fallo porque {0}",
+    "207": "No encontramos ese pedido.",
+    "208": "Esa copropiedad ya existe.",
+    "209": "Ese pedido ya existe.",
+    "210": "No hay precio para el tipo de facturación y el modelo elegidos.",
+    "211": "La moneda del pedido no coincide con la del país de la copropiedad.",
+    "212": "La licencia no tiene precio para el tipo de facturación elegido.",
+    "213": "El identificador de la copropiedad es obligatorio.",
+    "214": "El identificador de la licencia es obligatorio."
   }
 }
