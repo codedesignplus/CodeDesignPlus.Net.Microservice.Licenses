@@ -1,0 +1,20 @@
+{
+  "language": "en",
+  "errors": {
+    "200": "UnknownError",
+    "201": "The request is invalid.",
+    "202": "The license already exists.",
+    "203": "The license was not found.",
+    "204": "The license popularity already exists.",
+    "205": "The price of the license has changed or is not valid.",
+    "206": "The payment failed because {0}",
+    "207": "The order was not found.",
+    "208": "The tenant already exists.",
+    "209": "The order already exists.",
+    "210": "The price for the selected billing type and model is not available.",
+    "211": "The order currency does not match the tenant's country currency.",
+    "212": "The price for the selected billing type is not available in the license.",
+    "213": "The tenant ID is required.",
+    "214": "The license ID is required."
+  }
+}
