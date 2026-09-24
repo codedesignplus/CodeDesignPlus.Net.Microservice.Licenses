@@ -59,7 +59,7 @@ public class LicenseGrpcService(
 
             return response;
         }
-        catch (ApplicationException ex) when (ex.Message.Contains(Errors.OrderNotFound))
+        catch (CodeDesignPlusException ex) when (ex.Code == Errors.OrderNotFound.Code)
         {
             logger.LogWarning("GetTenantLicense: No successful order found for tenant {TenantId}", tenantId);
             throw new RpcException(new Status(StatusCode.NotFound, $"No active license found for tenant {tenantId}."));
