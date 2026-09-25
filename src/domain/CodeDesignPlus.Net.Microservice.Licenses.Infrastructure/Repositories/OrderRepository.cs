@@ -136,6 +136,6 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
 
         var data = await query.ToListAsync(cancellationToken);
 
-        return Pagination<OrderAggregate>.Create(data, totalCount, criteria.Skip, criteria.Limit);
+        return Pagination<OrderAggregate>.Create(data, totalCount, limit: criteria.Limit, skip: criteria.Skip);
     }
 }
