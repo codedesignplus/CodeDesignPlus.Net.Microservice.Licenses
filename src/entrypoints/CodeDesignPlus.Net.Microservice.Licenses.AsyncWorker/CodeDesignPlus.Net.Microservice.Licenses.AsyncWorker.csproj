@@ -7,16 +7,16 @@
     <PublishAot>false</PublishAot>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CodeDesignPlus.Net.Microservice.Commons" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Vault" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Redis" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.RabbitMQ" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.ServiceBus" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Logger" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Observability" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Security" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Redis.Cache" Version="1.0.0-beta.13449" />
-    <PackageReference Include="CodeDesignPlus.Net.Hangfire" Version="1.0.0-beta.13449" />
+    <PackageReference Include="CodeDesignPlus.Net.Microservice.Commons" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Vault" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Redis" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.RabbitMQ" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.ServiceBus" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Logger" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Observability" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Security" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Redis.Cache" Version="1.0.0-beta.13463" />
+    <PackageReference Include="CodeDesignPlus.Net.Hangfire" Version="1.0.0-beta.13463" />
   </ItemGroup>
   <ItemGroup>
     <SonarQubeSetting Include="sonar.coverage.exclusions">
