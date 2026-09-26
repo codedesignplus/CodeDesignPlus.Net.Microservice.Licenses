@@ -96,7 +96,7 @@
     "193": "L'identifiant de l'acheteur est obligatoire.",
     "194": "L'identifiant du paiement est obligatoire.",
     "195": "La taxe de la licence ne peut pas être négative.",
-    "196": "Une stratégie tarifaire est en double.",
+    "196": "Une licence ne peut avoir qu’un seul prix par modalité de facturation.",
     "197": "Le total de la licence est obligatoire.",
     "198": "La taxe de la licence est obligatoire.",
     "199": "Le sous-total de la licence est obligatoire.",
@@ -110,6 +110,8 @@
     "220": "Le nom du module est obligatoire.",
     "221": "L'identifiant de la pièce jointe n'est pas valide.",
     "222": "Le nom de la pièce jointe n'est pas valide.",
-    "223": "La destination de la pièce jointe n'est pas valide."
+    "223": "La destination de la pièce jointe n'est pas valide.",
+    "226": "La remise de la licence ne peut pas dépasser 100 %.",
+    "227": "La taxe de la licence ne peut pas dépasser 100 %."
   }
 }

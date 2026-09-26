@@ -5,7 +5,7 @@
     "201": "La requête n'est pas valide.",
     "202": "Cette licence existe déjà.",
     "203": "Licence introuvable.",
-    "204": "Cette popularité de licence existe déjà.",
+    "204": "Une autre licence est déjà marquée comme offre populaire. Retirez-lui ce marquage avant de marquer celle-ci.",
     "205": "Le prix de la licence a changé ou n'est pas valide.",
     "206": "Le paiement a échoué car {0}",
     "207": "Commande introuvable.",
@@ -15,6 +15,7 @@
     "211": "La devise de la commande ne correspond pas à celle du pays de la copropriété.",
     "212": "La licence n'a pas de prix pour le type de facturation choisi.",
     "213": "L'identifiant de la copropriété est obligatoire.",
-    "214": "L'identifiant de la licence est obligatoire."
+    "214": "L'identifiant de la licence est obligatoire.",
+    "228": "Cette licence n’est plus disponible à l’achat."
   }
 }

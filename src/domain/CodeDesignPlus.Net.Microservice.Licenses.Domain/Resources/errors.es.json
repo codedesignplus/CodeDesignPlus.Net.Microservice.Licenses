@@ -96,7 +96,7 @@
     "193": "El identificador del comprador es obligatorio.",
     "194": "El identificador del pago es obligatorio.",
     "195": "El impuesto de la licencia no puede ser negativo.",
-    "196": "Hay una estrategia de precios repetida.",
+    "196": "Una licencia solo puede tener un precio por modalidad de facturación.",
     "197": "El total de la licencia es obligatorio.",
     "198": "El impuesto de la licencia es obligatorio.",
     "199": "El subtotal de la licencia es obligatorio.",
@@ -110,6 +110,8 @@
     "220": "El nombre del módulo es obligatorio.",
     "221": "El identificador del adjunto no es válido.",
     "222": "El nombre del adjunto no es válido.",
-    "223": "El destino del adjunto no es válido."
+    "223": "El destino del adjunto no es válido.",
+    "226": "El descuento de la licencia no puede superar el 100 %.",
+    "227": "El impuesto de la licencia no puede superar el 100 %."
   }
 }

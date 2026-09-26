@@ -55,12 +55,19 @@ public sealed partial record Price
     public Money Total => SubTotal + Tax;
 
 
+    /// <summary>
+    /// El 100 % en puntos basicos: ni el descuento ni el impuesto pueden pasar de ahi (plan 063 de pendings/).
+    /// </summary>
+    public const int MaxBasisPoints = 10000;
+
     [JsonConstructor]
     private Price(BillingType billingType, Money basePrice, BillingModel billingModel, int discountBasisPoints, int taxBasisPoints)
     {
         DomainGuard.IsNull(basePrice, Errors.PriceLicenseIsRequired);
         DomainGuard.IsLessThan(discountBasisPoints, 0, Errors.DiscountLicenseCannotBeLessThanZero);
         DomainGuard.IsLessThan(taxBasisPoints, 0, Errors.TaxLicenseCannotBeLessThanZero);
+        DomainGuard.IsGreaterThan(discountBasisPoints, MaxBasisPoints, Errors.DiscountLicenseCannotExceedOneHundredPercent);
+        DomainGuard.IsGreaterThan(taxBasisPoints, MaxBasisPoints, Errors.TaxLicenseCannotExceedOneHundredPercent);
 
         if (billingModel != BillingModel.None)
             DomainGuard.IsLessThan(basePrice.Amount, 0m, Errors.PriceLicenseCannotBeLessThanZero);

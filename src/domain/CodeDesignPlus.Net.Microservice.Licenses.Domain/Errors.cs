@@ -120,5 +120,8 @@ public class Errors : IErrorCodes
     public static readonly Error FileAttachmentIdIsInvalid = new("221");
     public static readonly Error FileAttachmentNameIsInvalid = new("222");
     public static readonly Error FileAttachmentTargetIsInvalid = new("223");
+
+    public static readonly Error DiscountLicenseCannotExceedOneHundredPercent = new("226");
+    public static readonly Error TaxLicenseCannotExceedOneHundredPercent = new("227");
 }
 

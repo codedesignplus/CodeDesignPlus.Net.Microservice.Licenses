@@ -4,6 +4,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.Dele
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.Cache.Abstractions;
 using Moq;
 using Xunit;
 
@@ -14,6 +15,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<ILicenseRepository> repositoryMock;
         private readonly Mock<IUserContext> userContextMock;
         private readonly Mock<IPubSub> pubSubMock;
+        private readonly Mock<ICacheManager> cacheManagerMock;
         private readonly DeleteLicenseCommandHandler handler;
 
         private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
@@ -24,7 +26,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             repositoryMock = new Mock<ILicenseRepository>();
             userContextMock = new Mock<IUserContext>();
             pubSubMock = new Mock<IPubSub>();
-            handler = new DeleteLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object);
+            cacheManagerMock = new Mock<ICacheManager>();
+            handler = new DeleteLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, cacheManagerMock.Object);
         }
 
         [Fact]
@@ -81,6 +84,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             // Assert
             repositoryMock.Verify(r => r.DeleteAsync<LicenseAggregate>(licenseAggregate.Id, cancellationToken), Times.Once);
             pubSubMock.Verify(p => p.PublishAsync(It.IsAny<List<LicenseDeletedDomainEvent>>(), cancellationToken), Times.AtMostOnce);
+            // La licencia borrada no puede seguir saliendo de la caché (plan 057 de pendings/).
+            cacheManagerMock.Verify(c => c.RemoveAsync(licenseAggregate.Id.ToString()), Times.Once);
         }
     }
 }

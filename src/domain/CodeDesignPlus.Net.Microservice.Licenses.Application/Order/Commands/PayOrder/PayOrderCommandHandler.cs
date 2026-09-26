@@ -20,17 +20,17 @@ public class PayOrderCommandHandler(
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
-        var existLicense = await repository.ExistsAsync<LicenseAggregate>(request.License.Id, cancellationToken);
-        ApplicationGuard.IsFalse(existLicense, Errors.LicenseNotFound);
+        var licenseAggregate = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
+        ApplicationGuard.IsNull(licenseAggregate, Errors.LicenseNotFound);
+
+        // Una licencia retirada de la venta no se compra, aunque alguien conserve su id (plan 056 de pendings/).
+        ApplicationGuard.IsFalse(licenseAggregate.IsActive, Errors.LicenseIsNotActive);
 
         var existTenant = await tenantGrpc.ExistTenantAsync(request.TenantDetail.Id, cancellationToken);
         ApplicationGuard.IsTrue(existTenant, Errors.TenantAlreadyExists);
 
         var orderExists = await repository.ExistsAsync<OrderAggregate>(request.Id, cancellationToken);
         ApplicationGuard.IsTrue(orderExists, Errors.OrderAlreadyExists);
-
-        var licenseAggregate = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
-        ApplicationGuard.IsNull(licenseAggregate, Errors.LicenseNotFound);
 
         var price = licenseAggregate.Prices.FirstOrDefault(x => x.BillingType == request.License.BillingType);
         ApplicationGuard.IsNull(price, Errors.PriceNotFoundBecauseBillingTypeIsNotAvailableInTheLicense);

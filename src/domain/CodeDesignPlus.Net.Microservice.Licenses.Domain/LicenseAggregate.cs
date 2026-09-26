@@ -93,11 +93,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.IsNull(modules, Errors.ModulesLicenseIsRequired);
         DomainGuard.IsNull(attributes, Errors.AttributesLicenseIsRequired);
 
-        var hasDuplicatePricingStrategies = prices
-            .GroupBy(p => new { p.BasePrice.Currency, p.BillingModel, p.BillingType })
-            .Any(g => g.Count() > 1);
-
-        DomainGuard.IsTrue(hasDuplicatePricingStrategies, Errors.DuplicatePricingStrategyFound);
+        EnsureOnePricePerBillingType(prices);
 
         var aggregate = new LicenseAggregate(id)
         {
@@ -133,11 +129,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.GuidIsEmpty(updatedBy, Errors.CreatedByLicenseIsRequired);
         DomainGuard.IsNull(icon, Errors.IconLicenseIsRequired);
 
-        var hasDuplicatePricingStrategies = prices
-            .GroupBy(p => new { p.BasePrice.Currency, p.BillingModel, p.BillingType })
-            .Any(g => g.Count() > 1);
-
-        DomainGuard.IsTrue(hasDuplicatePricingStrategies, Errors.DuplicatePricingStrategyFound);
+        EnsureOnePricePerBillingType(prices);
 
         this.Name = name;
         this.Description = description;
@@ -155,6 +147,20 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         this.UpdatedBy = updatedBy;
 
         AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular, ShowInLandingPage));
+    }
+
+    /// <summary>
+    /// Una licencia tiene como mucho un precio por modalidad de facturacion (mensual, anual...). La compra elige el
+    /// precio solo por la modalidad (<c>PayOrderCommandHandler</c>), asi que dos precios de la misma modalidad, aunque
+    /// fuera en otra moneda o con otro modelo, dejarian al azar cual se cobra (plan 063 de pendings/).
+    /// </summary>
+    private static void EnsureOnePricePerBillingType(List<Price> prices)
+    {
+        var hasRepeatedBillingType = prices
+            .GroupBy(p => p.BillingType)
+            .Any(g => g.Count() > 1);
+
+        DomainGuard.IsTrue(hasRepeatedBillingType, Errors.DuplicatePricingStrategyFound);
     }
 
     /// <summary>

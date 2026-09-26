@@ -29,4 +29,6 @@ public class Errors: IErrorCodes
     public static readonly Error TenantIdIsRequired = new("213");
 
     public static readonly Error LicenseIdIsRequired = new("214");
+
+    public static readonly Error LicenseIsNotActive = new("228");
 }

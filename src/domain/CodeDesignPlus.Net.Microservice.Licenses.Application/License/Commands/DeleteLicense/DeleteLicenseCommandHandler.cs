@@ -1,6 +1,6 @@
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.DeleteLicense;
 
-public class DeleteLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub) : IRequestHandler<DeleteLicenseCommand>
+public class DeleteLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, ICacheManager cacheManager) : IRequestHandler<DeleteLicenseCommand>
 {
     public async Task Handle(DeleteLicenseCommand request, CancellationToken cancellationToken)
     {
@@ -15,5 +15,8 @@ public class DeleteLicenseCommandHandler(ILicenseRepository repository, IUserCon
         await repository.DeleteAsync<LicenseAggregate>(aggregate.Id, cancellationToken);
 
         await pubsub.PublishAsync(aggregate.GetAndClearEvents(), cancellationToken);
+
+        // Sin esto, GET /License/{id} seguia sirviendo la licencia borrada desde la cache (plan 057 de pendings/).
+        await cacheManager.RemoveAsync(aggregate.Id.ToString());
     }
 }

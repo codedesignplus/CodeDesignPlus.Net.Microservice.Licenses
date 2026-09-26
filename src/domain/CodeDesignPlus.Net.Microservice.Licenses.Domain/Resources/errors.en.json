@@ -96,7 +96,7 @@
     "193": "The Id Buyer is required.",
     "194": "The Id Payment is required.",
     "195": "The Tax of the license cannot be less than zero.",
-    "196": "A duplicate pricing strategy was found.",
+    "196": "A license can only have one price per billing type.",
     "197": "The Total of the license is required.",
     "198": "The Tax of the license is required.",
     "199": "The SubTotal of the license is required.",
@@ -110,6 +110,8 @@
     "220": "The name of the module is required.",
     "221": "The file attachment id is invalid.",
     "222": "The file attachment name is invalid.",
-    "223": "The file attachment target is invalid."
+    "223": "The file attachment target is invalid.",
+    "226": "The license discount cannot exceed 100%.",
+    "227": "The license tax cannot exceed 100%."
   }
 }
