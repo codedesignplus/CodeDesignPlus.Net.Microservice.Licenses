@@ -35,4 +35,8 @@
   <ItemGroup>
     <Folder Include="Consumers\" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- La misma orden de prueba que usan las pruebas de Application. -->
+    <Compile Include="..\CodeDesignPlus.Net.Microservice.Licenses.Application.Test\Order\TestOrders.cs" Link="Order\TestOrders.cs" />
+  </ItemGroup>
 </Project>

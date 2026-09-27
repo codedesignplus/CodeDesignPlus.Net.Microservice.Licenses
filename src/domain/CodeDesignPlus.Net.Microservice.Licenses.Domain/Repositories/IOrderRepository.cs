@@ -36,6 +36,43 @@ public interface IOrderRepository : IRepositoryBase
     /// </summary>
     Task<OrderAggregate?> CompleteProvisioningStepAtomicAsync(Guid orderId, string stepName, CancellationToken cancellationToken);
 
+    // ESCRITURAS PARCIALES. Desde que se publica OrderPaidAndReadyForProvisioning, ms-tenants y ms-users marcan
+    // sus pasos sobre la orden con CompleteProvisioningStepAtomicAsync. Un UpdateAsync del documento entero,
+    // hecho con una copia leida antes, borra esos pasos: asi se quedaban las compras «en curso» hasta la
+    // conciliacion (pendings/080). Por eso todo cambio de la orden despues del pago escribe solo sus campos, y
+    // con un filtro que dice si el cambio aplica: el efecto (evento, recibo, correo) se hace solo si aplico.
+
+    /// <summary>
+    /// Guarda el resultado del pago que ya se aplico sobre <paramref name="order"/>, solo si la orden sigue en
+    /// <paramref name="previousStatus"/>.
+    /// </summary>
+    /// <returns><c>true</c> si esta llamada aplico el cambio; <c>false</c> si otra (el webhook o la
+    /// conciliacion) ya lo habia hecho.</returns>
+    Task<bool> ApplyPaymentStatusAsync(OrderAggregate order, PaymentStatus previousStatus, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Asocia el recibo a la orden sin tocar el resto del documento.
+    /// </summary>
+    Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Guid updatedBy, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Pasa la orden de <c>InProgress</c> a <c>Completed</c>.
+    /// </summary>
+    /// <returns><c>true</c> si esta llamada la completo; <c>false</c> si ya no estaba en curso.</returns>
+    Task<bool> MarkProvisioningCompletedAsync(Guid orderId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Anota un paso fallido y deja la orden en <c>PartiallyFailed</c>, solo si seguia en curso.
+    /// </summary>
+    /// <returns><c>true</c> si esta llamada la marco; <c>false</c> si ya no estaba en curso.</returns>
+    Task<bool> FailProvisioningAsync(Guid orderId, ProvisioningStep failedStep, Guid updatedBy, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Suma un intento de aprovisionamiento y mueve <c>UpdatedAt</c>, solo si la orden sigue en curso.
+    /// </summary>
+    /// <returns>El numero de intentos tras sumar, o <c>null</c> si la orden ya no estaba en curso.</returns>
+    Task<int?> RegisterProvisioningAttemptAsync(Guid orderId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Finds orders stuck in a given provisioning status for longer than the specified duration.
     /// Used by the reconciliation job to detect and recover failed provisioning flows.

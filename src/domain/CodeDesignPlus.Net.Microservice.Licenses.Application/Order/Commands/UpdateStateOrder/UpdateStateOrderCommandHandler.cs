@@ -25,9 +25,19 @@ public class UpdateStateOrderCommandHandler(
         var order = await orderRepository.FindAsync<OrderAggregate>(request.ReferenceId, cancellationToken);
         ApplicationGuard.IsNull(order, Errors.OrderNotFound);
 
+        var previousStatus = order.PaymentStatus;
+
         order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId);
 
-        await orderRepository.UpdateAsync(order, cancellationToken);
+        // Una reentrega del mismo resultado no cambia nada, y no debe regenerar el recibo ni reenviar el correo.
+        if (order.PaymentStatus == previousStatus)
+            return;
+
+        // Escritura condicional: si el webhook y la conciliacion aplican el mismo pago a la vez, solo uno gana, y
+        // solo ese publica el aprovisionamiento. Nunca UpdateAsync: el documento entero pisaria los pasos que
+        // ms-tenants y ms-users marcan en cuanto sale el evento (pendings/080).
+        if (!await orderRepository.ApplyPaymentStatusAsync(order, previousStatus, cancellationToken))
+            return;
 
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
@@ -85,7 +95,8 @@ public class UpdateStateOrderCommandHandler(
                     // Antes solo viajaba adjunta al correo y aqui se calculaba una `receiptUrl` que nadie leia,
                     // asi que la pantalla de compra no tenia de donde sacar el recibo.
                     order.AttachReceipt(fileId, fileName, target, order.Buyer.BuyerId);
-                    await orderRepository.UpdateAsync(order, cancellationToken);
+                    // Solo el recibo: a estas alturas los pasos de aprovisionamiento ya se estan marcando.
+                    await orderRepository.AttachReceiptAsync(order.Id, order.Receipt!, order.Buyer.BuyerId, cancellationToken);
 
                     var sendEmailEvent = new SendEmailDomainEvent(
                         Guid.NewGuid(),

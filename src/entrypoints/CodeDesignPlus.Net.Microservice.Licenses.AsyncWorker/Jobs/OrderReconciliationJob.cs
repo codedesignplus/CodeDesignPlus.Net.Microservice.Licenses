@@ -5,7 +5,9 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.UpdateStateOrder;
 using Hangfire;
+using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Jobs;
@@ -21,6 +23,7 @@ public class OrderReconciliationJob(
     IOrderRepository orderRepository,
     IPubSub pubsub,
     IPaymentGrpc paymentGrpc,
+    IMediator mediator,
     ILogger<OrderReconciliationJob> logger
 ) : IRecurrentJob
 {
@@ -52,19 +55,13 @@ public class OrderReconciliationJob(
                 var response = await paymentGrpc.GetPaymentStatusAsync(order.PaymentId, cancellationToken);
                 var paymentStatus = (PaymentStatus)(int)response.Status;
 
-                if (paymentStatus == PaymentStatus.Succeeded)
+                if (paymentStatus is PaymentStatus.Succeeded or PaymentStatus.Failed or PaymentStatus.Expired)
                 {
-                    order.SetPaymentStatus(PaymentStatus.Succeeded, order.Buyer.BuyerId);
-                    await orderRepository.UpdateAsync(order, cancellationToken);
-                    await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
-
-                    logger.LogInformation("Reconciled order {OrderId}: payment was Succeeded, triggered provisioning.", order.Id);
-                }
-                else if (paymentStatus == PaymentStatus.Failed || paymentStatus == PaymentStatus.Expired)
-                {
-                    order.SetPaymentStatus(paymentStatus, order.Buyer.BuyerId);
-                    await orderRepository.UpdateAsync(order, cancellationToken);
-                    await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
+                    // El mismo comando que usa el webhook: aplica el pago con una escritura condicional (si el
+                    // webhook llega a la vez, solo uno gana) y, si se aprobo, genera el recibo y envia el correo.
+                    // Antes el job aplicaba el pago por su cuenta y esas compras se quedaban sin recibo ni correo
+                    // (pendings/080).
+                    await mediator.Send(new UpdateStateOrderCommand(order.Id, paymentStatus), cancellationToken);
 
                     logger.LogInformation("Reconciled order {OrderId}: payment {Status}.", order.Id, paymentStatus);
                 }
@@ -94,9 +91,14 @@ public class OrderReconciliationJob(
 
                 if (required.All(completedSteps.Contains))
                 {
-                    order.SetProvisioningCompleted();
-                    await orderRepository.UpdateAsync(order, cancellationToken);
-                    await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
+                    // Escrituras parciales en todo el job: un UpdateAsync con esta copia borraria los pasos que
+                    // ms-tenants y ms-users marcan mientras tanto (pendings/080).
+                    if (await orderRepository.MarkProvisioningCompletedAsync(order.Id, cancellationToken))
+                    {
+                        order.SetProvisioningCompleted();
+                        await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
+                    }
+
 
                     logger.LogInformation("Reconciled order {OrderId}: all steps completed, marked as Completed.", order.Id);
                     continue;
@@ -120,13 +122,19 @@ public class OrderReconciliationJob(
                         $"El aprovisionamiento no pudo completarse tras {OrderAggregate.MaxProvisioningAttempts} intentos. Pasos pendientes: {missing}.",
                         order.Buyer.BuyerId);
 
-                    await orderRepository.UpdateAsync(order, cancellationToken);
-                    await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
+                    if (await orderRepository.FailProvisioningAsync(order.Id, order.ProvisioningHistory[^1], order.Buyer.BuyerId, cancellationToken))
+                        await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
                     continue;
                 }
 
-                var attempt = order.RegisterProvisioningAttempt();
+                // El intento se anota ANTES de republicar, y solo el contador: ms-tenants y ms-users responden en
+                // segundos y marcan sus pasos sobre la orden; guardar despues el documento entero los borraba
+                // (pendings/080). Mover UpdatedAt es tambien lo que evita reprocesar el pedido en el ciclo siguiente.
+                var attempt = await orderRepository.RegisterProvisioningAttemptAsync(order.Id, cancellationToken);
+
+                if (attempt is null)
+                    continue;
 
                 logger.LogWarning("Reconciling stuck InProgress order {OrderId}, attempt {Attempt} of {Max}. Missing steps: {Missing}",
                     order.Id, attempt, OrderAggregate.MaxProvisioningAttempts, missing);
@@ -146,10 +154,6 @@ public class OrderReconciliationJob(
                 );
 
                 await pubsub.PublishAsync(@event, cancellationToken);
-
-                // RegisterProvisioningAttempt ya movio UpdatedAt, que es lo que evita reprocesar el mismo
-                // pedido en el ciclo siguiente.
-                await orderRepository.UpdateAsync(order, cancellationToken);
 
                 logger.LogInformation("Re-published provisioning event for stuck order {OrderId}.", order.Id);
             }

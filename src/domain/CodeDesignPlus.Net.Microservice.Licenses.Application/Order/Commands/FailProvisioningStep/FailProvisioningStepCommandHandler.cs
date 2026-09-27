@@ -37,7 +37,14 @@ public class FailProvisioningStepCommandHandler(
 
         order.FailProvisioningStep(request.StepName, request.Error, order.Buyer.BuyerId);
 
-        await orderRepository.UpdateAsync(order, cancellationToken);
+        // Solo el paso fallido y el estado, y solo si la orden sigue en curso: un UpdateAsync del documento entero
+        // borraria un paso completado que llegue a la vez, y un fallo tardio no debe deshacer una orden ya
+        // completada (pendings/080).
+        var failedStep = order.ProvisioningHistory[^1];
+
+        if (!await orderRepository.FailProvisioningAsync(order.Id, failedStep, order.Buyer.BuyerId, cancellationToken))
+            return;
+
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
         // Efimero: la fase 1 hizo consultable la compra. /purchase/processing reconcilia contra

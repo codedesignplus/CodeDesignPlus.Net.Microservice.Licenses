@@ -84,6 +84,104 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
     }
 
     /// <inheritdoc/>
+    public async Task<bool> ApplyPaymentStatusAsync(OrderAggregate order, PaymentStatus previousStatus, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.Id, order.Id),
+            Builders<OrderAggregate>.Filter.Eq(x => x.PaymentStatus, previousStatus)
+        );
+
+        // El historial se escribe entero porque aqui nace: los pasos pendientes se crean al aplicar el pago y
+        // nadie mas escribe en el hasta que se publica el evento, que va despues de esta llamada.
+        var update = Builders<OrderAggregate>.Update
+            .Set(x => x.PaymentStatus, order.PaymentStatus)
+            .Set(x => x.IsSuccess, order.IsSuccess)
+            .Set(x => x.ProvisioningStatus, order.ProvisioningStatus)
+            .Set(x => x.ProvisioningHistory, order.ProvisioningHistory)
+            .Set(x => x.UpdatedAt, order.UpdatedAt);
+
+        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <inheritdoc/>
+    public async Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Guid updatedBy, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var update = Builders<OrderAggregate>.Update
+            .Set(x => x.Receipt, receipt)
+            .Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant())
+            .Set(x => x.UpdatedBy, updatedBy);
+
+        await collection.UpdateOneAsync(Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId), update, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> MarkProvisioningCompletedAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId),
+            Builders<OrderAggregate>.Filter.Eq(x => x.ProvisioningStatus, ProvisioningStatus.InProgress)
+        );
+
+        var update = Builders<OrderAggregate>.Update
+            .Set(x => x.ProvisioningStatus, ProvisioningStatus.Completed)
+            .Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant());
+
+        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> FailProvisioningAsync(Guid orderId, ProvisioningStep failedStep, Guid updatedBy, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId),
+            Builders<OrderAggregate>.Filter.Eq(x => x.ProvisioningStatus, ProvisioningStatus.InProgress)
+        );
+
+        var update = Builders<OrderAggregate>.Update
+            .Push(x => x.ProvisioningHistory, failedStep)
+            .Set(x => x.ProvisioningStatus, ProvisioningStatus.PartiallyFailed)
+            .Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant())
+            .Set(x => x.UpdatedBy, updatedBy);
+
+        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <inheritdoc/>
+    public async Task<int?> RegisterProvisioningAttemptAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId),
+            Builders<OrderAggregate>.Filter.Eq(x => x.ProvisioningStatus, ProvisioningStatus.InProgress)
+        );
+
+        var update = Builders<OrderAggregate>.Update
+            .Inc(x => x.ProvisioningAttempts, 1)
+            .Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant());
+
+        var options = new FindOneAndUpdateOptions<OrderAggregate> { ReturnDocument = ReturnDocument.After };
+
+        var order = await collection.FindOneAndUpdateAsync(filter, update, options, cancellationToken);
+
+        return order?.ProvisioningAttempts;
+    }
+
+    /// <inheritdoc/>
     public async Task<List<OrderAggregate>> FindStuckOrdersAsync(ProvisioningStatus status, Duration stuckDuration, int limit, CancellationToken cancellationToken)
     {
         var collection = GetCollection<OrderAggregate>();

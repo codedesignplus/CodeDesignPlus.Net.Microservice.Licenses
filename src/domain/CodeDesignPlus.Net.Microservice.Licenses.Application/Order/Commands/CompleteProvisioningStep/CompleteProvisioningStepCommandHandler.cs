@@ -35,10 +35,14 @@ public class CompleteProvisioningStepCommandHandler(
         if (order.ProvisioningStatus == ProvisioningStatus.Completed)
             return;
 
-        // All steps completed — mark order as Completed and notify
+        // All steps completed. Only the status changes: a full UpdateAsync with this copy could erase a receipt
+        // attached in between (pendings/080). The conditional write also makes the last two steps race safe:
+        // whichever arrives second completes the order, once.
+        if (!await orderRepository.MarkProvisioningCompletedAsync(order.Id, cancellationToken))
+            return;
+
         order.SetProvisioningCompleted();
 
-        await orderRepository.UpdateAsync(order, cancellationToken);
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
 
         // Efimero: la fase 1 hizo consultable la compra. /purchase/processing reconcilia contra
