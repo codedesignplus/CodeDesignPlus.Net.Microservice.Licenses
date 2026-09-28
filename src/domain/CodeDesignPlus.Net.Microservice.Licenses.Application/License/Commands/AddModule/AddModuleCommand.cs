@@ -8,7 +8,7 @@ public class Validator : AbstractValidator<AddModuleCommand>
     public Validator()
     {
         RuleFor(x => x.IdModule).NotEmpty().NotNull();
-        RuleFor(x => x.Name).NotEmpty().NotNull().MaximumLength(128);
+        RuleFor(x => x.Name).NotEmpty().NotNull().MaximumLength(FieldLength.Name);
         RuleFor(x => x.Description).NotEmpty().NotNull();
     }
 }
