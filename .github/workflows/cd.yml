@@ -40,6 +40,9 @@ jobs:
   
   deploy:
     needs: container
+    # Desactivado: ningun cluster esta conectado a este despliegue por ahora. Para reactivarlo,
+    # quitar el if: false.
+    if: false
     uses: codedesignplus/workflows/.github/workflows/deploy-self-host.yaml@main
     with:
       project-name: CodeDesignPlus.Net.Microservice.Licenses
