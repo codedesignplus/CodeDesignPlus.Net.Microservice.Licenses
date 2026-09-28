@@ -14,10 +14,14 @@ RUN apt-get update \
 
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["nuget.config", "nuget.config"]
+COPY ["src/domain/CodeDesignPlus.Net.Microservice.Licenses.Application/CodeDesignPlus.Net.Microservice.Licenses.Application.csproj", "domain/CodeDesignPlus.Net.Microservice.Licenses.Application/"]
+COPY ["src/domain/CodeDesignPlus.Net.Microservice.Licenses.Domain/CodeDesignPlus.Net.Microservice.Licenses.Domain.csproj", "domain/CodeDesignPlus.Net.Microservice.Licenses.Domain/"]
+COPY ["src/domain/CodeDesignPlus.Net.Microservice.Licenses.Infrastructure/CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.csproj", "domain/CodeDesignPlus.Net.Microservice.Licenses.Infrastructure/"]
+COPY ["src/entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/CodeDesignPlus.Net.Microservice.Licenses.gRpc.csproj", "entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/"]
+RUN dotnet restore "./entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/CodeDesignPlus.Net.Microservice.Licenses.gRpc.csproj"
 COPY ["src/domain/", "domain/"]
 COPY ["src/entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/", "entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/"]
-COPY ["nuget.config", "nuget.config"]
-RUN dotnet restore "./entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc/CodeDesignPlus.Net.Microservice.Licenses.gRpc.csproj"
 
 WORKDIR "/src/entrypoints/CodeDesignPlus.Net.Microservice.Licenses.gRpc"
 RUN dotnet build "./CodeDesignPlus.Net.Microservice.Licenses.gRpc.csproj" -c "$BUILD_CONFIGURATION" -o /app/build
