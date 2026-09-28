@@ -33,7 +33,7 @@ builder.Services.AddGrpcReflection();
 builder.Services.AddVault(builder.Configuration);
 builder.Services.AddMapster();
 builder.Services.AddMediatR<CodeDesignPlus.Net.Microservice.Licenses.Application.Startup>();
-builder.Services.AddFluentValidation();
+builder.Services.AddFluentValidation<CodeDesignPlus.Net.Microservice.Licenses.Application.Startup>();
 
 builder.Services.AddMongo<CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Startup>(builder.Configuration);
 builder.Services.AddRedis(builder.Configuration);

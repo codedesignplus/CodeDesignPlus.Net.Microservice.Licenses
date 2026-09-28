@@ -31,7 +31,7 @@ builder.Services.AddServiceBus<Program>(builder.Configuration);
 builder.Services.AddSecurity(builder.Configuration);
 builder.Services.AddCache(builder.Configuration);
 builder.Services.AddMapster();
-builder.Services.AddFluentValidation();
+builder.Services.AddFluentValidation<CodeDesignPlus.Net.Microservice.Licenses.Application.Startup>();
 builder.Services.AddMediatR<CodeDesignPlus.Net.Microservice.Licenses.Application.Startup>();
 builder.Services.AddHealthChecksServices();
 builder.Services.AddObservability(builder.Configuration, builder.Environment);
