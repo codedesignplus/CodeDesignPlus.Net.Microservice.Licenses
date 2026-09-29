@@ -190,12 +190,13 @@ public static class MapsterConfigLicense
                             Name = src.Location.City.Name,
                             Timezone = src.Location.City.Timezone
                         },
-                        Locality = new gRpc.Clients.Services.Tenant.Locality
+                        // Localidad y barrio son opcionales: la mayoría de los municipios no tiene (pendings/130).
+                        Locality = src.Location.Locality == null ? null : new gRpc.Clients.Services.Tenant.Locality
                         {
                             Id = src.Location.Locality.Id.ToString(),
                             Name = src.Location.Locality.Name
                         },
-                        Neighborhood = new gRpc.Clients.Services.Tenant.Neighborhood
+                        Neighborhood = src.Location.Neighborhood == null ? null : new gRpc.Clients.Services.Tenant.Neighborhood
                         {
                             Id = src.Location.Neighborhood.Id.ToString(),
                             Name = src.Location.Neighborhood.Name
