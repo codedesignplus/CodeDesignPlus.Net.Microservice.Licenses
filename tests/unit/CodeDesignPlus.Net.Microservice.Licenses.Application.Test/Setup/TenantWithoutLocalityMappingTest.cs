@@ -1,7 +1,7 @@
-using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
+using CreateTenantRequest = CodeDesignPlus.Net.gRpc.Clients.Services.Tenant.CreateTenantRequest;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Setup;
-using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using CodeDesignPlus.Net.ValueObjects.Financial;
+using TypeDocument = CodeDesignPlus.Net.ValueObjects.User.TypeDocument;
+using Currency = CodeDesignPlus.Net.ValueObjects.Financial.Currency;
 using Vo = CodeDesignPlus.Net.ValueObjects.Location;
 using TenantSnapshot = CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects.Tenant;
 
