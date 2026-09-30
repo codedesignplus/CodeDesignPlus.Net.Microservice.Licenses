@@ -217,7 +217,8 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
 
         var totalCount = await collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-        var query = collection.Find(filter);
+        // Orden natural: las cifras de un texto se comparan como numeros ("T1-101" antes que "T1-1001"). pendings/150.
+        var query = collection.Find(filter, new FindOptions { Collation = new Collation("es", numericOrdering: true) });
 
         if (sortBy != null)
         {
