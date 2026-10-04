@@ -1,6 +1,6 @@
-﻿using CodeDesignPlus.Net.File.Storage.Abstractions;
-using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+﻿using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Emails.gRpc;
+using CodeDesignPlus.Net.gRpc.Clients.Services.FileStorage;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
@@ -13,11 +13,17 @@ public class UpdateStateOrderCommandHandler(
     IPubSub pubsub,
     ILiveChannelGrpc liveChannel,
     IEmailGrpc emailGrpc,
-    IFileStorage fileStorage,
+    IFileStorageGrpc fileStorage,
     ICurrencyGrpc currencyGrpc,
     ILogger<UpdateStateOrderCommandHandler> logger
 ) : IRequestHandler<UpdateStateOrderCommand>
 {
+    /// <summary>El target de ms-filestorage de los recibos de compra.</summary>
+    public const string ReceiptTarget = "licenses-pdf";
+
+    /// <summary>El nombre del recibo: cada uno vive en su carpeta (licenses-pdf/{id}/), no necesita llevar el id.</summary>
+    public const string ReceiptFileName = "PurchaseReceipt.pdf";
+
     public async Task Handle(UpdateStateOrderCommand request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
@@ -82,12 +88,21 @@ public class UpdateStateOrderCommandHandler(
 
                 if (pdfResult.Success)
                 {
-                    var fileId = Guid.NewGuid();
-                    var fileName = $"PurchaseReceipt-{fileId}.pdf";
-                    var target = $"licenses-pdf/{tenant}";
+                    // Por ms-filestorage y no directo al blob: así queda en licenses-pdf/{id}/ con su registro, que es lo
+                    // que permite darlo de baja y descargarlo con sus permisos (pendings/260, regla 56).
+                    var stored = await fileStorage.UploadAsync(new UploadFileRequest
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Tenant = tenant.ToString(),
+                        UploadedBy = order.Buyer.BuyerId.ToString(),
+                        Target = ReceiptTarget,
+                        FileName = ReceiptFileName,
+                        Content = pdfResult.PdfContent,
+                    }, cancellationToken);
 
-                    using var stream = new MemoryStream(pdfResult.PdfContent.ToByteArray());
-                    await fileStorage.UploadAsync(stream, fileName, target, false, tenant, cancellationToken);
+                    var fileId = Guid.Parse(stored.Id);
+                    var fileName = stored.FileName;
+                    var target = stored.Target;
 
                     var attachment = new FileAttachment(fileId, fileName, target);
 

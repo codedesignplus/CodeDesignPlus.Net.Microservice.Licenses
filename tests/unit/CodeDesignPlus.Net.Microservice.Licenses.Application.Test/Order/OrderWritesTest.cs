@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using CodeDesignPlus.Net.File.Storage.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Emails.gRpc;
+using CodeDesignPlus.Net.gRpc.Clients.Services.FileStorage;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.CompleteProvisioningStep;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.FailProvisioningStep;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.UpdateStateOrder;
@@ -26,7 +26,7 @@ public class OrderWritesTest
     private readonly Mock<IPubSub> pubsub = new();
     private readonly Mock<ILiveChannelGrpc> liveChannel = new();
     private readonly Mock<IEmailGrpc> emailGrpc = new();
-    private readonly Mock<IFileStorage> fileStorage = new();
+    private readonly Mock<IFileStorageGrpc> fileStorage = new();
     private readonly Mock<ICurrencyGrpc> currencyGrpc = new();
 
     private UpdateStateOrderCommandHandler PaymentHandler() => new(
@@ -41,6 +41,40 @@ public class OrderWritesTest
         emailGrpc
             .Setup(x => x.GeneratePdfAsync(It.IsAny<GeneratePdfRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeneratePdfResponse { Success = true, PdfContent = Google.Protobuf.ByteString.CopyFrom([1, 2, 3]) });
+        fileStorage
+            .Setup(x => x.UploadAsync(It.IsAny<UploadFileRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UploadFileRequest request, CancellationToken _) =>
+                new UploadFileResponse { Id = request.Id, Target = request.Target, FileName = request.FileName });
+    }
+
+    /// <summary>
+    /// The receipt is stored through ms-filestorage, which keeps its record, and the order points at that record
+    /// (pendings/260).
+    /// </summary>
+    [Fact]
+    public async Task Handle_PaymentApproved_StoresTheReceiptThroughFileStorage()
+    {
+        var order = TestOrders.Build();
+        repository.Setup(x => x.FindAsync<OrderAggregate>(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        repository.Setup(x => x.ApplyPaymentStatusAsync(order, PaymentStatus.Initiated, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        ReceiptCanBeGenerated();
+        UploadFileRequest? stored = null;
+        fileStorage
+            .Setup(x => x.UploadAsync(It.IsAny<UploadFileRequest>(), It.IsAny<CancellationToken>()))
+            .Callback((UploadFileRequest request, CancellationToken _) => stored = request)
+            .ReturnsAsync((UploadFileRequest request, CancellationToken _) =>
+                new UploadFileResponse { Id = request.Id, Target = request.Target, FileName = request.FileName });
+
+        await PaymentHandler().Handle(new UpdateStateOrderCommand(order.Id, PaymentStatus.Succeeded), CancellationToken.None);
+
+        Assert.NotNull(stored);
+        Assert.Equal("licenses-pdf", stored.Target);
+        Assert.Equal(order.TenantDetail.Id.ToString(), stored.Tenant);
+        Assert.Equal(TestOrders.BuyerId.ToString(), stored.UploadedBy);
+        Assert.Equal([1, 2, 3], stored.Content.ToByteArray());
+        repository.Verify(x => x.AttachReceiptAsync(order.Id,
+            It.Is<FileAttachment>(r => r.Id == Guid.Parse(stored.Id) && r.Target == "licenses-pdf" && r.Name == "PurchaseReceipt.pdf"),
+            TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -33,8 +33,9 @@ public class GetOrderReceiptUrlQueryHandler(IOrderRepository repository, IFileSt
         if (order.Receipt is null)
             return null;
 
+        // El recibo vive en {target}/{id}/{nombre}, la carpeta que le da ms-filestorage (regla 56).
         var response = await fileStorage.GetSignedUrlAsync(
-            order.Receipt.Name, order.Receipt.Target, Lifetime, order.TenantDetail.Id, cancellationToken);
+            order.Receipt.Name, $"{order.Receipt.Target}/{order.Receipt.Id}", Lifetime, order.TenantDetail.Id, cancellationToken);
 
         return response?.Success == true ? response.File.Detail.SignedUrl.ToString() : null;
     }
