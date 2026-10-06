@@ -4,6 +4,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Infrastructure
     {
         public void Initialize(IServiceCollection services, IConfiguration configuration)
         {
+            Persistence.MongoClassMaps.Register();
         }
     }
 }
