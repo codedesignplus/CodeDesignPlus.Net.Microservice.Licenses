@@ -12,9 +12,9 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
-        var exist = await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken);
-
-        ApplicationGuard.IsTrue(exist, Errors.LicenseAlreadyExists);
+        // Ya guardado por un envío anterior del mismo formulario: el reintento termina bien sin repetir nada (pendings/589).
+        if (await repository.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken))
+            return;
 
         if (request.IsPopular)
         {
@@ -29,7 +29,9 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
 
-        await repository.CreateAsync(license, cancellationToken);
+        // Dos envíos que llegan a la vez pasan los dos la comprobación de arriba; el segundo choca contra el id y no publica.
+        if (!await repository.CreateIfAbsentAsync(license, cancellationToken))
+            return;
 
         await pubsub.PublishAsync(license.GetAndClearEvents(), cancellationToken);
     }

@@ -56,7 +56,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         }
 
         [Fact]
-        public async Task Handle_LicenseAlreadyExists_ThrowsCodeDesignPlusException()
+        public async Task Handle_LicenseAlreadyExists_IsTheRetryAndDoesNotCreateItAgain()
         {
             // Arrange
             var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false);
@@ -64,12 +64,11 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
 
             repositoryMock.Setup(x => x.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken)).ReturnsAsync(true);
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(request, cancellationToken));
+            // Act: el mismo id es el reintento del mismo formulario (pendings/589, regla 66), no un error.
+            await handler.Handle(request, cancellationToken);
 
-            Assert.Equal(Errors.LicenseAlreadyExists.GetCode(), exception.Code);
-            Assert.Equal(Errors.LicenseAlreadyExists.GetMessage(), exception.Message);
-            Assert.Equal(Layer.Application, exception.Layer);
+            // Assert
+            repositoryMock.Verify(x => x.CreateIfAbsentAsync(It.IsAny<LicenseAggregate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -90,7 +89,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             await handler.Handle(request, cancellationToken);
 
             // Assert
-            repositoryMock.Verify(x => x.CreateAsync(It.IsAny<LicenseAggregate>(), cancellationToken), Times.Once);
+            repositoryMock.Verify(x => x.CreateIfAbsentAsync(It.IsAny<LicenseAggregate>(), cancellationToken), Times.Once);
             pubSubMock.Verify(x => x.PublishAsync(It.IsAny<List<LicenseCreatedDomainEvent>>(), cancellationToken), Times.AtMostOnce);
         }
     }

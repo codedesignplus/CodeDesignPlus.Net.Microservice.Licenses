@@ -10,4 +10,19 @@ public class LicenseRepository(IServiceProvider serviceProvider, IOptions<MongoO
 
         return collection.Find(x => x.Id != id && x.IsPopular == true && x.IsActive == true).AnyAsync(cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<bool> CreateIfAbsentAsync(LicenseAggregate license, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await CreateAsync(license, cancellationToken);
+
+            return true;
+        }
+        catch (MongoWriteException exception) when (exception.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return false;
+        }
+    }
 }
