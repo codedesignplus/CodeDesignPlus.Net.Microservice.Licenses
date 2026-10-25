@@ -92,4 +92,25 @@ public interface IOrderRepository : IRepositoryBase
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns>A paginated list of orders.</returns>
     Task<Pagination<OrderAggregate>> GetAllOrdersAsync(CodeDesignPlus.Net.Core.Abstractions.Models.Criteria.Criteria criteria, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Guarda la orden si su id no existe todavía (pendings/589, regla 66).
+    /// </summary>
+    /// <param name="order">La orden nueva.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>false</c> si otro envío del mismo formulario ya la guardó: el segundo choca contra la clave primaria.</returns>
+    Task<bool> CreateIfAbsentAsync(OrderAggregate order, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Anota en la orden lo que respondió la pasarela al iniciar su cobro, sin reemplazar el resto del documento
+    /// (pendings/589).
+    /// </summary>
+    /// <remarks>
+    /// Va con un <c>$set</c> de ese campo y no con un reemplazo: con tarjeta, la respuesta del pago puede estar actualizando
+    /// la orden a la vez, y un reemplazo con la copia de aquí borraría ese cambio.
+    /// </remarks>
+    /// <param name="id">La orden.</param>
+    /// <param name="payment">La respuesta de la pasarela.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    Task RecordInitiatedPaymentAsync(Guid id, InitiatedPayment payment, CancellationToken cancellationToken);
 }

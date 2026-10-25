@@ -236,4 +236,28 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
 
         return Pagination<OrderAggregate>.Create(data, totalCount, limit: criteria.Limit, skip: criteria.Skip);
     }
+
+    /// <inheritdoc />
+    public async Task<bool> CreateIfAbsentAsync(OrderAggregate order, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await CreateAsync(order, cancellationToken);
+
+            return true;
+        }
+        catch (MongoWriteException exception) when (exception.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
+    public Task RecordInitiatedPaymentAsync(Guid id, InitiatedPayment payment, CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.Eq(x => x.Id, id);
+        var update = Builders<OrderAggregate>.Update.Set(x => x.InitiatedPayment, payment);
+
+        return GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+    }
 }

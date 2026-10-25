@@ -57,6 +57,13 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public PaymentStatus PaymentStatus { get; private set; }
 
     /// <summary>
+    /// Lo que respondió la pasarela al iniciar el cobro, para devolverlo igual a un reintento del mismo formulario
+    /// (pendings/589). Lo escribe solo <c>IOrderRepository.RecordInitiatedPaymentAsync</c>, con un <c>$set</c> de este campo,
+    /// porque la respuesta del pago puede estar cambiando la orden a la vez. Nulo en las órdenes guardadas antes de existir.
+    /// </summary>
+    public InitiatedPayment? InitiatedPayment { get; private set; }
+
+    /// <summary>
     /// Gets the overall provisioning status of the order.
     /// </summary>
     public ProvisioningStatus ProvisioningStatus { get; private set; }
