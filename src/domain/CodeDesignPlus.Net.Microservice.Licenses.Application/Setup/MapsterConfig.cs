@@ -25,7 +25,6 @@ public static class MapsterConfigLicense
                 Id = src.Id,
                 PaymentId = src.PaymentId,
                 Buyer = src.Buyer,
-                PaymentMethod = src.PaymentMethod,
                 License = src.License,
                 TenantDetail = src.TenantDetail,
                 CreatedAt = src.CreatedAt,
@@ -52,7 +51,6 @@ public static class MapsterConfigLicense
                 src.Id,
                 src.Buyer,
                 src.License,
-                src.PaymentMethod,
                 src.TenantDetail
             ));
 
@@ -100,34 +98,7 @@ public static class MapsterConfigLicense
                    Code = src.Buyer.TypeDocument!.Code,
                    Name = src.Buyer.TypeDocument.Name,
                },
-               Email = src.Buyer.Email,
-               ShippingAddress = src.Buyer.ShippingAddress != null ? new Address()
-               {
-                   City = src.Buyer.ShippingAddress.City,
-                   Country = src.Buyer.ShippingAddress.Country,
-                   PostalCode = src.Buyer.ShippingAddress.PostalCode,
-                   State = src.Buyer.ShippingAddress.State,
-                   Street = src.Buyer.ShippingAddress.Street
-               } : null
-           })
-           .Map(dest => dest.PaymentMethod, src => new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.PaymentMethod
-           {
-               Type = src.PaymentMethod.Type,
-               CreditCard = src.PaymentMethod.CreditCard != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.CreditCard
-               {
-                   CreditCardTokenId = src.PaymentMethod.CreditCard.Token,
-                   SecurityCode = src.PaymentMethod.CreditCard.SecurityCode,
-                   ExpirationDate = src.PaymentMethod.CreditCard.ExpirationDate,
-                   Last4Digits = src.PaymentMethod.CreditCard.Last4Digits,
-                   CardHolderName = src.PaymentMethod.CreditCard.CardHolderName,
-                   InstallmentsNumber = 1
-               } : null,
-               Pse = src.PaymentMethod.Pse != null ? new CodeDesignPlus.Net.gRpc.Clients.Services.Payment.Pse
-               {
-                   PseCode = src.PaymentMethod.Pse.PseCode,
-                   PseResponseUrl = src.PaymentMethod.Pse.PseResponseUrl,
-                   TypePerson = src.PaymentMethod.Pse.TypePerson
-               } : null
+               Email = src.Buyer.Email
            });
 
         TypeAdapterConfig<InitiatePaymentResponse, Order.DataTransferObjects.PaymentResponse>

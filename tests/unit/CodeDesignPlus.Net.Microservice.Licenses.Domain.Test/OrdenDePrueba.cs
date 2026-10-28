@@ -28,7 +28,7 @@ public static class OrdenDePrueba
     public static readonly Guid UserId = Guid.Parse("ee000000-0000-4000-8000-000000000005");
 
     public static OrderAggregate Nueva() => OrderAggregate.Create(
-        OrderId, PaymentId, Licencia(), MedioDePago(), Comprador(), Copropiedad(), UserId);
+        OrderId, PaymentId, Licencia(), Comprador(), Copropiedad(), UserId);
 
     public static License Licencia()
     {
@@ -54,11 +54,6 @@ public static class OrdenDePrueba
             attributes: [],
             modules: modules);
     }
-
-    // PaymentMethod exige que venga el detalle: uno de los dos medios, no ninguno.
-    public static PaymentMethod MedioDePago() => PaymentMethod.Create(
-        "CREDIT_CARD", null,
-        CreditCard.Create("tok_test_0001", "4242", "2030/12", "Copropiedad Malpelo", "123", 1));
 
     public static Buyer Comprador() =>
         Buyer.CreateMinimal(BuyerId, "Copropiedad Malpelo", "+573001234567", "compras@malpelo.com");

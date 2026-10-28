@@ -21,7 +21,7 @@ internal static class TestOrders
     public static readonly Guid TenantId = Guid.Parse("dd000000-0000-4000-8000-000000000104");
 
     public static OrderAggregate Build() => OrderAggregate.Create(
-        OrderId, PaymentId, BuildLicense(), BuildPaymentMethod(), BuildBuyer(), BuildTenant(), BuyerId);
+        OrderId, PaymentId, BuildLicense(), BuildBuyer(), BuildTenant(), BuyerId);
 
     /// <summary>An order whose payment was already approved: provisioning in progress, both steps pending.</summary>
     public static OrderAggregate Paid()
@@ -49,13 +49,10 @@ internal static class TestOrders
         attributes: [],
         modules: [new LicenseModule(Guid.Parse("33000000-0000-4000-8000-000000000108"), "Organización", "Identidad")]);
 
-    private static PaymentMethod BuildPaymentMethod() => PaymentMethod.Create(
-        "VISA", null, CreditCard.Create("tok_test_0001", "0004", "2027/03", "APPROVED", "777", 1));
-
     private static Buyer BuildBuyer() =>
         Buyer.CreateMinimal(BuyerId, "Buyer", "+573001234567", "buyer@example.com");
 
-    private static TenantSnapshot BuildTenant() => TenantSnapshot.Create(
+    internal static TenantSnapshot BuildTenant() => TenantSnapshot.Create(
         TenantId, "Conjunto Prueba", null,
         TypeDocument.Create("NIT", "Número de Identificación Tributaria"),
         "900123456", "+573001234567", "admin@example.com", BuildLocation());

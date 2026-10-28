@@ -1,7 +1,6 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
-using CodeDesignPlus.Net.ValueObjects.Payment;
 using CodeDesignPlus.Net.ValueObjects.User;
 using ProvisioningStep = CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects.ProvisioningStep;
 
@@ -25,11 +24,6 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// This snapshot reflects exactly what the customer bought, regardless of later catalog changes.
     /// </summary>
     public License License { get; private set; } = null!;
-
-    /// <summary>
-    /// Gets the snapshot of the payment method used by the buyer for this order.
-    /// </summary>
-    public PaymentMethod PaymentMethod { get; private set; } = null!;
 
     /// <summary>
     /// Gets the snapshot of the buyer's information at the time of purchase.
@@ -127,12 +121,11 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// <summary>
     /// Creates a new Order instance with the initial status of 'Initiated'.
     /// </summary>
-    public static OrderAggregate Create(Guid id, Guid paymentId, License license, PaymentMethod paymentMethod, Buyer buyer, Tenant tenantDetail, Guid createdBy)
+    public static OrderAggregate Create(Guid id, Guid paymentId, License license, Buyer buyer, Tenant tenantDetail, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdOrderIsRequired);
         DomainGuard.GuidIsEmpty(paymentId, Errors.IdPaymentIsRequired);
         DomainGuard.IsNull(license, Errors.LicenseIdIsRequired);
-        DomainGuard.IsNull(paymentMethod, Errors.PaymentMethodIsRequired);
         DomainGuard.IsNull(buyer, Errors.BuyerIsRequired);
         DomainGuard.IsNull(tenantDetail, Errors.TenantDetailIsRequired);
 
@@ -140,7 +133,6 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         {
             PaymentId = paymentId,
             License = license,
-            PaymentMethod = paymentMethod,
             Buyer = buyer,
             PaymentStatus = PaymentStatus.Initiated,
             ProvisioningStatus = ProvisioningStatus.PaymentPending,

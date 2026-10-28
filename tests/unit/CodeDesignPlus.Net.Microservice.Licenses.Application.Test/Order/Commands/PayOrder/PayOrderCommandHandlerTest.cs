@@ -1,10 +1,14 @@
 using System.Threading;
 using System.Threading.Tasks;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using GrpcPayment = CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Setup;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order.Commands.PayOrder;
@@ -18,16 +22,21 @@ public class PayOrderCommandHandlerTest
     private readonly Mock<IUserContext> userMock = new();
     private readonly PayOrderCommandHandler handler;
 
+    private const string ReturnUrl = "https://www.kappali.test/purchase/payment-return";
+
     public PayOrderCommandHandlerTest()
     {
+        MapsterConfigLicense.Configure();
+
         handler = new PayOrderCommandHandler(
             repositoryMock.Object,
             userMock.Object,
             Mock.Of<IPubSub>(),
-            Mock.Of<IMapper>(),
+            new Mapper(),
             paymentGrpcMock.Object,
             tenantGrpcMock.Object,
-            ordersMock.Object);
+            ordersMock.Object,
+            Microsoft.Extensions.Options.Options.Create(new OnlinePaymentOptions { ReturnUrl = ReturnUrl }));
     }
 
     /// <summary>
@@ -42,7 +51,7 @@ public class PayOrderCommandHandlerTest
             [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, 1900)],
             Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: false, isPopular: false, showInLandingPage: true, Guid.NewGuid());
 
-        var request = new PayOrderCommand(Guid.NewGuid(), null!, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, null!, null!);
+        var request = new PayOrderCommand(Guid.NewGuid(), null!, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, null!);
 
         repositoryMock
             .Setup(r => r.FindAsync<LicenseAggregate>(license.Id, It.IsAny<CancellationToken>()))
@@ -67,7 +76,7 @@ public class PayOrderCommandHandlerTest
         var order = StoredOrder(buyerId, new InitiatedPayment(true, (int)NextActionType.Redirect, "https://sandbox.payu.test/pse/589", []));
         userMock.SetupGet(u => u.IdUser).Returns(buyerId);
 
-        var response = await handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!, null!), CancellationToken.None);
+        var response = await handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!), CancellationToken.None);
 
         Assert.Equal((order.PaymentId, true, NextActionType.Redirect, "https://sandbox.payu.test/pse/589"), (response.PaymentId, response.Success, response.NextAction, response.RedirectUrl));
         paymentGrpcMock.VerifyNoOtherCalls();
@@ -83,10 +92,51 @@ public class PayOrderCommandHandlerTest
         var order = StoredOrder(Guid.NewGuid(), null);
         userMock.SetupGet(u => u.IdUser).Returns(Guid.NewGuid());
 
-        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!, null!), CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!), CancellationToken.None));
 
         Assert.Equal(Errors.OrderAlreadyExists.GetCode(), exception.Code);
         paymentGrpcMock.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// The license is sold by the platform: the charge goes to the platform's merchant account, comes back to the purchase
+    /// page set in the configuration, and leaves the provider and the payment method to ms-payments and to the provider's
+    /// hosted page (pendings/660).
+    /// </summary>
+    [Fact]
+    public async Task Handle_NewOrder_ChargesThePlatformAccountAndReturnsToTheConfiguredPage()
+    {
+        // Arrange
+        var license = LicenseAggregate.Create(
+            Guid.NewGuid(), "Esencial", "Short", "Description", [],
+            [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, 1900)],
+            Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: true, isPopular: false, showInLandingPage: true, Guid.NewGuid());
+
+        var buyer = new BuyerDto
+        {
+            Name = "Copropiedad Malpelo",
+            Phone = "+573001234567",
+            Email = "compras@malpelo.com",
+            TypeDocument = CodeDesignPlus.Net.ValueObjects.User.TypeDocument.Create("NIT", "Número de Identificación Tributaria"),
+            Document = "900123456",
+        };
+
+        var request = new PayOrderCommand(Guid.NewGuid(), buyer, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, TestOrders.BuildTenant());
+        GrpcPayment.InitiatePaymentRequest? sent = null;
+
+        userMock.SetupGet(u => u.IdUser).Returns(Guid.NewGuid());
+        repositoryMock.Setup(r => r.FindAsync<LicenseAggregate>(license.Id, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        ordersMock.Setup(o => o.CreateIfAbsentAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        paymentGrpcMock
+            .Setup(p => p.InitiatePaymentAsync(It.IsAny<GrpcPayment.InitiatePaymentRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<GrpcPayment.InitiatePaymentRequest, CancellationToken>((payment, _) => sent = payment)
+            .ReturnsAsync(new GrpcPayment.InitiatePaymentResponse { PaymentId = Guid.NewGuid().ToString(), Success = true, NextAction = GrpcPayment.NextActionType.Redirect, RedirectUrl = "https://checkout.wompi.test/l/660" });
+
+        // Act
+        await handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal((true, ReturnUrl, false, "900123456"), (sent!.PlatformAccount, sent.ReturnUrl, sent.HasProvider, sent.Buyer.Document));
     }
 
     private OrderAggregate StoredOrder(Guid createdBy, InitiatedPayment? payment)

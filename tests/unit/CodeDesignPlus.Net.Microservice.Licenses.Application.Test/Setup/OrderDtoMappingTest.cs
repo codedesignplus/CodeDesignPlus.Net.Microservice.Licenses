@@ -95,7 +95,7 @@ public class OrderDtoMappingTest
     }
 
     private static OrderAggregate BuildOrder() => OrderAggregate.Create(
-        OrderId, PaymentId, BuildLicense(), BuildPaymentMethod(), BuildBuyer(), BuildTenant(), UserId);
+        OrderId, PaymentId, BuildLicense(), BuildBuyer(), BuildTenant(), UserId);
 
     private static LicenseSnapshot BuildLicense()
     {
@@ -121,11 +121,6 @@ public class OrderDtoMappingTest
             attributes: [],
             modules: modules);
     }
-
-    // PaymentMethod exige que venga el detalle: uno de los dos medios, no ninguno.
-    private static PaymentMethod BuildPaymentMethod() => PaymentMethod.Create(
-        "CREDIT_CARD", null,
-        CreditCard.Create("tok_test_0001", "4242", "2030/12", "Copropiedad Malpelo", "123", 1));
 
     private static Buyer BuildBuyer() =>
         Buyer.CreateMinimal(BuyerId, "Copropiedad Malpelo", "+573001234567", "compras@malpelo.com");

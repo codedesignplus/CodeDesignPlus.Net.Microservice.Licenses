@@ -3,6 +3,8 @@ using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
+using Microsoft.Extensions.Options;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 
@@ -13,7 +15,8 @@ public class PayOrderCommandHandler(
     IMapper mapper,
     IPaymentGrpc paymentGrpc,
     ITenantGrpc tenantGrpc,
-    IOrderRepository orders
+    IOrderRepository orders,
+    IOptions<OnlinePaymentOptions> onlinePayment
 ) : IRequestHandler<PayOrderCommand, PaymentResponse>
 {
     public const string MODULE = "Licenses";
@@ -66,7 +69,7 @@ public class PayOrderCommandHandler(
             licenseAggregate.Modules.Select(m => new Domain.ValueObjects.LicenseModule(m.Id, m.Name, m.Description)).ToList()
         );
 
-        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, request.PaymentMethod, buyer, request.TenantDetail, user.IdUser);
+        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, buyer, request.TenantDetail, user.IdUser);
 
         // Dos envíos que llegan a la vez pasan los dos la comprobación de arriba; el segundo choca contra el id y no cobra ni
         // publica: devuelve lo que haya guardado el primero.
@@ -113,7 +116,12 @@ public class PayOrderCommandHandler(
         payRequest.ReferenceId = order.Id.ToString();
 
         payRequest.Module = MODULE;
-        payRequest.Provider = PaymentProvider.Payu;
+
+        // The license is sold by the platform, not by the tenant being created: it is charged to the platform's own
+        // merchant account (pendings/660, D7 bis). The provider and the payment method are not chosen here: ms-payments
+        // resolves the provider and the buyer picks the method on the provider's hosted page.
+        payRequest.PlatformAccount = true;
+        payRequest.ReturnUrl = onlinePayment.Value.ReturnUrl;
 
         var isCorrectCurrency = order.License.Total.Currency == tenantCurrency.Code;
         ApplicationGuard.IsFalse(isCorrectCurrency, Errors.InvalidCurrency);
