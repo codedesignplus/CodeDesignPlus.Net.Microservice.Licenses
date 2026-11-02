@@ -307,7 +307,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
             PeriodStart = periodStart ?? now;
             PeriodEnd = BillingPeriod.End(PeriodStart.Value, License.BillingType);
 
-            ProvisioningHistory.Add(new ProvisioningStep("Payment", ProvisioningStepStatus.Completed, now));
+            ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.Payment, ProvisioningStepStatus.Completed, now));
 
             if (Type == OrderType.Purchase)
             {
@@ -333,7 +333,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             ProvisioningStatus = ProvisioningStatus.PaymentFailed;
-            ProvisioningHistory.Add(new ProvisioningStep("Payment", ProvisioningStepStatus.Failed, now));
+            ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.Payment, ProvisioningStepStatus.Failed, now));
         }
 
         UpdatedAt = SystemClock.Instance.GetCurrentInstant();
