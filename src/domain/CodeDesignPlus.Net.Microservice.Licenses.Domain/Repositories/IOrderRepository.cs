@@ -113,4 +113,43 @@ public interface IOrderRepository : IRepositoryBase
     /// <param name="payment">La respuesta de la pasarela.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
     Task RecordInitiatedPaymentAsync(Guid id, InitiatedPayment payment, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las órdenes pagadas y activas de una copropiedad: con ellas se arma su suscripción (pendings/735).
+    /// </summary>
+    /// <param name="tenantId">La copropiedad.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las órdenes, en cualquier orden.</returns>
+    Task<List<OrderAggregate>> FindPaidByTenantAsync(Guid tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las órdenes pagadas y activas de todas las copropiedades, para el job de avisos de vencimiento (pendings/736).
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las órdenes, en cualquier orden.</returns>
+    Task<List<OrderAggregate>> FindAllPaidAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las renovaciones y los cambios de licencia de una copropiedad que esperan todavía su pago.
+    /// </summary>
+    /// <param name="tenantId">La copropiedad.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las órdenes.</returns>
+    Task<List<OrderAggregate>> FindAwaitingSubscriptionPaymentAsync(Guid tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Deja sin efecto una orden que otra reemplazó, solo si su pago sigue pendiente.
+    /// </summary>
+    /// <param name="order">La orden, ya marcada con <c>Supersede</c>.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>true</c> si esta llamada la reemplazó; <c>false</c> si su pago ya tenía resultado.</returns>
+    Task<bool> SupersedeAsync(OrderAggregate order, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Inactiva las órdenes cuyo periodo no prestado se acreditó al cambiar de licencia (pendings/738).
+    /// </summary>
+    /// <param name="orderIds">Las órdenes.</param>
+    /// <param name="updatedBy">Quien pagó el cambio.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    Task DeactivateAsync(IReadOnlyCollection<Guid> orderIds, Guid updatedBy, CancellationToken cancellationToken);
 }

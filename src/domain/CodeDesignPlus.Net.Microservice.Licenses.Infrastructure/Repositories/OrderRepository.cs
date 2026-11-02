@@ -100,6 +100,8 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
             .Set(x => x.IsSuccess, order.IsSuccess)
             .Set(x => x.ProvisioningStatus, order.ProvisioningStatus)
             .Set(x => x.ProvisioningHistory, order.ProvisioningHistory)
+            .Set(x => x.PeriodStart, order.PeriodStart)
+            .Set(x => x.PeriodEnd, order.PeriodEnd)
             .Set(x => x.UpdatedAt, order.UpdatedAt);
 
         var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
@@ -210,10 +212,9 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
         var filterExpression = criteria.GetFilterExpression<OrderAggregate>();
         var sortBy = criteria.GetSortByExpression<OrderAggregate>();
 
-        var filter = Builders<OrderAggregate>.Filter.And(
-            Builders<OrderAggregate>.Filter.Where(filterExpression),
-            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true)
-        );
+        // Sin filtrar por activas: el Super Admin ve también la orden que un cambio de licencia dejó inactiva y la que otra
+        // reemplazó antes de pagarse (pendings/738). Quien quiera solo las activas lo pide en el criterio.
+        var filter = Builders<OrderAggregate>.Filter.Where(filterExpression);
 
         var totalCount = await collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
@@ -259,5 +260,80 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
         var update = Builders<OrderAggregate>.Update.Set(x => x.InitiatedPayment, payment);
 
         return GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<List<OrderAggregate>> FindPaidByTenantAsync(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.TenantDetail.Id, tenantId),
+            Builders<OrderAggregate>.Filter.Eq(x => x.PaymentStatus, PaymentStatus.Succeeded),
+            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true)
+        );
+
+        return GetCollection<OrderAggregate>().Find(filter).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<List<OrderAggregate>> FindAllPaidAsync(CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.PaymentStatus, PaymentStatus.Succeeded),
+            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true),
+            Builders<OrderAggregate>.Filter.Ne(x => x.PeriodEnd, null)
+        );
+
+        return GetCollection<OrderAggregate>().Find(filter).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<List<OrderAggregate>> FindAwaitingSubscriptionPaymentAsync(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.TenantDetail.Id, tenantId),
+            Builders<OrderAggregate>.Filter.In(x => x.Type, [OrderType.Renewal, OrderType.Change]),
+            Builders<OrderAggregate>.Filter.In(x => x.PaymentStatus, [PaymentStatus.Unknown, PaymentStatus.Initiated, PaymentStatus.Pending]),
+            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true)
+        );
+
+        return GetCollection<OrderAggregate>().Find(filter).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> SupersedeAsync(OrderAggregate order, CancellationToken cancellationToken)
+    {
+        // Solo si el pago sigue pendiente: si el webhook lo resolvió a la vez, gana el pago.
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.Id, order.Id),
+            Builders<OrderAggregate>.Filter.In(x => x.PaymentStatus, [PaymentStatus.Unknown, PaymentStatus.Initiated, PaymentStatus.Pending])
+        );
+
+        var update = Builders<OrderAggregate>.Update
+            .Set(x => x.SupersededBy, order.SupersededBy)
+            .Set(x => x.IsActive, false)
+            .Set(x => x.UpdatedAt, order.UpdatedAt)
+            .Set(x => x.UpdatedBy, order.UpdatedBy);
+
+        var result = await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <inheritdoc />
+    public Task DeactivateAsync(IReadOnlyCollection<Guid> orderIds, Guid updatedBy, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var filter = Builders<OrderAggregate>.Filter.In(x => x.Id, orderIds);
+
+        var update = Builders<OrderAggregate>.Update
+            .Set(x => x.IsActive, false)
+            .Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant())
+            .Set(x => x.UpdatedBy, updatedBy);
+
+        return GetCollection<OrderAggregate>().UpdateManyAsync(filter, update, cancellationToken: cancellationToken);
     }
 }

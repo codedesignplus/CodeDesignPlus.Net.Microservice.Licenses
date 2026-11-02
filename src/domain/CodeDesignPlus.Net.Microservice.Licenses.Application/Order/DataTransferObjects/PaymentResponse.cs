@@ -31,6 +31,11 @@ public enum NextActionType
 public class PaymentResponse
 {
     /// <summary>
+    /// La orden cuyo pago se inició. Si se reutilizó una renovación o un cambio que ya esperaba su pago, es esa orden y no
+    /// la del id enviado (pendings/735): la pantalla espera el desenlace leyendo <c>GET Order/{id}</c> con este id.
+    /// </summary>
+    public Guid Id { get; set; }
+    /// <summary>
     /// Indica si la iniciación del pago fue exitosa.
     /// </summary>
     public bool Success { get; set; }
@@ -50,4 +55,9 @@ public class PaymentResponse
     /// Metadatos adicionales proporcionados por el proveedor de pagos.
     /// </summary>
     public Dictionary<string, string> Metadata { get; set; } = [];
+    /// <summary>
+    /// Si la orden quedó pagada sin pasar por la pasarela: el crédito y el saldo a favor cubrieron todo el precio
+    /// (pendings/735, 738). Con <c>true</c> no hay a dónde redirigir y <see cref="NextAction"/> es <c>None</c>.
+    /// </summary>
+    public bool ConfirmedWithoutPayment { get; set; }
 }

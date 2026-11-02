@@ -16,6 +16,11 @@
     "212": "The price for the selected billing type is not available in the license.",
     "213": "The tenant ID is required.",
     "214": "The license ID is required.",
-    "228": "This license is no longer available for purchase."
+    "228": "This license is no longer available for purchase.",
+    "229": "The organization has no paid subscription.",
+    "230": "This license can no longer be renewed. Change to another license.",
+    "231": "You can only change to a license with all your modules and equal or greater limits.",
+    "232": "This license is not offered to your organization.",
+    "233": "That order belongs to another organization."
   }
 }

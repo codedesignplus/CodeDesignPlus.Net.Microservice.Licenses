@@ -1,4 +1,4 @@
-﻿using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Emails.gRpc;
 using CodeDesignPlus.Net.gRpc.Clients.Services.FileStorage;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
@@ -15,6 +15,7 @@ public class UpdateStateOrderCommandHandler(
     IEmailGrpc emailGrpc,
     IFileStorageGrpc fileStorage,
     ICurrencyGrpc currencyGrpc,
+    ISubscriptionSettlement settlement,
     ILogger<UpdateStateOrderCommandHandler> logger
 ) : IRequestHandler<UpdateStateOrderCommand>
 {
@@ -33,11 +34,17 @@ public class UpdateStateOrderCommandHandler(
 
         var previousStatus = order.PaymentStatus;
 
-        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId);
+        // Una reentrega del mismo resultado no cambia nada, y no debe regenerar el recibo ni reenviar el correo. Lo que
+        // sigue al pago de una renovación o un cambio sí se repasa: es idempotente, y si la entrega anterior se cayó a
+        // mitad, aquí se completa.
+        if (request.PaymentStatus == previousStatus)
+        {
+            await SettleAsync(order, cancellationToken);
 
-        // Una reentrega del mismo resultado no cambia nada, y no debe regenerar el recibo ni reenviar el correo.
-        if (order.PaymentStatus == previousStatus)
             return;
+        }
+
+        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken));
 
         // Escritura condicional: si el webhook y la conciliacion aplican el mismo pago a la vez, solo uno gana, y
         // solo ese publica el aprovisionamiento. Nunca UpdateAsync: el documento entero pisaria los pasos que
@@ -46,6 +53,14 @@ public class UpdateStateOrderCommandHandler(
             return;
 
         await pubsub.PublishAsync(order.GetAndClearEvents(), cancellationToken);
+
+        await SettleAsync(order, cancellationToken);
+
+        if (request.PaymentStatus == PaymentStatus.Succeeded && order.SupersededBy is not null)
+        {
+            // Lo pagado quedó como saldo a favor: ni recibo de licencia ni correo de renovación.
+            return;
+        }
 
         if (request.PaymentStatus == PaymentStatus.Succeeded)
         {
@@ -113,13 +128,17 @@ public class UpdateStateOrderCommandHandler(
                     // Solo el recibo: a estas alturas los pasos de aprovisionamiento ya se estan marcando.
                     await orderRepository.AttachReceiptAsync(order.Id, order.Receipt!, order.Buyer.BuyerId, cancellationToken);
 
+                    var (template, emailVariables) = order.Type == OrderType.Renewal
+                        ? ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency.DecimalDigits))
+                        : ("PurchaseConfirmation", variables);
+
                     var sendEmailEvent = new SendEmailDomainEvent(
                         Guid.NewGuid(),
-                        templateName: "PurchaseConfirmation",
-                        to: [order.Buyer.Email],
+                        templateName: template,
+                        to: Recipients(order),
                         cc: [],
                         bcc: [],
-                        variables: variables,
+                        variables: emailVariables,
                         attachments: [attachment],
                         tenant: tenant
                     );
@@ -133,4 +152,44 @@ public class UpdateStateOrderCommandHandler(
             }
         }
     }
+
+    /// <summary>
+    /// Desde cuándo paga la orden si este resultado la aprueba: una renovación pagada por adelantado empieza donde termina
+    /// lo ya pagado, no hoy (pendings/735); lo demás empieza al pagarse.
+    /// </summary>
+    private async Task<Instant?> PeriodStartAsync(OrderAggregate order, PaymentStatus status, CancellationToken cancellationToken)
+    {
+        if (status != PaymentStatus.Succeeded || order.Type != OrderType.Renewal || order.SupersededBy is not null)
+        {
+            return null;
+        }
+
+        var now = SystemClock.Instance.GetCurrentInstant();
+        var paid = await orderRepository.FindPaidByTenantAsync(order.TenantDetail.Id, cancellationToken);
+        var subscription = Domain.ServiceDomain.SubscriptionTimeline.From(paid.Where(x => x.Id != order.Id));
+
+        return subscription is not null && subscription.PaidThrough > now ? subscription.PaidThrough : now;
+    }
+
+    private Task SettleAsync(OrderAggregate order, CancellationToken cancellationToken)
+    {
+        if (order.Type == OrderType.Purchase)
+        {
+            return Task.CompletedTask;
+        }
+
+        return order.PaymentStatus switch
+        {
+            PaymentStatus.Succeeded => settlement.SettleAsync(order, cancellationToken),
+            PaymentStatus.Failed or PaymentStatus.Expired => settlement.ReleaseAsync(order, cancellationToken),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    /// <summary>
+    /// A quién va el correo: a quien pagó y, en una renovación o un cambio, también al correo de la copropiedad.
+    /// </summary>
+    private static List<string> Recipients(OrderAggregate order) => order.Type == OrderType.Purchase
+        ? [order.Buyer.Email]
+        : [.. new[] { order.Buyer.Email, order.TenantDetail.Email }.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase)];
 }

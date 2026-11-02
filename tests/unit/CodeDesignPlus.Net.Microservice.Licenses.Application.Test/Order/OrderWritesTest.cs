@@ -31,6 +31,7 @@ public class OrderWritesTest
 
     private UpdateStateOrderCommandHandler PaymentHandler() => new(
         repository.Object, pubsub.Object, liveChannel.Object, emailGrpc.Object, fileStorage.Object, currencyGrpc.Object,
+        new Mock<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.ISubscriptionSettlement>().Object,
         new Mock<ILogger<UpdateStateOrderCommandHandler>>().Object);
 
     private void ReceiptCanBeGenerated()

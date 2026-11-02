@@ -63,6 +63,17 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     public bool ShowInLandingPage { get; private set; } = false;
 
     /// <summary>
+    /// Si la licencia se le ofrece a esa copropiedad para cambiarse a ella (pendings/738).
+    /// </summary>
+    /// <remarks>
+    /// Hoy son las que están a la venta y se ven en la landing. Las licencias a medida (pendings/464) se sumarán aquí: las
+    /// privadas que el equipo comercial le ofrezca a esa copropiedad. Quien lista o acepta un cambio pregunta solo esto.
+    /// </remarks>
+    /// <param name="tenantId">La copropiedad.</param>
+    /// <returns><c>true</c> si se le ofrece.</returns>
+    public bool IsOfferedTo(Guid tenantId) => IsActive && !IsDeleted && ShowInLandingPage;
+
+    /// <summary>
     /// Creates a new valid instance of the License aggregate and registers the creation domain event.
     /// </summary>
     /// <param name="id">The unique identifier to assign.</param>

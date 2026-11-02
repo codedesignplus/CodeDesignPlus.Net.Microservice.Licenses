@@ -25,4 +25,39 @@ public class OrderDto : IDtoBase
     public Domain.ValueObjects.FileAttachment? Receipt { get; set; }
     public Instant CreatedAt { get; set; }
     public bool IsActive { get; set; }
+
+    /// <summary>
+    /// Para qué es: la compra, una renovación o un cambio de licencia (pendings/735, 738).
+    /// </summary>
+    public OrderType Type { get; set; }
+
+    /// <summary>
+    /// El periodo que paga; nulo mientras no se pague.
+    /// </summary>
+    public Instant? PeriodStart { get; set; }
+
+    /// <summary>
+    /// El fin del periodo que paga; nulo mientras no se pague.
+    /// </summary>
+    public Instant? PeriodEnd { get; set; }
+
+    /// <summary>
+    /// En un cambio, el crédito por lo no prestado de la licencia anterior, en unidades mínimas.
+    /// </summary>
+    public long ProrationCredit { get; set; }
+
+    /// <summary>
+    /// El saldo a favor aplicado, en unidades mínimas.
+    /// </summary>
+    public long CreditBalanceApplied { get; set; }
+
+    /// <summary>
+    /// Lo que cobró o cobra la pasarela, en unidades mínimas.
+    /// </summary>
+    public long AmountDue { get; set; }
+
+    /// <summary>
+    /// La orden que reemplazó a esta antes de pagarse, si alguna.
+    /// </summary>
+    public Guid? SupersededBy { get; set; }
 }

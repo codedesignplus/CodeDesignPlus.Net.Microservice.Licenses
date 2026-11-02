@@ -1,4 +1,4 @@
-﻿using CodeDesignPlus.Net.Core.Abstractions;
+using CodeDesignPlus.Net.Core.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Setup;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +19,16 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application
             services.AddOptions<OnlinePaymentOptions>()
                 .Bind(configuration.GetSection(OnlinePaymentOptions.Section))
                 .ValidateOnStart();
+
+            // La política de vencimiento de las suscripciones (pendings/735, 736, 737).
+            services.AddSingleton<IValidateOptions<SubscriptionOptions>, SubscriptionOptionsValidator>();
+
+            services.AddOptions<SubscriptionOptions>()
+                .Bind(configuration.GetSection(SubscriptionOptions.Section))
+                .ValidateOnStart();
+
+            services.AddScoped<Order.Services.ISubscriptionCheckout, Order.Services.SubscriptionCheckout>();
+            services.AddScoped<Order.Services.ISubscriptionSettlement, Order.Services.SubscriptionSettlement>();
         }
     }
 }

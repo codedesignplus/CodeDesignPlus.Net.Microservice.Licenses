@@ -1,9 +1,11 @@
-﻿using CodeDesignPlus.Microservice.Api.Dtos;
+using CodeDesignPlus.Microservice.Api.Dtos;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.ChangeSubscription;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.RenewSubscription;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -32,7 +34,14 @@ public static class MapsterConfigLicense
                 PaymentStatus = src.PaymentStatus,
                 ProvisioningStatus = src.ProvisioningStatus,
                 ProvisioningHistory = src.ProvisioningHistory,
-                Receipt = src.Receipt
+                Receipt = src.Receipt,
+                Type = src.Type,
+                PeriodStart = src.PeriodStart,
+                PeriodEnd = src.PeriodEnd,
+                ProrationCredit = src.ProrationCredit.Amount,
+                CreditBalanceApplied = src.CreditBalanceApplied == null ? 0 : src.CreditBalanceApplied.Amount,
+                AmountDue = src.AmountToCharge.Amount,
+                SupersededBy = src.SupersededBy
             });
 
 
@@ -53,6 +62,14 @@ public static class MapsterConfigLicense
                 src.License,
                 src.TenantDetail
             ));
+
+        TypeAdapterConfig<RenewSubscriptionDto, RenewSubscriptionCommand>
+            .NewConfig()
+            .MapWith(src => new RenewSubscriptionCommand(src.Id));
+
+        TypeAdapterConfig<ChangeSubscriptionDto, ChangeSubscriptionCommand>
+            .NewConfig()
+            .MapWith(src => new ChangeSubscriptionCommand(src.Id, src.LicenseId));
 
         TypeAdapterConfig<LicenseAggregate, License.DataTransferObjects.LicenseDto>
             .NewConfig()
@@ -92,10 +109,11 @@ public static class MapsterConfigLicense
                BuyerId = src.Buyer.BuyerId.ToString(),
                Name = src.Buyer.Name,
                Phone = src.Buyer.Phone,
-               Document = src.Buyer.Document,
-               TypeDocument = new gRpc.Clients.Services.Payment.TypeDocument()
+               // El comprador de una renovación copia los datos de la orden anterior, que pueden no traer documento.
+               Document = src.Buyer.Document ?? string.Empty,
+               TypeDocument = src.Buyer.TypeDocument == null ? null : new gRpc.Clients.Services.Payment.TypeDocument()
                {
-                   Code = src.Buyer.TypeDocument!.Code,
+                   Code = src.Buyer.TypeDocument.Code,
                    Name = src.Buyer.TypeDocument.Name,
                },
                Email = src.Buyer.Email

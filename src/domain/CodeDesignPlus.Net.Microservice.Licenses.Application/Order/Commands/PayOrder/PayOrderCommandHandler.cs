@@ -2,6 +2,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Payment;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using Microsoft.Extensions.Options;
@@ -80,6 +81,8 @@ public class PayOrderCommandHandler(
 
         var paymentResponse = mapper.Map<PaymentResponse>(responseGrpc);
 
+        paymentResponse.Id = order.Id;
+
         // Para devolverlo igual a un reintento del mismo checkout (pendings/589).
         await orders.RecordInitiatedPaymentAsync(order.Id, new InitiatedPayment(paymentResponse.Success, (int)paymentResponse.NextAction, paymentResponse.RedirectUrl, paymentResponse.Metadata ?? []), cancellationToken);
 
@@ -88,25 +91,7 @@ public class PayOrderCommandHandler(
         return paymentResponse;
     }
 
-    /// <summary>
-    /// La respuesta del checkout a partir de la orden guardada: la del cobro que se inició o, si aún no se anotó, la de un
-    /// cobro cuyo desenlace hay que esperar.
-    /// </summary>
-    private static PaymentResponse ResponseOf(OrderAggregate order) => order.InitiatedPayment is { } payment
-        ? new PaymentResponse
-        {
-            PaymentId = order.PaymentId,
-            Success = payment.Success,
-            NextAction = (Order.DataTransferObjects.NextActionType)payment.NextAction,
-            RedirectUrl = payment.RedirectUrl,
-            Metadata = payment.Metadata,
-        }
-        : new PaymentResponse
-        {
-            PaymentId = order.PaymentId,
-            Success = order.IsSuccess,
-            NextAction = Order.DataTransferObjects.NextActionType.WaitConfirmation,
-        };
+    private static PaymentResponse ResponseOf(OrderAggregate order) => PaymentResponses.Of(order);
 
     private async Task<InitiatePaymentResponse> PayLicenseAsync(OrderAggregate order, LicenseAggregate license, Currency tenantCurrency, CancellationToken cancellationToken)
     {

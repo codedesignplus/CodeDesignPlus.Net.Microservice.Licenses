@@ -16,6 +16,11 @@
     "212": "La licencia no tiene precio para el tipo de facturación elegido.",
     "213": "El identificador de la copropiedad es obligatorio.",
     "214": "El identificador de la licencia es obligatorio.",
-    "228": "Esta licencia ya no está disponible para la compra."
+    "228": "Esta licencia ya no está disponible para la compra.",
+    "229": "La copropiedad no tiene una suscripción pagada.",
+    "230": "Esta licencia ya no se puede renovar. Cámbiate a otra licencia.",
+    "231": "Solo puedes cambiarte a una licencia con todos tus módulos y límites iguales o mayores.",
+    "232": "Esta licencia no se le ofrece a tu copropiedad.",
+    "233": "Esa orden es de otra copropiedad."
   }
 }

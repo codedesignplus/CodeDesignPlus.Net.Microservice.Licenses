@@ -16,6 +16,11 @@
     "212": "La licence n'a pas de prix pour le type de facturation choisi.",
     "213": "L'identifiant de la copropriété est obligatoire.",
     "214": "L'identifiant de la licence est obligatoire.",
-    "228": "Cette licence n’est plus disponible à l’achat."
+    "228": "Cette licence n’est plus disponible à l’achat.",
+    "229": "La copropriété n'a pas d'abonnement payé.",
+    "230": "Cette licence ne peut plus être renouvelée. Passez à une autre licence.",
+    "231": "Vous ne pouvez passer qu'à une licence avec tous vos modules et des limites égales ou supérieures.",
+    "232": "Cette licence n'est pas proposée à votre copropriété.",
+    "233": "Cette commande appartient à une autre copropriété."
   }
 }

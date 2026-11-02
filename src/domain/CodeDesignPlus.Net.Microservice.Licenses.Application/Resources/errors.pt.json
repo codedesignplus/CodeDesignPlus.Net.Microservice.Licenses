@@ -16,6 +16,11 @@
     "212": "A licença não tem preço para o tipo de faturamento escolhido.",
     "213": "O identificador do condomínio é obrigatório.",
     "214": "O identificador da licença é obrigatório.",
-    "228": "Esta licença não está mais disponível para compra."
+    "228": "Esta licença não está mais disponível para compra.",
+    "229": "O condomínio não tem uma assinatura paga.",
+    "230": "Esta licença não pode mais ser renovada. Mude para outra licença.",
+    "231": "Você só pode mudar para uma licença com todos os seus módulos e limites iguais ou maiores.",
+    "232": "Esta licença não é oferecida ao seu condomínio.",
+    "233": "Esse pedido é de outro condomínio."
   }
 }

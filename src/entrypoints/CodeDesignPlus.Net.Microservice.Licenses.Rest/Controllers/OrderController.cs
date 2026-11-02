@@ -113,10 +113,12 @@ public class OrderController(IMediator mediator, IMapper mapper, IUserContext us
     }
 
     /// <summary>
-    /// Get the active subscription for the authenticated tenant.
-    /// Returns the full license snapshot from the successful order.
+    /// Get the subscription of the authenticated tenant: the license of the current order, until when it is paid, its
+    /// status and the credit balance (pendings/735).
     /// </summary>
-    /// <param name="licenseId">The license ID assigned to the tenant.</param>
+    /// <param name="licenseId">
+    /// Ignored: the subscription is the tenant's, whatever its license. It is still accepted because the screen sends it.
+    /// </param>
     /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
     /// <response code="200">Returns the active subscription details.</response>
     /// <response code="400">If the request is invalid.</response>
@@ -129,9 +131,9 @@ public class OrderController(IMediator mediator, IMapper mapper, IUserContext us
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ProblemDetails))]
     [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
-    public async Task<IActionResult> GetSubscription([FromQuery] Guid licenseId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetSubscription([FromQuery] Guid? licenseId, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetSubscriptionQuery(userContext.Tenant, licenseId), cancellationToken);
+        var result = await mediator.Send(new GetSubscriptionQuery(userContext.Tenant), cancellationToken);
 
         return Ok(result);
     }

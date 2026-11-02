@@ -91,6 +91,17 @@
     "222": "The file attachment name is invalid.",
     "223": "The file attachment target is invalid.",
     "226": "The license discount cannot exceed 100%.",
-    "227": "The license tax cannot exceed 100%."
+    "227": "The license tax cannot exceed 100%.",
+    "151": "The billing type of the price does not define a period.",
+    "152": "A credit cannot be negative.",
+    "153": "A renewal does not credit the unused part of a previous license.",
+    "154": "The change of license must say what it credits of the previous license.",
+    "155": "The charge does not match the price of the order.",
+    "156": "Only an order whose payment is still pending can be replaced.",
+    "157": "The order does not pay any period yet.",
+    "158": "The days to prorate are not valid.",
+    "159": "The credit movement is required.",
+    "160": "The credit balance is not enough for this order. Reload the page and try again.",
+    "161": "The subscription is required."
   }
 }

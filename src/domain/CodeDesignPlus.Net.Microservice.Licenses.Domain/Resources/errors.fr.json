@@ -91,6 +91,17 @@
     "222": "Le nom de la pièce jointe n'est pas valide.",
     "223": "La destination de la pièce jointe n'est pas valide.",
     "226": "La remise de la licence ne peut pas dépasser 100 %.",
-    "227": "La taxe de la licence ne peut pas dépasser 100 %."
+    "227": "La taxe de la licence ne peut pas dépasser 100 %.",
+    "151": "La périodicité du prix ne définit pas de période.",
+    "152": "Un crédit ne peut pas être négatif.",
+    "153": "Un renouvellement ne crédite pas la partie non utilisée d'une licence précédente.",
+    "154": "Le changement de licence doit indiquer ce qu'il crédite de la licence précédente.",
+    "155": "Le paiement ne correspond pas au prix de la commande.",
+    "156": "Seule une commande dont le paiement est encore en attente peut être remplacée.",
+    "157": "La commande ne paie encore aucune période.",
+    "158": "Les jours à proratiser ne sont pas valides.",
+    "159": "Le mouvement du solde créditeur est obligatoire.",
+    "160": "Le solde créditeur ne suffit pas pour cette commande. Rechargez la page et réessayez.",
+    "161": "L'abonnement est obligatoire."
   }
 }

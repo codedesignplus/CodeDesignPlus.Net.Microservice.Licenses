@@ -102,5 +102,16 @@ public class Errors : IErrorCodes
 
     public static readonly Error DiscountLicenseCannotExceedOneHundredPercent = new("226");
     public static readonly Error TaxLicenseCannotExceedOneHundredPercent = new("227");
-}
 
+    public static readonly Error BillingTypeHasNoPeriod = new("151");
+    public static readonly Error CreditCannotBeNegative = new("152");
+    public static readonly Error RenewalCannotCarryProrationCredit = new("153");
+    public static readonly Error CreditedPeriodsAreRequired = new("154");
+    public static readonly Error ChargeDoesNotMatchTheOrder = new("155");
+    public static readonly Error OnlyAnUnpaidOrderCanBeSuperseded = new("156");
+    public static readonly Error OrderHasNoPeriod = new("157");
+    public static readonly Error ProrationDaysAreInvalid = new("158");
+    public static readonly Error CreditMovementIsRequired = new("159");
+    public static readonly Error InsufficientCreditBalance = new("160");
+    public static readonly Error SubscriptionIsRequired = new("161");
+}

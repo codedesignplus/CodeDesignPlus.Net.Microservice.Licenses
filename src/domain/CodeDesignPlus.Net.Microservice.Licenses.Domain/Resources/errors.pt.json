@@ -91,6 +91,17 @@
     "222": "O nome do anexo não é válido.",
     "223": "O destino do anexo não é válido.",
     "226": "O desconto da licença não pode ultrapassar 100%.",
-    "227": "O imposto da licença não pode ultrapassar 100%."
+    "227": "O imposto da licença não pode ultrapassar 100%.",
+    "151": "A periodicidade do preço não define um período.",
+    "152": "Um crédito não pode ser negativo.",
+    "153": "Uma renovação não credita a parte não usada de uma licença anterior.",
+    "154": "A mudança de licença deve dizer o que credita da licença anterior.",
+    "155": "A cobrança não corresponde ao preço do pedido.",
+    "156": "Só é possível substituir um pedido cujo pagamento ainda está pendente.",
+    "157": "O pedido ainda não paga nenhum período.",
+    "158": "Os dias para ratear não são válidos.",
+    "159": "O movimento do saldo a favor é obrigatório.",
+    "160": "O saldo a favor não é suficiente para este pedido. Recarregue a página e tente novamente.",
+    "161": "A assinatura é obrigatória."
   }
 }

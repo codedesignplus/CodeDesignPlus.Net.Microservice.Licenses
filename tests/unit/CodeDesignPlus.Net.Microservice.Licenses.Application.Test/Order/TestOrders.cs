@@ -32,7 +32,18 @@ internal static class TestOrders
         return order;
     }
 
-    private static LicenseSnapshot BuildLicense() => LicenseSnapshot.Create(
+    /// <summary>
+    /// A paid purchase whose period starts at <paramref name="start"/> (pendings/735).
+    /// </summary>
+    public static OrderAggregate PaidFrom(Instant start, Guid? id = null, LicenseSnapshot? license = null)
+    {
+        var order = OrderAggregate.Create(id ?? Guid.NewGuid(), Guid.NewGuid(), license ?? BuildLicense(), BuildBuyer(), BuildTenant(), BuyerId);
+        order.SetPaymentStatus(PaymentStatus.Succeeded, BuyerId, start);
+        order.GetAndClearEvents();
+        return order;
+    }
+
+    internal static LicenseSnapshot BuildLicense() => LicenseSnapshot.Create(
         id: Guid.Parse("44000000-0000-4000-8000-000000000109"),
         name: "Esencial",
         total: Money.FromLong(14_280_000L, "COP"),

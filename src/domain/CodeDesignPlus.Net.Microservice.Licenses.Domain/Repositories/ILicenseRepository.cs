@@ -11,4 +11,11 @@ public interface ILicenseRepository : IRepositoryBase
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>false</c> si otro envío del mismo formulario ya lo guardó: el segundo choca contra la clave primaria.</returns>
     Task<bool> CreateIfAbsentAsync(LicenseAggregate license, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las licencias del catálogo que siguen a la venta, para ofrecerlas como cambio de licencia (pendings/738).
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las licencias activas y no borradas.</returns>
+    Task<List<LicenseAggregate>> FindOnSaleAsync(CancellationToken cancellationToken);
 }

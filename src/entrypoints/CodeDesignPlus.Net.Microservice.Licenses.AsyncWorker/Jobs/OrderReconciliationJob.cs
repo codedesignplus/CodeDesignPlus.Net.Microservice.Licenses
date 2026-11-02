@@ -139,19 +139,8 @@ public class OrderReconciliationJob(
                 logger.LogWarning("Reconciling stuck InProgress order {OrderId}, attempt {Attempt} of {Max}. Missing steps: {Missing}",
                     order.Id, attempt, OrderAggregate.MaxProvisioningAttempts, missing);
 
-                var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(
-                    order.Id,
-                    order.TenantDetail,
-                    LicenseTenant.Create(
-                        order.License.Id,
-                        order.License.Name,
-                        order.CreatedAt,
-                        order.CreatedAt.Plus(Duration.FromDays(order.License.BillingType == BillingType.Monthly ? 30 : 365)),
-                        order.License.Modules,
-                        order.License.Attributes
-                    ),
-                    order.Buyer.BuyerId
-                );
+                // Con el periodo que se fijó al aprobarse el pago, no con uno calculado desde la creación (pendings/735).
+                var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(order.Id, order.TenantDetail, order.ToLicenseTenant(), order.Buyer.BuyerId);
 
                 await pubsub.PublishAsync(@event, cancellationToken);
 

@@ -25,4 +25,10 @@ public class LicenseRepository(IServiceProvider serviceProvider, IOptions<MongoO
             return false;
         }
     }
+
+    /// <inheritdoc />
+    public Task<List<LicenseAggregate>> FindOnSaleAsync(CancellationToken cancellationToken)
+    {
+        return GetCollection<LicenseAggregate>().Find(x => x.IsActive == true && x.IsDeleted == false).ToListAsync(cancellationToken);
+    }
 }

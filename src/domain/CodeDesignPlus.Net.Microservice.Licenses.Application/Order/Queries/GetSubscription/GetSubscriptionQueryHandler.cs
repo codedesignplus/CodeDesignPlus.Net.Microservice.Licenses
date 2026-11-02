@@ -1,25 +1,34 @@
-using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
+using Microsoft.Extensions.Options;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetSubscription;
 
 /// <summary>
-/// Handler para obtener la suscripción activa de un tenant.
-/// Busca la orden exitosa para el tenant y la licencia indicada, retornando el snapshot completo.
-/// Money amounts are returned in minor units; the client converts for display.
+/// Arma la suscripción de una copropiedad con sus órdenes pagadas: la licencia en curso, hasta cuándo está pagada, su
+/// estado y su saldo a favor (pendings/735).
 /// </summary>
-public class GetSubscriptionQueryHandler(IOrderRepository repository)
+/// <remarks>
+/// Money amounts are returned in minor units; the client converts for display.
+/// </remarks>
+public class GetSubscriptionQueryHandler(IOrderRepository repository, ICreditBalanceRepository creditBalances, IOptions<SubscriptionOptions> options)
     : IRequestHandler<GetSubscriptionQuery, SubscriptionDto>
 {
     public async Task<SubscriptionDto> Handle(GetSubscriptionQuery request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
         ApplicationGuard.GuidIsEmpty(request.TenantId, Errors.TenantIdIsRequired);
-        ApplicationGuard.GuidIsEmpty(request.LicenseId, Errors.LicenseIdIsRequired);
 
-        var order = await repository.FindActiveSubscriptionAsync(request.TenantId, request.LicenseId, cancellationToken);
+        var subscription = SubscriptionTimeline.From(await repository.FindPaidByTenantAsync(request.TenantId, cancellationToken));
 
-        ApplicationGuard.IsNull(order, Errors.OrderNotFound);
+        ApplicationGuard.IsNull(subscription, Errors.OrderNotFound);
+
+        var now = SystemClock.Instance.GetCurrentInstant();
+        var order = subscription.CurrentAt(now);
+        var balance = await creditBalances.FindAsync<CreditBalanceAggregate>(request.TenantId, request.TenantId, cancellationToken);
+        var awaiting = await repository.FindAwaitingSubscriptionPaymentAsync(request.TenantId, cancellationToken);
+
         return new SubscriptionDto
         {
             Id = order.Id,
@@ -27,6 +36,15 @@ public class GetSubscriptionQueryHandler(IOrderRepository repository)
             ProvisioningStatus = order.ProvisioningStatus,
             CreatedAt = order.CreatedAt,
             IsActive = order.IsActive,
+            PeriodStart = order.PeriodStart!.Value,
+            PeriodEnd = subscription.PaidThrough,
+            DaysRemaining = subscription.DaysRemaining(now),
+            Status = subscription.StatusAt(now, options.Value.ExpiringWindowDays, options.Value.GraceDays),
+            GraceEndsAt = subscription.GraceEndsAt(options.Value.GraceDays),
+            CreditBalance = balance?.Balance.Amount ?? 0,
+            Currency = order.License.Total.Currency,
+            BillingType = order.License.BillingType,
+            HasPaymentInProgress = awaiting.Count > 0,
             License = new SubscriptionLicenseDto
             {
                 Id = order.License.Id,

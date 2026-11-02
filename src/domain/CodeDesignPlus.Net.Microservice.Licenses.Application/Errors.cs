@@ -31,4 +31,10 @@ public class Errors: IErrorCodes
     public static readonly Error LicenseIdIsRequired = new("214");
 
     public static readonly Error LicenseIsNotActive = new("228");
+
+    public static readonly Error SubscriptionNotFound = new("229");
+    public static readonly Error LicenseCannotBeRenewed = new("230");
+    public static readonly Error LicenseIsNotAnUpgrade = new("231");
+    public static readonly Error LicenseIsNotOffered = new("232");
+    public static readonly Error SubscriptionOrderBelongsToAnotherTenant = new("233");
 }
