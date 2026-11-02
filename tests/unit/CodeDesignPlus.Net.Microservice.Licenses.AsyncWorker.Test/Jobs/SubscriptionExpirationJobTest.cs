@@ -10,6 +10,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using CodeDesignPlus.Net.PubSub.Abstractions;
+using CodeDesignPlus.Net.Security.Abstractions;
 using Xunit;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Test.Jobs;
@@ -23,11 +24,13 @@ public class SubscriptionExpirationJobTest
     private readonly Mock<IOrderRepository> orders = new();
     private readonly Mock<ISubscriptionNoticeRepository> notices = new();
     private readonly Mock<IPubSub> pubsub = new();
+    private readonly Mock<ITenantDirectory> tenants = new();
     private readonly List<SubscriptionExpiringDomainEvent> published = [];
     private readonly HashSet<Guid> stored = [];
 
     public SubscriptionExpirationJobTest()
     {
+        tenants.Setup(x => x.GetActiveTenantsAsync(It.IsAny<CancellationToken>())).ReturnsAsync([TestOrders.TenantId]);
         notices.Setup(x => x.FindUnpublishedAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
         notices.Setup(x => x.CreateIfAbsentAsync(It.IsAny<SubscriptionNoticeAggregate>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((SubscriptionNoticeAggregate notice, CancellationToken _) => stored.Add(notice.Id));
@@ -40,7 +43,7 @@ public class SubscriptionExpirationJobTest
     }
 
     private SubscriptionExpirationJob Job() => new(
-        orders.Object, notices.Object, pubsub.Object,
+        orders.Object, notices.Object, pubsub.Object, tenants.Object,
         Microsoft.Extensions.Options.Options.Create(new SubscriptionOptions { GraceDays = 15, ReminderDays = [30, 15, 7, 1], NoticeCatchUpDays = 3 }),
         new Mock<ILogger<SubscriptionExpirationJob>>().Object);
 
@@ -146,5 +149,45 @@ public class SubscriptionExpirationJobTest
 
         // Assert
         Assert.Contains("1 tenant", exception.Message);
+    }
+
+    /// <summary>
+    /// Una copropiedad dada de baja conserva sus órdenes durante la baja diferida (pendings/078), pero ya no se le avisa que
+    /// renueve: no está entre las activas del directorio (pendings/735).
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_TenantDeleted_DoesNotWarnIt()
+    {
+        // Arrange
+        var order = TestOrders.PaidFrom(Instant.FromUtc(2027, 3, 1, 15, 0));
+        orders.Setup(x => x.FindAllPaidAsync(It.IsAny<CancellationToken>())).ReturnsAsync([order]);
+        tenants.Setup(x => x.GetActiveTenantsAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        // Act
+        await Job().RunAsync(MorningOf(order.PeriodEnd!.Value, 7), CancellationToken.None);
+
+        // Assert
+        Assert.Empty(published);
+    }
+
+    /// <summary>
+    /// El aviso que quedó sin publicar de una copropiedad que después se dio de baja tampoco sale.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_UnpublishedNoticeOfADeletedTenant_IsNotRepublished()
+    {
+        // Arrange
+        var order = TestOrders.PaidFrom(Instant.FromUtc(2027, 3, 1, 15, 0));
+        var subscription = Domain.ServiceDomain.SubscriptionTimeline.From([order])!;
+        var pending = SubscriptionNoticeAggregate.Create(subscription, new Domain.ServiceDomain.ExpirationNotice(Domain.Enums.ExpirationStage.Upcoming, 7), MorningOf(order.PeriodEnd!.Value, 7), 15, Guid.Empty);
+        notices.Setup(x => x.FindUnpublishedAsync(It.IsAny<CancellationToken>())).ReturnsAsync([pending]);
+        orders.Setup(x => x.FindAllPaidAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        tenants.Setup(x => x.GetActiveTenantsAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        // Act
+        await Job().RunAsync(MorningOf(order.PeriodEnd!.Value, 6), CancellationToken.None);
+
+        // Assert
+        Assert.Empty(published);
     }
 }

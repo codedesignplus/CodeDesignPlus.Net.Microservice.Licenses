@@ -92,7 +92,8 @@ public class UpdateStateOrderCommandHandler(
 
                 var pdfRequest = new GeneratePdfRequest
                 {
-                    TemplateType = "PurchaseReceipt",
+                    // Una renovación o un cambio muestran el crédito aplicado y lo pagado, no solo el precio (pendings/738).
+                    TemplateType = ReceiptEmailVariables.ReceiptTemplateOf(order),
                     Tenant = tenant.ToString()
                 };
 

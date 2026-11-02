@@ -39,6 +39,33 @@ public class OrderController(IMediator mediator, IMapper mapper, IUserContext us
     }
 
     /// <summary>
+    /// Get details of any Order by its ID, whatever its tenant (admin view, like <c>GET Order/all</c>).
+    /// </summary>
+    /// <remarks>
+    /// Es la vista de plataforma del detalle de una orden (pendings/735): <c>GET Order/{id}</c> solo devuelve las de la
+    /// copropiedad de la sesión o las que creó el usuario. Quién puede usar esta lo decide el RBAC, no el micro.
+    /// </remarks>
+    /// <param name="id">The unique identifier of the Order.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <response code="200">Returns the details of the Order.</response>
+    /// <response code="400">If the request is invalid or the Order does not exist.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user does not have permission to access the Order.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpGet("all/{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(OrderDto))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> GetAnyOrderById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetAnyOrderByIdQuery(id), cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Get a paginated list of Orders for the authenticated user.
     /// </summary>
     /// <param name="criteria">The criteria for filtering and paginating the Orders.</param>

@@ -3,6 +3,7 @@ using CodeDesignPlus.Net.Hangfire.Abstractions.Attributes;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
+using CodeDesignPlus.Net.Security.Abstractions;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,12 +23,17 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Jobs;
 /// renovación o un cambio de licencia, al mover el fin del periodo, cortan los avisos del anterior. Una copropiedad que
 /// falla no impide avisar a las demás, pero el job falla al final para que el panel de Hangfire lo muestre.
 /// </para>
+/// <para>
+/// Solo avisa a las copropiedades activas del directorio de ms-tenants: una dada de baja conserva sus órdenes durante el
+/// plazo de la baja diferida (pendings/078), y avisarle que renueve sería escribirle a quien ya se fue (pendings/735).
+/// </para>
 /// </remarks>
 [RecurringJobOptions("0 11 * * *", jobId: "subscription-expiration-job")]
 public class SubscriptionExpirationJob(
     IOrderRepository orders,
     ISubscriptionNoticeRepository notices,
     IPubSub pubsub,
+    ITenantDirectory tenants,
     IOptions<SubscriptionOptions> options,
     ILogger<SubscriptionExpirationJob> logger
 ) : IRecurrentJob
@@ -47,12 +53,14 @@ public class SubscriptionExpirationJob(
     {
         var failed = 0;
 
-        failed += await RepublishUnconfirmedAsync(now, cancellationToken);
+        var active = (await tenants.GetActiveTenantsAsync(cancellationToken)).ToHashSet();
+
+        failed += await RepublishUnconfirmedAsync(active, now, cancellationToken);
 
         var paid = await orders.FindAllPaidAsync(cancellationToken);
         var emitted = 0;
 
-        foreach (var tenantOrders in paid.GroupBy(x => x.TenantDetail.Id))
+        foreach (var tenantOrders in paid.GroupBy(x => x.TenantDetail.Id).Where(x => active.Contains(x.Key)))
         {
             try
             {
@@ -108,11 +116,12 @@ public class SubscriptionExpirationJob(
         return true;
     }
 
-    private async Task<int> RepublishUnconfirmedAsync(Instant now, CancellationToken cancellationToken)
+    private async Task<int> RepublishUnconfirmedAsync(HashSet<Guid> active, Instant now, CancellationToken cancellationToken)
     {
         var failed = 0;
 
-        foreach (var notice in await notices.FindUnpublishedAsync(cancellationToken))
+        // El de una copropiedad dada de baja queda sin publicar: si la restauran, sale entonces.
+        foreach (var notice in (await notices.FindUnpublishedAsync(cancellationToken)).Where(x => active.Contains(x.Tenant)))
         {
             try
             {

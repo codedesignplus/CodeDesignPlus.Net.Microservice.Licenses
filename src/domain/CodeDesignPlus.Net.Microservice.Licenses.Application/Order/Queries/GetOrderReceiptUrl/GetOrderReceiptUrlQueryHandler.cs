@@ -8,9 +8,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.Get
 /// <remarks>
 /// Devuelve <c>null</c> cuando la orden todavia no tiene recibo, que es un estado legitimo: el PDF se genera
 /// despues de que la pasarela confirma el pago. La pantalla oculta el boton en ese caso en vez de mostrar
-/// uno roto.
+/// uno roto. Solo firma el recibo de una orden de la copropiedad de la sesión o que creó el usuario.
 /// </remarks>
-public class GetOrderReceiptUrlQueryHandler(IOrderRepository repository, IFileStorage fileStorage)
+public class GetOrderReceiptUrlQueryHandler(IOrderRepository repository, IFileStorage fileStorage, IUserContext user)
     : IRequestHandler<GetOrderReceiptUrlQuery, string?>
 {
     /// <summary>La firma vive lo justo para abrir el PDF; no se guarda ni se cachea.</summary>
@@ -28,9 +28,10 @@ public class GetOrderReceiptUrlQueryHandler(IOrderRepository repository, IFileSt
 
         var order = await repository.FindAsync<OrderAggregate>(request.OrderId, cancellationToken);
 
-        ApplicationGuard.IsNull(order, Errors.OrderNotFound);
+        // Como GET Order/{id}: el recibo de otra copropiedad responde lo mismo que una orden que no existe (pendings/735).
+        ApplicationGuard.IsFalse(order?.IsVisibleTo(user.Tenant, user.IdUser) == true, Errors.OrderNotFound);
 
-        if (order.Receipt is null)
+        if (order!.Receipt is null)
             return null;
 
         // El recibo vive en {target}/{id}/{nombre}, la carpeta que le da ms-filestorage (regla 56).

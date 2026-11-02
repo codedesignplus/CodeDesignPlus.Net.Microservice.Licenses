@@ -33,6 +33,7 @@ global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderById;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.UpdateStateOrder;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetAllOrders;
+global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetAnyOrderById;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetMyOrders;
 global using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetSubscription;
 global using CodeDesignPlus.Net.Security.Abstractions;

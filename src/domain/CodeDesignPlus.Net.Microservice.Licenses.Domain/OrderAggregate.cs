@@ -163,6 +163,19 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public bool IsAwaitingPayment => PaymentStatus is PaymentStatus.Initiated or PaymentStatus.Pending or PaymentStatus.Unknown;
 
     /// <summary>
+    /// Si un usuario, en la copropiedad de su sesión, puede leer esta orden: es de esa copropiedad o la creó él.
+    /// </summary>
+    /// <remarks>
+    /// Al creador también se le permite porque una compra la lee quien la paga antes de que exista la copropiedad que
+    /// crea: el token de la pantalla de compra lleva otra copropiedad, o ninguna (pendings/735). Leer cualquier orden es
+    /// una vista de plataforma con su propio endpoint, que concede el RBAC.
+    /// </remarks>
+    /// <param name="tenant">La copropiedad de la sesión.</param>
+    /// <param name="user">El usuario de la sesión.</param>
+    /// <returns><see langword="true"/> si la orden es de la copropiedad o la creó el usuario.</returns>
+    public bool IsVisibleTo(Guid tenant, Guid user) => (tenant != Guid.Empty && TenantDetail.Id == tenant) || (user != Guid.Empty && CreatedBy == user);
+
+    /// <summary>
     /// The license of this order with the period it paid, as ms-tenants applies it to the tenant.
     /// </summary>
     /// <returns>The license snapshot.</returns>

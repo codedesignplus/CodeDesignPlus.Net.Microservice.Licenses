@@ -6,7 +6,8 @@ using NodaTime.Text;
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 
 /// <summary>
-/// Traduce una orden a las variables de las plantillas <c>PurchaseConfirmation</c> y <c>PurchaseReceipt</c> de ms-emails.
+/// Traduce una orden a las variables de las plantillas <c>PurchaseConfirmation</c>, <c>PurchaseReceipt</c> y
+/// <c>SubscriptionReceipt</c> de ms-emails.
 /// </summary>
 /// <remarks>
 /// Esto es un <b>adaptador de salida</b>, y por eso vive fuera de <c>Commands/</c>. Es el unico sitio donde
@@ -23,10 +24,32 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 /// objeto o de un enum (pendings/264): el documento es «NIT 900123456», la periodicidad va en el idioma de la plantilla
 /// y la fecha es la del calendario de la copropiedad, no la de UTC (regla 11).
 /// </para>
+/// <para>
+/// Una renovación o un cambio de licencia no cobra siempre el precio: el crédito por lo no usado y el saldo a favor pagan
+/// una parte o todo (pendings/738). Su recibo es <see cref="SubscriptionReceiptTemplate"/>, que muestra el precio, el
+/// crédito aplicado y el total pagado; el de compra no lo necesita, porque una compra se paga completa.
+/// </para>
 /// </remarks>
 public static class ReceiptEmailVariables
 {
+    /// <summary>
+    /// La plantilla del recibo de una compra.
+    /// </summary>
+    public const string PurchaseReceiptTemplate = "PurchaseReceipt";
+
+    /// <summary>
+    /// La plantilla del recibo de una renovación o un cambio de licencia: precio, crédito aplicado y total pagado.
+    /// </summary>
+    public const string SubscriptionReceiptTemplate = "SubscriptionReceipt";
+
     private static readonly LocalDatePattern DatePattern = LocalDatePattern.CreateWithInvariantCulture("dd/MM/yyyy");
+
+    /// <summary>
+    /// La plantilla del recibo de la orden.
+    /// </summary>
+    /// <param name="order">La orden ya pagada.</param>
+    /// <returns>El nombre de la plantilla en ms-emails.</returns>
+    public static string ReceiptTemplateOf(OrderAggregate order) => order.Type == OrderType.Purchase ? PurchaseReceiptTemplate : SubscriptionReceiptTemplate;
 
     /// <summary>
     /// Arma el diccionario que consume la plantilla.
@@ -52,6 +75,10 @@ public static class ReceiptEmailVariables
             ["subtotal"] = order.License.SubTotal.ToDecimal(decimalDigits).ToString("N2"),
             ["tax"] = order.License.Tax.ToDecimal(decimalDigits).ToString("N2"),
             ["total"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
+            ["price"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
+            ["credit_applied"] = (order.License.Total - order.AmountToCharge).ToDecimal(decimalDigits).ToString("N2"),
+            ["amount_paid"] = order.AmountToCharge.ToDecimal(decimalDigits).ToString("N2"),
+            ["order_type"] = OrderTypeLabel(order.Type),
             ["currency"] = order.License.Total.Currency,
             ["purchase_date"] = DatePattern.Format(purchasedAt.Date),
             ["current_year"] = purchasedAt.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -70,6 +97,21 @@ public static class ReceiptEmailVariables
 
         return payment?.Timestamp ?? SystemClock.Instance.GetCurrentInstant();
     }
+
+    /// <summary>
+    /// Qué pagó la orden, en el idioma de las plantillas.
+    /// </summary>
+    /// <remarks>
+    /// No es un catálogo: son los tres tipos de orden que el micro sabe cobrar, y uno nuevo exige código antes que una
+    /// etiqueta.
+    /// </remarks>
+    private static string OrderTypeLabel(OrderType type) => type switch
+    {
+        OrderType.Purchase => "Compra",
+        OrderType.Renewal => "Renovación",
+        OrderType.Change => "Cambio de licencia",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "The order type has no label.")
+    };
 
     /// <summary>
     /// La periodicidad en el idioma de las plantillas, que hoy están escritas en español.
