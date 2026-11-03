@@ -67,4 +67,40 @@ public class LicenseDto : IDtoBase
     /// Indicates whether this license is currently active and available for use.
     /// </summary>
     public bool IsActive { get; set; } = false;
+
+    /// <summary>
+    /// El concepto con el que se factura la licencia (pendings/662).
+    /// </summary>
+    public string? InvoiceConcept { get; set; }
+
+    /// <summary>
+    /// Las copropiedades a las que se ofrece una licencia privada, con quién y cuándo (pendings/464).
+    /// </summary>
+    public List<LicenseOfferDto> OfferedTo { get; set; } = [];
+}
+
+/// <summary>
+/// Una copropiedad a la que se ofrece una licencia privada (pendings/464).
+/// </summary>
+public class LicenseOfferDto
+{
+    /// <summary>
+    /// La copropiedad.
+    /// </summary>
+    public Guid TenantId { get; set; }
+
+    /// <summary>
+    /// Su nombre cuando se le ofreció.
+    /// </summary>
+    public string TenantName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Quién se la ofreció.
+    /// </summary>
+    public Guid OfferedBy { get; set; }
+
+    /// <summary>
+    /// Cuándo se la ofreció.
+    /// </summary>
+    public Instant OfferedAt { get; set; }
 }

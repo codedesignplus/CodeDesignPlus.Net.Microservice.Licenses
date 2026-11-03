@@ -84,7 +84,50 @@ public sealed record License
     /// <summary>
     /// Gets the list of modules (features or bounded capabilities) included in this license at purchase time.
     /// </summary>
-    public List<LicenseModule> Modules { get; private set; } 
+    public List<LicenseModule> Modules { get; private set; }
+
+    // Los miembros que siguen no van al constructor (regla 31): las órdenes guardadas antes de existir no los traen y
+    // leen 0, gravado y nulos (pendings/662).
+
+    /// <summary>
+    /// La tarifa del impuesto del precio comprado, en puntos básicos (1900 = 19 %). Cero si no es gravado.
+    /// </summary>
+    public int TaxBasisPoints { get; private set; }
+
+    /// <summary>
+    /// Cómo trató el impuesto el precio comprado: gravado, excluido o exento.
+    /// </summary>
+    public TaxTreatment TaxTreatment { get; private set; }
+
+    /// <summary>
+    /// La base legal de un precio excluido o exento.
+    /// </summary>
+    public string? TaxLegalBasis { get; private set; }
+
+    /// <summary>
+    /// El concepto con el que se factura la licencia comprada.
+    /// </summary>
+    public string? InvoiceConcept { get; private set; }
+
+    /// <summary>
+    /// La copia con el tratamiento tributario del precio comprado y el concepto de la factura (pendings/662): lo que
+    /// necesita la factura de la orden aunque el catálogo cambie después.
+    /// </summary>
+    /// <param name="price">El precio del catálogo que se compra.</param>
+    /// <param name="invoiceConcept">El concepto de la factura de la licencia.</param>
+    /// <returns>La copia con los términos del cobro.</returns>
+    public License WithBillingTerms(Price price, string? invoiceConcept)
+    {
+        DomainGuard.IsNull(price, Errors.PriceLicenseIsRequired);
+
+        return this with
+        {
+            TaxBasisPoints = price.TaxBasisPoints,
+            TaxTreatment = price.TaxTreatment,
+            TaxLegalBasis = price.TaxLegalBasis,
+            InvoiceConcept = invoiceConcept
+        };
+    } 
 
 
     [JsonConstructor]

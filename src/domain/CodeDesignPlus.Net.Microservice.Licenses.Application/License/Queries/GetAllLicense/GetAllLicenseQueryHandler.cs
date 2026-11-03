@@ -10,7 +10,9 @@ public class GetAllLicenseQueryHandler(ILicenseRepository repository, IMapper ma
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
 
-        var licenses = await repository.MatchingAsync<LicenseAggregate>(request.Criteria, cancellationToken);
+        var licenses = request.ForSaleOnly
+            ? await repository.MatchingShownInLandingPageAsync(request.Criteria, cancellationToken)
+            : await repository.MatchingAsync<LicenseAggregate>(request.Criteria, cancellationToken);
 
         var licensesDto = new List<LicenseDto>();
 

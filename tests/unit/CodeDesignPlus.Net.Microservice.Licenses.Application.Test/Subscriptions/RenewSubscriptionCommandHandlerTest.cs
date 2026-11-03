@@ -56,7 +56,7 @@ public class RenewSubscriptionCommandHandlerTest
             .ReturnsAsync(new PaymentResponse());
 
         // Act
-        await handler.Handle(new RenewSubscriptionCommand(Guid.NewGuid()), CancellationToken.None);
+        await handler.Handle(new RenewSubscriptionCommand(Guid.NewGuid(), null), CancellationToken.None);
 
         // Assert
         Assert.Equal(
@@ -75,7 +75,7 @@ public class RenewSubscriptionCommandHandlerTest
         orders.Setup(x => x.FindAwaitingSubscriptionPaymentAsync(TestOrders.TenantId, It.IsAny<CancellationToken>())).ReturnsAsync([pending]);
 
         // Act
-        var response = await handler.Handle(new RenewSubscriptionCommand(Guid.NewGuid()), CancellationToken.None);
+        var response = await handler.Handle(new RenewSubscriptionCommand(Guid.NewGuid(), null), CancellationToken.None);
 
         // Assert
         Assert.Equal(pending.Id, response.Id);
@@ -94,7 +94,7 @@ public class RenewSubscriptionCommandHandlerTest
         licenses.Setup(x => x.FindAsync<LicenseAggregate>(current.License.Id, It.IsAny<CancellationToken>())).ReturnsAsync(catalog);
 
         // Act
-        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new RenewSubscriptionCommand(Guid.NewGuid()), CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new RenewSubscriptionCommand(Guid.NewGuid(), null), CancellationToken.None));
 
         // Assert
         Assert.Equal(Errors.LicenseCannotBeRenewed.GetCode(), exception.Code);
@@ -112,7 +112,7 @@ public class RenewSubscriptionCommandHandlerTest
         user.SetupGet(x => x.Tenant).Returns(Guid.NewGuid());
 
         // Act
-        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new RenewSubscriptionCommand(stored.Id), CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new RenewSubscriptionCommand(stored.Id, null), CancellationToken.None));
 
         // Assert
         Assert.Equal(Errors.SubscriptionOrderBelongsToAnotherTenant.GetCode(), exception.Code);

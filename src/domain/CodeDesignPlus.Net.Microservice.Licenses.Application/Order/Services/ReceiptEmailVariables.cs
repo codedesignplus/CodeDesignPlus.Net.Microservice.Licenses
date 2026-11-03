@@ -74,6 +74,10 @@ public static class ReceiptEmailVariables
             ["billing_type"] = BillingTypeLabel(order.License.BillingType),
             ["subtotal"] = order.License.SubTotal.ToDecimal(decimalDigits).ToString("N2"),
             ["tax"] = order.License.Tax.ToDecimal(decimalDigits).ToString("N2"),
+            ["tax_label"] = TaxLabel(order.License),
+            ["tax_rate"] = TaxRate(order.License.TaxBasisPoints),
+            ["tax_legal_basis"] = order.License.TaxLegalBasis ?? string.Empty,
+            ["invoice_concept"] = order.License.InvoiceConcept ?? order.License.Name,
             ["total"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
             ["price"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
             ["credit_applied"] = (order.License.Total - order.AmountToCharge).ToDecimal(decimalDigits).ToString("N2"),
@@ -86,6 +90,32 @@ public static class ReceiptEmailVariables
             ["modules_list"] = string.Join(", ", order.License.Modules.Select(m => m.Name))
         };
     }
+
+    /// <summary>
+    /// La fila del impuesto en el recibo según el tratamiento del precio comprado (pendings/662): «IVA (19 %)» si es
+    /// gravado, «Excluido de IVA» o «Exento de IVA» si no. Antes la plantilla decía «IVA (19%)» fijo.
+    /// </summary>
+    /// <remarks>
+    /// El impuesto del precio de una licencia es el IVA: es el único que cobra la plataforma por la suscripción. No es un
+    /// catálogo: son los tres tratamientos que <see cref="TaxTreatment"/> sabe validar, y uno nuevo exige código ahí antes
+    /// que una etiqueta aquí.
+    /// </remarks>
+    private static string TaxLabel(Domain.ValueObjects.License license) => license.TaxTreatment switch
+    {
+        TaxTreatment.Taxed => $"IVA ({TaxRate(license.TaxBasisPoints)})",
+        TaxTreatment.Excluded => "Excluido de IVA",
+        TaxTreatment.Exempt => "Exento de IVA",
+        _ => throw new ArgumentOutOfRangeException(nameof(license), license.TaxTreatment, "The tax treatment has no label.")
+    };
+
+    /// <summary>
+    /// La tarifa legible: 1900 puntos básicos son «19 %» y 1650 son «16,5 %», con la coma decimal de las plantillas.
+    /// </summary>
+    /// <remarks>
+    /// Se formatea con la cultura invariante y se cambia el punto por la coma: el contenedor puede correr sin datos de
+    /// culturas, y pedir «es-CO» ahí falla.
+    /// </remarks>
+    private static string TaxRate(int basisPoints) => $"{(basisPoints / 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')} %";
 
     /// <summary>
     /// El instante en que se aprobó el pago; si la orden no lo registra, ahora, que es cuando se arma el recibo.

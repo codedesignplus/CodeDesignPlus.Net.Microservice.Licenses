@@ -99,8 +99,8 @@ public class LicenseUpgradeTest
 
     internal static LicenseAggregate Catalog(Guid? id = null, List<ModuleEntity>? modules = null, Dictionary<string, string>? attributes = null, long subTotal = 30_000_000) => LicenseAggregate.Create(
         id ?? Guid.NewGuid(), "Estándar", "Plan", "Plan", modules ?? [],
-        [Price.Create(BillingType.Monthly, Money.FromLong(subTotal, "COP"), BillingModel.FlatRate, 0, 0)],
+        [Price.Create(BillingType.Monthly, Money.FromLong(subTotal, "COP"), BillingModel.FlatRate, 0, TaxTreatment.Excluded, 0, "Test legal basis")],
         Icon.Create("solar:home-2-linear", "#2563eb"), "Terms",
         attributes ?? new Dictionary<string, string> { ["meetings.perYear"] = "12", ["meetings.recording"] = "false" },
-        isActive: true, isPopular: false, showInLandingPage: true, Guid.NewGuid());
+        isActive: true, isPopular: false, showInLandingPage: true, invoiceConcept: "Invoice concept", offeredTo: [], Guid.NewGuid());
 }

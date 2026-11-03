@@ -48,10 +48,10 @@ public class PayOrderCommandHandlerTest
     {
         var license = LicenseAggregate.Create(
             Guid.NewGuid(), "Retired", "Short", "Description", [],
-            [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, 1900)],
-            Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: false, isPopular: false, showInLandingPage: true, Guid.NewGuid());
+            [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null)],
+            Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: false, isPopular: false, showInLandingPage: true, "Invoice concept", [], Guid.NewGuid());
 
-        var request = new PayOrderCommand(Guid.NewGuid(), null!, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, null!);
+        var request = new PayOrderCommand(Guid.NewGuid(), null!, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, null!, "2026-11-02");
 
         repositoryMock
             .Setup(r => r.FindAsync<LicenseAggregate>(license.Id, It.IsAny<CancellationToken>()))
@@ -76,7 +76,7 @@ public class PayOrderCommandHandlerTest
         var order = StoredOrder(buyerId, new InitiatedPayment(true, (int)NextActionType.Redirect, "https://sandbox.payu.test/pse/589", []));
         userMock.SetupGet(u => u.IdUser).Returns(buyerId);
 
-        var response = await handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!), CancellationToken.None);
+        var response = await handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!, "2026-11-02"), CancellationToken.None);
 
         Assert.Equal((order.PaymentId, true, NextActionType.Redirect, "https://sandbox.payu.test/pse/589"), (response.PaymentId, response.Success, response.NextAction, response.RedirectUrl));
         paymentGrpcMock.VerifyNoOtherCalls();
@@ -92,7 +92,7 @@ public class PayOrderCommandHandlerTest
         var order = StoredOrder(Guid.NewGuid(), null);
         userMock.SetupGet(u => u.IdUser).Returns(Guid.NewGuid());
 
-        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!), CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => handler.Handle(new PayOrderCommand(order.Id, null!, null!, null!, "2026-11-02"), CancellationToken.None));
 
         Assert.Equal(Errors.OrderAlreadyExists.GetCode(), exception.Code);
         paymentGrpcMock.VerifyNoOtherCalls();
@@ -109,8 +109,8 @@ public class PayOrderCommandHandlerTest
         // Arrange
         var license = LicenseAggregate.Create(
             Guid.NewGuid(), "Esencial", "Short", "Description", [],
-            [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, 1900)],
-            Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: true, isPopular: false, showInLandingPage: true, Guid.NewGuid());
+            [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null)],
+            Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: true, isPopular: false, showInLandingPage: true, "Invoice concept", [], Guid.NewGuid());
 
         var buyer = new BuyerDto
         {
@@ -121,7 +121,7 @@ public class PayOrderCommandHandlerTest
             Document = "900123456",
         };
 
-        var request = new PayOrderCommand(Guid.NewGuid(), buyer, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, TestOrders.BuildTenant());
+        var request = new PayOrderCommand(Guid.NewGuid(), buyer, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, TestOrders.BuildTenant(), "2026-11-02");
         GrpcPayment.InitiatePaymentRequest? sent = null;
 
         userMock.SetupGet(u => u.IdUser).Returns(Guid.NewGuid());

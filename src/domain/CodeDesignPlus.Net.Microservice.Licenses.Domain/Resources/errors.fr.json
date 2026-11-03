@@ -102,6 +102,15 @@
     "158": "Les jours à proratiser ne sont pas valides.",
     "159": "Le mouvement du solde créditeur est obligatoire.",
     "160": "Le solde créditeur ne suffit pas pour cette commande. Rechargez la page et réessayez.",
-    "161": "L'abonnement est obligatoire."
+    "161": "L'abonnement est obligatoire.",
+    "162": "Le traitement fiscal n'est pas valide.",
+    "163": "Une licence visible sur la page d'accueil est déjà proposée à toutes les copropriétés : retirez les copropriétés ou décochez « Visible sur la page d'accueil ».",
+    "164": "Une copropriété apparaît deux fois parmi les copropriétés auxquelles la licence est proposée.",
+    "165": "Un prix taxé nécessite un taux d'impôt supérieur à zéro. S'il ne porte pas d'impôt, marquez-le comme exclu ou exonéré.",
+    "166": "Un prix taxé ne porte pas de base légale : la base légale concerne un prix exclu ou exonéré.",
+    "169": "Un prix exclu ou exonéré ne porte pas de taux d'impôt : laissez-le à zéro.",
+    "174": "Un prix exclu ou exonéré nécessite sa base légale, par exemple la norme qui l'exclut.",
+    "175": "Le libellé de la facture est obligatoire.",
+    "176": "Chaque copropriété à laquelle la licence est proposée nécessite son identifiant et son nom."
   }
 }

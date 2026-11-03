@@ -41,18 +41,19 @@ public static class MapsterConfigLicense
                 ProrationCredit = src.ProrationCredit.Amount,
                 CreditBalanceApplied = src.CreditBalanceApplied == null ? 0 : src.CreditBalanceApplied.Amount,
                 AmountDue = src.AmountToCharge.Amount,
-                SupersededBy = src.SupersededBy
+                SupersededBy = src.SupersededBy,
+                AcceptedTermsVersion = src.AcceptedTermsVersion
             });
 
 
         //License
         TypeAdapterConfig<CreateLicenseDto, CreateLicenseCommand>
             .NewConfig()
-            .MapWith(src => new CreateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular, src.ShowInLandingPage));
+            .MapWith(src => new CreateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular, src.ShowInLandingPage, src.InvoiceConcept, src.OfferedTo));
 
         TypeAdapterConfig<UpdateLicenseDto, UpdateLicenseCommand>
             .NewConfig()
-            .MapWith(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular, src.ShowInLandingPage));
+            .MapWith(src => new UpdateLicenseCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Modules, src.Prices, src.Icon, src.TermsOfService, src.Attributes, src.IsActive, src.IsPopular, src.ShowInLandingPage, src.InvoiceConcept, src.OfferedTo));
 
         TypeAdapterConfig<PayOrderDto, PayOrderCommand>
             .NewConfig()
@@ -60,16 +61,17 @@ public static class MapsterConfigLicense
                 src.Id,
                 src.Buyer,
                 src.License,
-                src.TenantDetail
+                src.TenantDetail,
+                src.AcceptedTermsVersion
             ));
 
         TypeAdapterConfig<RenewSubscriptionDto, RenewSubscriptionCommand>
             .NewConfig()
-            .MapWith(src => new RenewSubscriptionCommand(src.Id));
+            .MapWith(src => new RenewSubscriptionCommand(src.Id, src.AcceptedTermsVersion));
 
         TypeAdapterConfig<ChangeSubscriptionDto, ChangeSubscriptionCommand>
             .NewConfig()
-            .MapWith(src => new ChangeSubscriptionCommand(src.Id, src.LicenseId));
+            .MapWith(src => new ChangeSubscriptionCommand(src.Id, src.LicenseId, src.AcceptedTermsVersion));
 
         TypeAdapterConfig<LicenseAggregate, License.DataTransferObjects.LicenseDto>
             .NewConfig()
@@ -85,6 +87,14 @@ public static class MapsterConfigLicense
                 IsActive = src.IsActive,
                 IsPopular = src.IsPopular,
                 ShowInLandingPage = src.ShowInLandingPage,
+                InvoiceConcept = src.InvoiceConcept,
+                OfferedTo = (src.OfferedTo ?? new List<LicenseOffer>()).Select(x => new License.DataTransferObjects.LicenseOfferDto
+                {
+                    TenantId = x.TenantId,
+                    TenantName = x.TenantName,
+                    OfferedBy = x.OfferedBy,
+                    OfferedAt = x.OfferedAt,
+                }).ToList(),
                 Modules = src.Modules.Select(x => new License.DataTransferObjects.ModuleDto
                 {
                     Id = x.Id,

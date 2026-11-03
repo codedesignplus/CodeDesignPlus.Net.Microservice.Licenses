@@ -1,12 +1,13 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Services;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.UpdateLicense;
 
-public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, ICacheManager cacheManager, ICurrencyGrpc currencyGrpc) : IRequestHandler<UpdateLicenseCommand>
+public class UpdateLicenseCommandHandler(ILicenseRepository repository, IOrderRepository orders, IUserContext user, IPubSub pubsub, IMapper mapper, ICacheManager cacheManager, ICurrencyGrpc currencyGrpc) : IRequestHandler<UpdateLicenseCommand>
 {
     public async Task Handle(UpdateLicenseCommand request, CancellationToken cancellationToken)
     {
@@ -27,7 +28,9 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         var prices = await GetPricesAsync(request.Prices, cancellationToken);
 
-        license.Update(request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
+        license.Update(request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, request.InvoiceConcept, request.OfferedTo ?? [], user.IdUser);
+
+        await LicenseOffers.EnsureEachIsAnUpgradeAsync(license, orders, cancellationToken);
 
         await repository.UpdateAsync(license, cancellationToken);
 
@@ -44,9 +47,7 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         {
             var currency = await currencyGrpc.GetCurrencyAsync(code: price.BasePrice.Currency, cancellationToken: cancellationToken);
 
-            var money = price.BasePrice.ToMoney(currency.DecimalDigits);
-
-            prices.Add(Price.Create(price.BillingType, money, price.BillingModel, BasisPoints.FromPercentage(price.DiscountPercentage), BasisPoints.FromPercentage(price.TaxPercentage)));
+            prices.Add(price.ToPrice((short)currency.DecimalDigits));
         }
 
         return prices;

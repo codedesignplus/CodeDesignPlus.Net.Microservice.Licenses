@@ -62,16 +62,37 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     /// </summary>
     public bool ShowInLandingPage { get; private set; } = false;
 
+    // Los miembros que siguen no van al constructor (regla 31): las licencias guardadas antes de existir no los traen.
+
     /// <summary>
-    /// Si la licencia se le ofrece a esa copropiedad para cambiarse a ella (pendings/738).
+    /// El concepto con el que se factura la licencia, p. ej. «Suscripción al servicio en la nube Kappali (SaaS)»
+    /// (pendings/662). Se copia en la orden.
+    /// </summary>
+    public string? InvoiceConcept { get; private set; }
+
+    /// <summary>
+    /// Las copropiedades a las que se ofrece una licencia privada (la que no se ve en la landing), con quién se la ofreció
+    /// y cuándo (pendings/464). Vacía en una licencia pública.
+    /// </summary>
+    public List<LicenseOffer>? OfferedTo { get; private set; }
+
+    /// <summary>
+    /// Si la licencia está a la venta para cualquiera: es pública (se ve en la landing), activa y no está borrada. Es lo
+    /// único que acepta la compra inicial (pendings/464).
+    /// </summary>
+    public bool IsForSale => IsActive && !IsDeleted && ShowInLandingPage;
+
+    /// <summary>
+    /// Si la licencia se le ofrece a esa copropiedad para cambiarse a ella (pendings/738, 464): la que está a la venta
+    /// para cualquiera, o la privada que el equipo comercial le ofreció a ella.
     /// </summary>
     /// <remarks>
-    /// Hoy son las que están a la venta y se ven en la landing. Las licencias a medida (pendings/464) se sumarán aquí: las
-    /// privadas que el equipo comercial le ofrezca a esa copropiedad. Quien lista o acepta un cambio pregunta solo esto.
+    /// Quien lista o acepta un cambio pregunta solo esto. Que sea una mejora lo decide la cotización del cambio, también
+    /// para una licencia a medida: nunca baja la licencia del cliente (decisión del usuario, 2026-11-02).
     /// </remarks>
     /// <param name="tenantId">La copropiedad.</param>
     /// <returns><c>true</c> si se le ofrece.</returns>
-    public bool IsOfferedTo(Guid tenantId) => IsActive && !IsDeleted && ShowInLandingPage;
+    public bool IsOfferedTo(Guid tenantId) => IsForSale || (IsActive && !IsDeleted && (OfferedTo ?? []).Any(x => x.TenantId == tenantId));
 
     /// <summary>
     /// Creates a new valid instance of the License aggregate and registers the creation domain event.
@@ -87,11 +108,13 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     /// <param name="attributes">Custom key-value metadata for the license.</param>
     /// <param name="isActive">Indicates if the license is currently active.</param>
     /// <param name="isPopular">Indicates if it should be highlighted as popular.</param>
-    /// <param name="showInLandingPage">Indicates if it should be displayed on the landing page.</param>
+    /// <param name="showInLandingPage">Indicates if it should be displayed on the landing page: a public license.</param>
+    /// <param name="invoiceConcept">El concepto con el que se factura.</param>
+    /// <param name="offeredTo">Las copropiedades a las que se ofrece si es privada; vacía si es pública.</param>
     /// <param name="createdBy">The identifier of the user or system creating the record.</param>
     /// <returns>A new <see cref="LicenseAggregate"/> instance.</returns>
     /// <exception cref="DomainException">Thrown if any business rule validation fails.</exception>
-    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, Guid createdBy)
+    public static LicenseAggregate Create(Guid id, string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, string invoiceConcept, List<OfferedTenant> offeredTo, Guid createdBy)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdLicenseIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
@@ -105,6 +128,10 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.IsNull(attributes, Errors.AttributesLicenseIsRequired);
 
         EnsureOnePricePerBillingType(prices);
+        EnsureInvoiceConcept(invoiceConcept);
+        EnsureOffers(showInLandingPage, offeredTo);
+
+        var now = SystemClock.Instance.GetCurrentInstant();
 
         var aggregate = new LicenseAggregate(id)
         {
@@ -119,11 +146,15 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
             IsActive = isActive,
             IsPopular = isPopular,
             ShowInLandingPage = showInLandingPage,
-            CreatedAt = SystemClock.Instance.GetCurrentInstant(),
+            InvoiceConcept = invoiceConcept.Trim(),
+            OfferedTo = [],
+            CreatedAt = now,
             CreatedBy = createdBy
         };
 
         aggregate.AddEvent(LicenseCreatedDomainEvent.Create(id, name, shortDescription, description, modules, prices, icon, TermsOfService, attributes, isActive, isPopular, showInLandingPage));
+
+        aggregate.ApplyOffers(offeredTo, createdBy, now);
 
         return aggregate;
     }
@@ -131,7 +162,11 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     /// <summary>
     /// Updates the license's information and registers the update domain event.
     /// </summary>
-    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, Guid updatedBy)
+    /// <remarks>
+    /// Una copropiedad que sigue en <paramref name="offeredTo"/> conserva quién se la ofreció y cuándo; una nueva queda con
+    /// quien edita y ahora, y publica <see cref="LicenseOfferedDomainEvent"/>; la que sale de la lista deja de verla.
+    /// </remarks>
+    public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, string invoiceConcept, List<OfferedTenant> offeredTo, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
         DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
@@ -141,6 +176,10 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         DomainGuard.IsNull(icon, Errors.IconLicenseIsRequired);
 
         EnsureOnePricePerBillingType(prices);
+        EnsureInvoiceConcept(invoiceConcept);
+        EnsureOffers(showInLandingPage, offeredTo);
+
+        var now = SystemClock.Instance.GetCurrentInstant();
 
         this.Name = name;
         this.Description = description;
@@ -153,11 +192,57 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         this.IsActive = isActive;
         this.IsPopular = isPopular;
         this.ShowInLandingPage = showInLandingPage;
+        this.InvoiceConcept = invoiceConcept.Trim();
 
-        this.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+        this.UpdatedAt = now;
         this.UpdatedBy = updatedBy;
 
         AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular, ShowInLandingPage));
+
+        ApplyOffers(offeredTo, updatedBy, now);
+    }
+
+    /// <summary>
+    /// Deja como ofertas exactamente las copropiedades pedidas, conservando quién y cuándo de las que ya estaban.
+    /// </summary>
+    private void ApplyOffers(List<OfferedTenant> offeredTo, Guid offeredBy, Instant now)
+    {
+        var current = (OfferedTo ?? []).ToDictionary(x => x.TenantId);
+        var offers = new List<LicenseOffer>();
+
+        foreach (var tenant in offeredTo)
+        {
+            var name = tenant.TenantName.Trim();
+
+            if (current.TryGetValue(tenant.TenantId, out var existing))
+            {
+                offers.Add(existing with { TenantName = name });
+
+                continue;
+            }
+
+            offers.Add(new LicenseOffer(tenant.TenantId, name, offeredBy, now));
+
+            AddEvent(LicenseOfferedDomainEvent.Create(Id, Name, tenant.TenantId, name, offeredBy));
+        }
+
+        OfferedTo = offers;
+    }
+
+    private static void EnsureInvoiceConcept(string invoiceConcept)
+    {
+        DomainGuard.IsTrue(string.IsNullOrWhiteSpace(invoiceConcept), Errors.InvoiceConceptIsRequired);
+    }
+
+    /// <summary>
+    /// Una licencia pública ya se le ofrece a todas: solo una privada lleva copropiedades, y cada una una vez.
+    /// </summary>
+    private static void EnsureOffers(bool showInLandingPage, List<OfferedTenant> offeredTo)
+    {
+        DomainGuard.IsNull(offeredTo, Errors.OfferedTenantIsRequired);
+        DomainGuard.IsTrue(showInLandingPage && offeredTo.Count > 0, Errors.PublicLicenseCannotBeOfferedToTenants);
+        DomainGuard.IsTrue(offeredTo.Any(x => x is null || x.TenantId == Guid.Empty || string.IsNullOrWhiteSpace(x.TenantName)), Errors.OfferedTenantIsRequired);
+        DomainGuard.IsTrue(offeredTo.GroupBy(x => x.TenantId).Any(g => g.Count() > 1), Errors.TenantIsOfferedTwice);
     }
 
     /// <summary>

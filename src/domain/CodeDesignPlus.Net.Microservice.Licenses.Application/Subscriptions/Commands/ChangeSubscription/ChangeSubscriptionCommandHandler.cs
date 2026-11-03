@@ -77,6 +77,8 @@ public class ChangeSubscriptionCommandHandler(
             quote.Charge,
             user.IdUser);
 
+        order.RecordAcceptedTerms(request.AcceptedTermsVersion);
+
         return await checkout.StartAsync(order, awaiting, cancellationToken);
     }
 }

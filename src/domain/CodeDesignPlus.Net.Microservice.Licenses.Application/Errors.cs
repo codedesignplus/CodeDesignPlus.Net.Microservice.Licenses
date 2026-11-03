@@ -37,4 +37,7 @@ public class Errors: IErrorCodes
     public static readonly Error LicenseIsNotAnUpgrade = new("231");
     public static readonly Error LicenseIsNotOffered = new("232");
     public static readonly Error SubscriptionOrderBelongsToAnotherTenant = new("233");
+    public static readonly Error LicenseIsNotForSale = new("234");
+    public static readonly Error LicenseIsNotAnUpgradeForAnOfferedTenant = new("235");
+    public static readonly Error OfferedTenantHasNoSubscription = new("236");
 }

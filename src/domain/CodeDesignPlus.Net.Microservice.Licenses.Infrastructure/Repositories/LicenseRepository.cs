@@ -1,3 +1,6 @@
+using CodeDesignPlus.Net.Core.Abstractions.Models.Criteria;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
+using CodeDesignPlus.Net.Criteria.Extensions;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Repositories;
 
@@ -30,5 +33,41 @@ public class LicenseRepository(IServiceProvider serviceProvider, IOptions<MongoO
     public Task<List<LicenseAggregate>> FindOnSaleAsync(CancellationToken cancellationToken)
     {
         return GetCollection<LicenseAggregate>().Find(x => x.IsActive == true && x.IsDeleted == false).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Pagination<LicenseAggregate>> MatchingShownInLandingPageAsync(CodeDesignPlus.Net.Core.Abstractions.Models.Criteria.Criteria criteria, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<LicenseAggregate>();
+        var builder = Builders<LicenseAggregate>.Filter;
+
+        var filter = builder.And(
+            builder.Where(criteria.GetFilterExpression<LicenseAggregate>()),
+            builder.Eq(x => x.ShowInLandingPage, true),
+            builder.Eq(x => x.IsDeleted, false));
+
+        var totalCount = await collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+
+        var query = collection.Find(filter);
+        var sortBy = criteria.GetSortByExpression<LicenseAggregate>();
+
+        if (sortBy != null)
+        {
+            query = criteria.OrderType == OrderTypes.Ascending ? query.SortBy(sortBy) : query.SortByDescending(sortBy);
+        }
+
+        if (criteria.Skip.HasValue)
+        {
+            query = query.Skip(criteria.Skip.Value);
+        }
+
+        if (criteria.Limit.HasValue)
+        {
+            query = query.Limit(criteria.Limit.Value);
+        }
+
+        var data = await query.ToListAsync(cancellationToken);
+
+        return Pagination<LicenseAggregate>.Create(data, totalCount, limit: criteria.Limit, skip: criteria.Skip);
     }
 }

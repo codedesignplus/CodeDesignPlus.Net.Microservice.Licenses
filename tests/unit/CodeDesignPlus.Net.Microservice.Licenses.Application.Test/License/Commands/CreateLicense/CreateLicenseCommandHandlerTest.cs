@@ -21,8 +21,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<ICurrencyGrpc> currencyGrpcMock;
         private readonly CreateLicenseCommandHandler handler;
 
-        // private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        // private readonly Price PriceAnnualy = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        // private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 19, null);
+        // private readonly Price PriceAnnualy = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 19, null);
 
         private readonly PriceInput PriceMonthly = new(BillingType.Monthly, BillingModel.FlatRate, new MoneyInput(100m, "USD"), 0m, 19m);
 
@@ -37,7 +37,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             mapperMock = new Mock<IMapper>();
             currencyGrpcMock = new Mock<ICurrencyGrpc>();
 
-            handler = new CreateLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, mapperMock.Object, currencyGrpcMock.Object);
+            handler = new CreateLicenseCommandHandler(repositoryMock.Object, Mock.Of<IOrderRepository>(), userContextMock.Object, pubSubMock.Object, mapperMock.Object, currencyGrpcMock.Object);
         }
 
         [Fact]
@@ -59,7 +59,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_LicenseAlreadyExists_IsTheRetryAndDoesNotCreateItAgain()
         {
             // Arrange
-            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false);
+            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, "Invoice concept", []);
             var cancellationToken = CancellationToken.None;
 
             repositoryMock.Setup(x => x.ExistsAsync<LicenseAggregate>(request.Id, cancellationToken)).ReturnsAsync(true);
@@ -75,7 +75,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         public async Task Handle_ValidRequest_CreatesLicenseAndPublishesEvents()
         {
             // Arrange
-            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false);
+            var request = new CreateLicenseCommand(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, "Invoice concept", []);
             var cancellationToken = CancellationToken.None;
             var userId = Guid.NewGuid();
 

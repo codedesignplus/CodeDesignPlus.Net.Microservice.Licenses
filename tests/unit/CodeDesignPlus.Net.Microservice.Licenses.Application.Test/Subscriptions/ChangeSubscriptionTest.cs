@@ -50,7 +50,7 @@ public class ChangeSubscriptionTest
     public async Task Handle_ALicenseThatIsNotGreater_IsRejected()
     {
         // Act
-        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => Handler().Handle(new ChangeSubscriptionCommand(Guid.NewGuid(), Same), CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => Handler().Handle(new ChangeSubscriptionCommand(Guid.NewGuid(), Same, null), CancellationToken.None));
 
         // Assert
         Assert.Equal(Errors.LicenseIsNotAnUpgrade.GetCode(), exception.Code);
@@ -72,7 +72,7 @@ public class ChangeSubscriptionTest
         var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
 
         // Act
-        await Handler().Handle(new ChangeSubscriptionCommand(Guid.NewGuid(), Upgrade), CancellationToken.None);
+        await Handler().Handle(new ChangeSubscriptionCommand(Guid.NewGuid(), Upgrade, null), CancellationToken.None);
 
         // Assert
         var quote = Assert.Single(options);

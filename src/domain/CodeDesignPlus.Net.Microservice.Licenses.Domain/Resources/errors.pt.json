@@ -102,6 +102,15 @@
     "158": "Os dias para ratear não são válidos.",
     "159": "O movimento do saldo a favor é obrigatório.",
     "160": "O saldo a favor não é suficiente para este pedido. Recarregue a página e tente novamente.",
-    "161": "A assinatura é obrigatória."
+    "161": "A assinatura é obrigatória.",
+    "162": "O tratamento do imposto não é válido.",
+    "163": "Uma licença visível na landing já é oferecida a todos os condomínios: remova os condomínios ou desmarque «Visível na landing».",
+    "164": "Um condomínio aparece duas vezes entre os condomínios aos quais a licença é oferecida.",
+    "165": "Um preço tributado precisa de uma alíquota maior que zero. Se não tiver imposto, marque-o como excluído ou isento.",
+    "166": "Um preço tributado não leva base legal: a base legal é para um preço excluído ou isento.",
+    "169": "Um preço excluído ou isento não leva alíquota: deixe-a em zero.",
+    "174": "Um preço excluído ou isento precisa de sua base legal, por exemplo a norma que o exclui.",
+    "175": "O conceito da fatura é obrigatório.",
+    "176": "Cada condomínio ao qual a licença é oferecida precisa de seu identificador e de seu nome."
   }
 }

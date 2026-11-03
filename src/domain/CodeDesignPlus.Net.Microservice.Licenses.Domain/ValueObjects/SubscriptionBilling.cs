@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
@@ -15,4 +16,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 /// <param name="PeriodStart">El inicio del periodo facturado.</param>
 /// <param name="PeriodEnd">El fin del periodo facturado.</param>
 /// <param name="PaidAt">Cuándo se aprobó el pago: la fecha de la factura.</param>
-public sealed record SubscriptionBilling(Money SubTotal, Money Tax, Money Total, Money ProrationCredit, Money AdvanceApplied, Money AmountPaid, Instant PeriodStart, Instant PeriodEnd, Instant PaidAt);
+/// <param name="TaxTreatment">Cómo trata el impuesto el precio: gravado, excluido o exento (pendings/662).</param>
+/// <param name="TaxBasisPoints">La tarifa del impuesto en puntos básicos; cero si no es gravado.</param>
+/// <param name="TaxLegalBasis">La base legal de un precio excluido o exento.</param>
+/// <param name="InvoiceConcept">El concepto de la factura.</param>
+public sealed record SubscriptionBilling(Money SubTotal, Money Tax, Money Total, Money ProrationCredit, Money AdvanceApplied, Money AmountPaid, Instant PeriodStart, Instant PeriodEnd, Instant PaidAt, TaxTreatment TaxTreatment, int TaxBasisPoints, string? TaxLegalBasis, string? InvoiceConcept);

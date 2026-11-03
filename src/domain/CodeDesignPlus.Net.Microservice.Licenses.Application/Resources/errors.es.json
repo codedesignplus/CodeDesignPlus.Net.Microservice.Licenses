@@ -21,6 +21,9 @@
     "230": "Esta licencia ya no se puede renovar. Cámbiate a otra licencia.",
     "231": "Solo puedes cambiarte a una licencia con todos tus módulos y límites iguales o mayores.",
     "232": "Esta licencia no se le ofrece a tu copropiedad.",
-    "233": "Esa orden es de otra copropiedad."
+    "233": "Esa orden es de otra copropiedad.",
+    "234": "Esta licencia no está a la venta. Si te la ofrecieron, cámbiate a ella desde Configuración › Organización.",
+    "235": "La licencia no mejora la de alguna de las copropiedades a las que se ofrece: necesita todos sus módulos y atributos iguales o mayores y un precio en su periodicidad y moneda.",
+    "236": "Una de las copropiedades a las que se ofrece la licencia no tiene una suscripción pagada."
   }
 }

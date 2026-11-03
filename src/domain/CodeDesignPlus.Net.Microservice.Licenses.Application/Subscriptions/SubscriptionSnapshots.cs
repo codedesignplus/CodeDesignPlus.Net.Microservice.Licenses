@@ -15,8 +15,9 @@ public static class SubscriptionSnapshots
     /// </summary>
     /// <param name="current">La copia de la licencia en curso.</param>
     /// <param name="price">El precio vigente del catálogo para su periodicidad.</param>
+    /// <param name="invoiceConcept">El concepto de la factura vigente en el catálogo.</param>
     /// <returns>La copia para la orden.</returns>
-    public static LicenseSnapshot Renewal(LicenseSnapshot current, Price price) => LicenseSnapshot.Create(
+    public static LicenseSnapshot Renewal(LicenseSnapshot current, Price price, string? invoiceConcept) => LicenseSnapshot.Create(
         current.Id,
         current.Name,
         price.Total,
@@ -31,7 +32,7 @@ public static class SubscriptionSnapshots
         current.IsPopular,
         current.ShowInLandingPage,
         new Dictionary<string, string>(current.Attributes),
-        [.. current.Modules]);
+        [.. current.Modules]).WithBillingTerms(price, invoiceConcept);
 
     /// <summary>
     /// La licencia a la que se cambia: la copia del catálogo con sus módulos y atributos y su precio completo.
@@ -54,7 +55,7 @@ public static class SubscriptionSnapshots
         target.IsPopular,
         target.ShowInLandingPage,
         new Dictionary<string, string>(target.Attributes),
-        [.. target.Modules.Select(m => new LicenseModule(m.Id, m.Name, m.Description))]);
+        [.. target.Modules.Select(m => new LicenseModule(m.Id, m.Name, m.Description))]).WithBillingTerms(price, target.InvoiceConcept);
 
     /// <summary>
     /// Quien paga: el usuario que lo pide, con los datos de facturación de la orden anterior.

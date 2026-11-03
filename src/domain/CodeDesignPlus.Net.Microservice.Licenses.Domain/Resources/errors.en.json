@@ -102,6 +102,15 @@
     "158": "The days to prorate are not valid.",
     "159": "The credit movement is required.",
     "160": "The credit balance is not enough for this order. Reload the page and try again.",
-    "161": "The subscription is required."
+    "161": "The subscription is required.",
+    "162": "The tax treatment is not valid.",
+    "163": "A license shown on the landing page is already offered to every tenant: remove the tenants or turn off \"Visible on the landing page\".",
+    "164": "A tenant appears twice among the tenants the license is offered to.",
+    "165": "A taxed price needs a tax rate greater than zero. If it carries no tax, mark it as excluded or exempt.",
+    "166": "A taxed price carries no legal basis: the legal basis is for an excluded or exempt price.",
+    "169": "An excluded or exempt price carries no tax rate: leave it at zero.",
+    "174": "An excluded or exempt price needs its legal basis, for example the rule that excludes it.",
+    "175": "The invoice concept is required.",
+    "176": "Each tenant the license is offered to needs its identifier and its name."
   }
 }

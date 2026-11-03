@@ -148,6 +148,11 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public Guid? SupersededBy { get; private set; }
 
     /// <summary>
+    /// La versión de los términos del servicio que aceptó quien pidió la orden (pendings/662). Nula si no se pidió aceptarlos.
+    /// </summary>
+    public string? AcceptedTermsVersion { get; private set; }
+
+    /// <summary>
     /// El crédito por lo no prestado de la licencia anterior: la suma de <see cref="CreditedPeriods"/>.
     /// </summary>
     public Money ProrationCredit => (CreditedPeriods ?? []).Aggregate(Money.Zero(License.Total.Currency), (sum, period) => sum + period.Amount);
@@ -269,6 +274,15 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         return order;
     }
 
+    /// <summary>
+    /// Deja constancia de la versión de los términos que aceptó quien pide la orden (pendings/662).
+    /// </summary>
+    /// <param name="version">La versión aceptada; vacía si la pantalla no los pidió.</param>
+    public void RecordAcceptedTerms(string? version)
+    {
+        AcceptedTermsVersion = string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+    }
+
     private void ApplyCharge(SubscriptionCharge charge)
     {
         DomainGuard.IsNull(charge, Errors.ChargeDoesNotMatchTheOrder);
@@ -362,7 +376,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     {
         DomainGuard.IsTrue(PeriodStart is null || PeriodEnd is null, Errors.OrderHasNoPeriod);
 
-        return new SubscriptionBilling(License.SubTotal, License.Tax, License.Total, ProrationCredit, License.Total - AmountToCharge, AmountToCharge, PeriodStart!.Value, PeriodEnd!.Value, paidAt);
+        return new SubscriptionBilling(License.SubTotal, License.Tax, License.Total, ProrationCredit, License.Total - AmountToCharge, AmountToCharge, PeriodStart!.Value, PeriodEnd!.Value, paidAt, License.TaxTreatment, License.TaxBasisPoints, License.TaxLegalBasis, License.InvoiceConcept);
     }
 
     private void AddSubscriptionEvent(Guid buyerId, Instant paidAt)

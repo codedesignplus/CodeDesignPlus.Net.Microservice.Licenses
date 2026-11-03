@@ -43,6 +43,16 @@ public class PriceDto
     public int TaxBasisPoints { get; set; }
 
     /// <summary>
+    /// Whether the price is taxed, excluded or exempt (pendings/662).
+    /// </summary>
+    public TaxTreatment TaxTreatment { get; set; }
+
+    /// <summary>
+    /// The legal basis of an excluded or exempt price.
+    /// </summary>
+    public string? TaxLegalBasis { get; set; }
+
+    /// <summary>
     /// The discount amount in minor units, derived from the base price and the discount rate.
     /// </summary>
     public long Discount { get; set; }
@@ -78,6 +88,8 @@ public class PriceDto
             Currency = price.BasePrice.Currency,
             DiscountBasisPoints = price.DiscountBasisPoints,
             TaxBasisPoints = price.TaxBasisPoints,
+            TaxTreatment = price.TaxTreatment,
+            TaxLegalBasis = price.TaxLegalBasis,
             Discount = price.Discount.Amount,
             SubTotal = price.SubTotal.Amount,
             Tax = price.Tax.Amount,

@@ -114,4 +114,14 @@ public class Errors : IErrorCodes
     public static readonly Error CreditMovementIsRequired = new("159");
     public static readonly Error InsufficientCreditBalance = new("160");
     public static readonly Error SubscriptionIsRequired = new("161");
+
+    public static readonly Error TaxTreatmentIsInvalid = new("162");
+    public static readonly Error PublicLicenseCannotBeOfferedToTenants = new("163");
+    public static readonly Error TenantIsOfferedTwice = new("164");
+    public static readonly Error TaxedPriceRequiresARate = new("165");
+    public static readonly Error TaxedPriceCannotCarryALegalBasis = new("166");
+    public static readonly Error UntaxedPriceCannotCarryARate = new("169");
+    public static readonly Error UntaxedPriceRequiresALegalBasis = new("174");
+    public static readonly Error InvoiceConceptIsRequired = new("175");
+    public static readonly Error OfferedTenantIsRequired = new("176");
 }

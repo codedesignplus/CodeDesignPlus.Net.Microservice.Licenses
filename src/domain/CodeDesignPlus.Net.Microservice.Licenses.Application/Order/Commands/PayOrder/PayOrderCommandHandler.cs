@@ -44,6 +44,10 @@ public class PayOrderCommandHandler(
         // Una licencia retirada de la venta no se compra, aunque alguien conserve su id (plan 056 de pendings/).
         ApplicationGuard.IsFalse(licenseAggregate.IsActive, Errors.LicenseIsNotActive);
 
+        // Una licencia privada (a medida) no se compra: se le ofrece a una copropiedad que ya existe y la paga con el cambio
+        // de licencia (pendings/464).
+        ApplicationGuard.IsFalse(licenseAggregate.IsForSale, Errors.LicenseIsNotForSale);
+
         var existTenant = await tenantGrpc.ExistTenantAsync(request.TenantDetail.Id, cancellationToken);
         ApplicationGuard.IsTrue(existTenant, Errors.TenantAlreadyExists);
 
@@ -68,9 +72,11 @@ public class PayOrderCommandHandler(
             licenseAggregate.ShowInLandingPage,
             licenseAggregate.Attributes,
             licenseAggregate.Modules.Select(m => new Domain.ValueObjects.LicenseModule(m.Id, m.Name, m.Description)).ToList()
-        );
+        ).WithBillingTerms(price, licenseAggregate.InvoiceConcept);
 
         var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, buyer, request.TenantDetail, user.IdUser);
+
+        order.RecordAcceptedTerms(request.AcceptedTermsVersion);
 
         // Dos envíos que llegan a la vez pasan los dos la comprobación de arriba; el segundo choca contra el id y no cobra ni
         // publica: devuelve lo que haya guardado el primero.

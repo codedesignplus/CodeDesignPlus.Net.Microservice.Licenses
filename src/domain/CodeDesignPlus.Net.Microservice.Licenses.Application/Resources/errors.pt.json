@@ -21,6 +21,9 @@
     "230": "Esta licença não pode mais ser renovada. Mude para outra licença.",
     "231": "Você só pode mudar para uma licença com todos os seus módulos e limites iguais ou maiores.",
     "232": "Esta licença não é oferecida ao seu condomínio.",
-    "233": "Esse pedido é de outro condomínio."
+    "233": "Esse pedido é de outro condomínio.",
+    "234": "Esta licença não está à venda. Se ela foi oferecida a você, mude para ela em Configurações › Organização.",
+    "235": "A licença não melhora a de algum dos condomínios aos quais é oferecida: precisa de todos os seus módulos e atributos iguais ou maiores e de um preço na sua periodicidade e moeda.",
+    "236": "Um dos condomínios aos quais a licença é oferecida não tem uma assinatura paga."
   }
 }

@@ -12,7 +12,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 public class LicenseController(IMediator mediator, IMapper mapper) : ControllerBase
 {
     /// <summary>
-    /// Get all Licenses.
+    /// Get the public Licenses: the catalog of the landing page and the checkout, without the private ones (pendings/464).
     /// </summary>
     /// <param name="criteria">Criteria for filtering and sorting the Licenses.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -21,13 +21,28 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     [AllowAnonymous]
     public async Task<IActionResult> GetLicenses([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetAllLicenseQuery(criteria), cancellationToken);
+        var result = await mediator.Send(new GetAllLicenseQuery(criteria, ForSaleOnly: true), cancellationToken);
 
         return Ok(result);
     }
 
     /// <summary>
-    /// Get a License by its ID.
+    /// Get every License, public and private: the platform view of the Super Admin (pendings/464). The RBAC decides who
+    /// can read it.
+    /// </summary>
+    /// <param name="criteria">Criteria for filtering and sorting the Licenses.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Collection of Licenses.</returns>
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllLicenses([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetAllLicenseQuery(criteria, ForSaleOnly: false), cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get a public License by its ID; a private one answers as not found (pendings/464).
     /// </summary>
     /// <param name="id">The unique identifier of the License.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -36,7 +51,21 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     [AllowAnonymous]
     public async Task<IActionResult> GetLicenseById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new GetLicenseByIdQuery(id), cancellationToken);
+        var result = await mediator.Send(new GetLicenseByIdQuery(id, ForSaleOnly: true), cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get any License by its ID, public or private: the platform view of the Super Admin (pendings/464).
+    /// </summary>
+    /// <param name="id">The unique identifier of the License.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The License.</returns>
+    [HttpGet("all/{id}")]
+    public async Task<IActionResult> GetAnyLicenseById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetLicenseByIdQuery(id, ForSaleOnly: false), cancellationToken);
 
         return Ok(result);
     }

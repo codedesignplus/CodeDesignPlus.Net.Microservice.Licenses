@@ -10,16 +10,16 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Test;
 public class LicensePricingRulesTest
 {
     private static Price Monthly(string currency = "COP", BillingModel model = BillingModel.FlatRate)
-        => Price.Create(BillingType.Monthly, Money.FromDecimal(120000, currency, 2), model, 0, 1900);
+        => Price.Create(BillingType.Monthly, Money.FromDecimal(120000, currency, 2), model, 0, TaxTreatment.Taxed, 1900, null);
 
     private static Price Annually()
-        => Price.Create(BillingType.Annually, Money.FromDecimal(1440000, "COP", 2), BillingModel.FlatRate, 1500, 1900);
+        => Price.Create(BillingType.Annually, Money.FromDecimal(1440000, "COP", 2), BillingModel.FlatRate, 1500, TaxTreatment.Taxed, 1900, null);
 
     private static Icon AnyIcon() => Icon.Create("solar:verified-check-bold", "#3B82F6");
 
     private static LicenseAggregate CreateWith(List<Price> prices)
         => LicenseAggregate.Create(Guid.NewGuid(), "Esencial", "Short", "Description", [], prices,
-            AnyIcon(), "Terms", [], true, false, true, Guid.NewGuid());
+            AnyIcon(), "Terms", [], true, false, true, "Invoice concept", [], Guid.NewGuid());
 
     /// <summary>Un mensual y un anual es la forma normal de una licencia.</summary>
     [Fact]
@@ -52,7 +52,7 @@ public class LicensePricingRulesTest
 
         var exception = Assert.Throws<CodeDesignPlusException>(() => license.Update(
             "Esencial", "Short", "Description", [], [Monthly(), Monthly("USD")],
-            AnyIcon(), "Terms", [], true, false, true, Guid.NewGuid()));
+            AnyIcon(), "Terms", [], true, false, true, "Invoice concept", [], Guid.NewGuid()));
 
         Assert.Equal(Errors.DuplicatePricingStrategyFound.GetCode(), exception.Code);
     }
@@ -62,7 +62,7 @@ public class LicensePricingRulesTest
     public void Price_DiscountOverOneHundredPercent_IsRejected()
     {
         var exception = Assert.Throws<CodeDesignPlusException>(() =>
-            Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, Price.MaxBasisPoints + 1, 1900));
+            Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, Price.MaxBasisPoints + 1, TaxTreatment.Taxed, 1900, null));
 
         Assert.Equal(Errors.DiscountLicenseCannotExceedOneHundredPercent.GetCode(), exception.Code);
     }
@@ -72,7 +72,7 @@ public class LicensePricingRulesTest
     public void Price_TaxOverOneHundredPercent_IsRejected()
     {
         var exception = Assert.Throws<CodeDesignPlusException>(() =>
-            Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, Price.MaxBasisPoints + 1));
+            Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, Price.MaxBasisPoints + 1, null));
 
         Assert.Equal(Errors.TaxLicenseCannotExceedOneHundredPercent.GetCode(), exception.Code);
     }
@@ -81,7 +81,7 @@ public class LicensePricingRulesTest
     [Fact]
     public void Price_ExactlyOneHundredPercent_IsAccepted()
     {
-        var price = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, Price.MaxBasisPoints, Price.MaxBasisPoints);
+        var price = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, Price.MaxBasisPoints, TaxTreatment.Taxed, Price.MaxBasisPoints, null);
 
         Assert.Equal(Price.MaxBasisPoints, price.DiscountBasisPoints);
     }

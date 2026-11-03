@@ -1,4 +1,5 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
@@ -17,10 +18,25 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTrans
 /// <param name="BillingModel">The billing model for the license.</param>
 /// <param name="BasePrice">The base price in major units together with its ISO 4217 currency.</param>
 /// <param name="DiscountPercentage">The discount as a percentage (e.g., 15.5 for 15.5%).</param>
-/// <param name="TaxPercentage">The tax as a percentage (e.g., 19 for 19%).</param>
+/// <param name="TaxPercentage">The tax as a percentage (e.g., 19 for 19%); zero unless the price is taxed.</param>
+/// <param name="TaxTreatment">Whether the price is taxed, excluded or exempt (pendings/662). Taxed when omitted.</param>
+/// <param name="TaxLegalBasis">The legal basis of an excluded or exempt price; empty when taxed.</param>
 public sealed record PriceInput(
     BillingType BillingType,
     BillingModel BillingModel,
     MoneyInput BasePrice,
     decimal DiscountPercentage,
-    decimal TaxPercentage);
+    decimal TaxPercentage,
+    TaxTreatment TaxTreatment = TaxTreatment.Taxed,
+    string? TaxLegalBasis = null)
+{
+    /// <summary>
+    /// Builds the domain price once the currency of <see cref="BasePrice"/> is resolved.
+    /// </summary>
+    /// <param name="decimalDigits">The decimal digits of the currency.</param>
+    /// <returns>The domain price.</returns>
+    public Price ToPrice(short decimalDigits)
+    {
+        return Price.Create(BillingType, BasePrice.ToMoney(decimalDigits), BillingModel, BasisPoints.FromPercentage(DiscountPercentage), TaxTreatment, BasisPoints.FromPercentage(TaxPercentage), TaxLegalBasis);
+    }
+}

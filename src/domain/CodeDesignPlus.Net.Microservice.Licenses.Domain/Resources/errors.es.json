@@ -102,6 +102,15 @@
     "158": "Los días para prorratear no son válidos.",
     "159": "El movimiento del saldo a favor es obligatorio.",
     "160": "El saldo a favor no alcanza para esta orden. Recarga la página e inténtalo de nuevo.",
-    "161": "La suscripción es obligatoria."
+    "161": "La suscripción es obligatoria.",
+    "162": "El tratamiento del impuesto no es válido.",
+    "163": "Una licencia visible en la landing ya se ofrece a todas las copropiedades: quita las copropiedades o desmarca «Visible en la landing».",
+    "164": "Una copropiedad aparece dos veces entre las copropiedades a las que se ofrece la licencia.",
+    "165": "Un precio gravado necesita una tarifa de impuesto mayor que cero. Si no lleva impuesto, márcalo como excluido o exento.",
+    "166": "Un precio gravado no lleva base legal: la base legal es para un precio excluido o exento.",
+    "169": "Un precio excluido o exento no lleva tarifa de impuesto: déjala en cero.",
+    "174": "Un precio excluido o exento necesita su base legal, por ejemplo la norma que lo excluye.",
+    "175": "El concepto de la factura es obligatorio.",
+    "176": "Cada copropiedad a la que se ofrece la licencia necesita su identificador y su nombre."
   }
 }

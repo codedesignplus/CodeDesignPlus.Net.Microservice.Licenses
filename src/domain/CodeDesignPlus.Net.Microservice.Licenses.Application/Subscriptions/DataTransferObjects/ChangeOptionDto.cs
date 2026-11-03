@@ -71,6 +71,21 @@ public class ChangeOptionDto
     public long PriceTax { get; set; }
 
     /// <summary>
+    /// Cómo trata el impuesto el precio: gravado, excluido o exento (pendings/662).
+    /// </summary>
+    public TaxTreatment TaxTreatment { get; set; }
+
+    /// <summary>
+    /// La tarifa del impuesto en puntos básicos; cero si no es gravado.
+    /// </summary>
+    public int TaxBasisPoints { get; set; }
+
+    /// <summary>
+    /// La base legal de un precio excluido o exento.
+    /// </summary>
+    public string? TaxLegalBasis { get; set; }
+
+    /// <summary>
     /// El crédito por lo no prestado de la licencia actual.
     /// </summary>
     public long Credit { get; set; }

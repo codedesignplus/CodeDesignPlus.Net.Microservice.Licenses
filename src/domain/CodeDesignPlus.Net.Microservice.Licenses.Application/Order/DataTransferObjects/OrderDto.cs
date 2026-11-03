@@ -60,4 +60,9 @@ public class OrderDto : IDtoBase
     /// La orden que reemplazó a esta antes de pagarse, si alguna.
     /// </summary>
     public Guid? SupersededBy { get; set; }
+
+    /// <summary>
+    /// La versión de los términos del servicio que aceptó quien pidió la orden (pendings/662).
+    /// </summary>
+    public string? AcceptedTermsVersion { get; set; }
 }

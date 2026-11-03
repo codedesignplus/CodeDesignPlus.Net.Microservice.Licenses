@@ -25,8 +25,8 @@ internal static class SubscriptionFixtures
     public static LicenseAggregate Catalog(Guid id, long subTotal, params Guid[] modules) => LicenseAggregate.Create(
         id, "Estándar", "Plan", "Plan",
         [.. modules.Select(x => new ModuleEntity { Id = x, Name = x == Parking ? "Parqueaderos" : "Organización", Description = "Módulo" })],
-        [Price.Create(BillingType.Monthly, Money.FromLong(subTotal, "COP"), BillingModel.FlatRate, 0, 0)],
-        Icon.Create("solar:home-2-linear", "#2563eb"), "Terms", [], isActive: true, isPopular: false, showInLandingPage: true, Guid.NewGuid());
+        [Price.Create(BillingType.Monthly, Money.FromLong(subTotal, "COP"), BillingModel.FlatRate, 0, TaxTreatment.Excluded, 0, "Test legal basis")],
+        Icon.Create("solar:home-2-linear", "#2563eb"), "Terms", [], isActive: true, isPopular: false, showInLandingPage: true, "Invoice concept", [], Guid.NewGuid());
 
     /// <summary>
     /// Hace que el repositorio del saldo aplique el cambio sobre <paramref name="balance"/>.

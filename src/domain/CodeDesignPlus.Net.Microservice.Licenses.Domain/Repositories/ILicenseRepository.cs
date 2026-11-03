@@ -1,3 +1,5 @@
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
+
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 
 public interface ILicenseRepository : IRepositoryBase
@@ -18,4 +20,13 @@ public interface ILicenseRepository : IRepositoryBase
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns>Las licencias activas y no borradas.</returns>
     Task<List<LicenseAggregate>> FindOnSaleAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las licencias del catálogo público que cumplen el criterio: solo las que se ven en la landing, nunca las privadas
+    /// (pendings/464). El criterio de la pantalla se suma a esa base y no la puede ampliar.
+    /// </summary>
+    /// <param name="criteria">El criterio de la pantalla.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>La página de licencias públicas no borradas.</returns>
+    Task<Pagination<LicenseAggregate>> MatchingShownInLandingPageAsync(CodeDesignPlus.Net.Core.Abstractions.Models.Criteria.Criteria criteria, CancellationToken cancellationToken);
 }

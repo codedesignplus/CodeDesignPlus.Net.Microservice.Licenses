@@ -71,11 +71,13 @@ public class RenewSubscriptionCommandHandler(
         var order = OrderAggregate.CreateRenewal(
             request.Id,
             Guid.NewGuid(),
-            SubscriptionSnapshots.Renewal(current.License, price),
+            SubscriptionSnapshots.Renewal(current.License, price, catalog.InvoiceConcept),
             SubscriptionSnapshots.Payer(current.Buyer, user.IdUser),
             current.TenantDetail,
             charge,
             user.IdUser);
+
+        order.RecordAcceptedTerms(request.AcceptedTermsVersion);
 
         return await checkout.StartAsync(order, awaiting, cancellationToken);
     }

@@ -12,7 +12,7 @@ public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper m
         var exists = await cacheManager.ExistsAsync(request.Id.ToString());
 
         if (exists)
-            return await cacheManager.GetAsync<LicenseDto>(request.Id.ToString());
+            return Visible(request, await cacheManager.GetAsync<LicenseDto>(request.Id.ToString()));
 
         var license = await repository.FindAsync<LicenseAggregate>(request.Id, cancellationToken);
 
@@ -26,6 +26,16 @@ public class GetLicenseByIdQueryHandler(ILicenseRepository repository, IMapper m
         }
 
         await cacheManager.SetAsync(request.Id.ToString(), dto);
+
+        return Visible(request, dto);
+    }
+
+    /// <summary>
+    /// El catálogo público no ve una licencia privada: responde igual que si no existiera (pendings/464).
+    /// </summary>
+    private static LicenseDto Visible(GetLicenseByIdQuery request, LicenseDto dto)
+    {
+        ApplicationGuard.IsTrue(request.ForSaleOnly && !dto.ShowInLandingPage, Errors.LicenseNotFound);
 
         return dto;
     }

@@ -18,8 +18,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
         private readonly Mock<ICacheManager> cacheManagerMock;
         private readonly DeleteLicenseCommandHandler handler;
 
-        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
-        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, 19);
+        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 19, null);
+        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal( 100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 19, null);
 
         public DeleteLicenseCommandHandlerTest()
         {
@@ -70,7 +70,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             // Arrange
             var request = new DeleteLicenseCommand(Guid.NewGuid());
             var cancellationToken = CancellationToken.None;
-            var licenseAggregate = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, Guid.NewGuid());
+            var licenseAggregate = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, "Invoice concept", [], Guid.NewGuid());
 
             repositoryMock
                 .Setup(r => r.FindAsync<LicenseAggregate>(request.Id, cancellationToken))

@@ -19,8 +19,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         private readonly Mock<ICacheManager> cacheManagerMock;
         private readonly GetLicenseByIdQueryHandler handler;
 
-        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 1900);
-        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 1900);
+        private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null);
+        private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null);
 
         private readonly PriceDto PriceMonthlyDto = new()
         {
@@ -78,7 +78,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         public async Task Handle_LicenseExistsInCache_ReturnsLicenseFromCache()
         {
             // Arrange
-            var request = new GetLicenseByIdQuery(Guid.NewGuid());
+            var request = new GetLicenseByIdQuery(Guid.NewGuid(), false);
             var licenseDto = new LicenseDto()
             {
                 Id = request.Id,
@@ -104,8 +104,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         public async Task Handle_LicenseNotInCache_ReturnsLicenseFromRepository()
         {
             // Arrange
-            var request = new GetLicenseByIdQuery(Guid.NewGuid());
-            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, false, Guid.NewGuid());
+            var request = new GetLicenseByIdQuery(Guid.NewGuid(), false);
+            var license = LicenseAggregate.Create(request.Id, "Test License", "Short Description", "Test Description", [], [PriceAnnualy, PriceMonthly], Icon.Create("icon", "#FFFFFF"), "Term of Service", [], true, false, false, "Invoice concept", [], Guid.NewGuid());
             var licenseDto = new LicenseDto()
             {
                 Id = license.Id,
@@ -135,7 +135,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
         public async Task Handle_LicenseNotFoundInRepository_ThrowsCodeDesignPlusException()
         {
             // Arrange
-            var request = new GetLicenseByIdQuery(Guid.NewGuid());
+            var request = new GetLicenseByIdQuery(Guid.NewGuid(), false);
             cacheManagerMock.Setup(x => x.ExistsAsync(request.Id.ToString())).ReturnsAsync(false);
             repositoryMock.Setup(x => x.FindAsync<LicenseAggregate>(request.Id, It.IsAny<CancellationToken>())).ReturnsAsync((LicenseAggregate)null!);
 

@@ -18,8 +18,8 @@ public class GetAAllLicenseQueryHandlerTest
     private readonly Mock<IMapper> mapperMock;
     private readonly GetAllLicenseQueryHandler handler;
 
-    private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 1900);
-    private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, 1900);
+    private readonly Price PriceMonthly = Price.Create(BillingType.Monthly, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null);
+    private readonly Price PriceAnnualy = Price.Create(BillingType.Annually, Money.FromDecimal(100, "USD", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null);
 
 
     private readonly PriceDto PriceMonthlyDto = new()
@@ -77,9 +77,9 @@ public class GetAAllLicenseQueryHandlerTest
     public async Task Handle_ValidRequest_ReturnsLicenseDtoList()
     {
         // Arrange
-        var request = new GetAllLicenseQuery(null!);
+        var request = new GetAllLicenseQuery(null!, false);
         var cancellationToken = CancellationToken.None;
-        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, Guid.NewGuid());
+        var license = LicenseAggregate.Create(Guid.NewGuid(), "Test License", "Short Description", "Test Description", [], [PriceMonthly, PriceAnnualy], Icon.Create("icon", "#FFFFFF"), "Test Terms of Service", [], true, false, false, "Invoice concept", [], Guid.NewGuid());
         var licenseDto = new LicenseDto()
         {
             Id = license.Id,

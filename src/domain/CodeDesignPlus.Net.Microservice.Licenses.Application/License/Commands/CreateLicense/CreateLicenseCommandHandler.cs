@@ -1,12 +1,13 @@
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Services;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.CreateLicense;
 
-public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserContext user, IPubSub pubsub, IMapper mapper, ICurrencyGrpc currencyGrpc) : IRequestHandler<CreateLicenseCommand>
+public class CreateLicenseCommandHandler(ILicenseRepository repository, IOrderRepository orders, IUserContext user, IPubSub pubsub, IMapper mapper, ICurrencyGrpc currencyGrpc) : IRequestHandler<CreateLicenseCommand>
 {
     public async Task Handle(CreateLicenseCommand request, CancellationToken cancellationToken)
     {
@@ -27,7 +28,9 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
 
         var prices = await GetPricesAsync(request.Prices, cancellationToken);
 
-        var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, user.IdUser);
+        var license = LicenseAggregate.Create(request.Id, request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, request.InvoiceConcept, request.OfferedTo ?? [], user.IdUser);
+
+        await LicenseOffers.EnsureEachIsAnUpgradeAsync(license, orders, cancellationToken);
 
         // Dos envíos que llegan a la vez pasan los dos la comprobación de arriba; el segundo choca contra el id y no publica.
         if (!await repository.CreateIfAbsentAsync(license, cancellationToken))
@@ -44,9 +47,7 @@ public class CreateLicenseCommandHandler(ILicenseRepository repository, IUserCon
         {
             var currency = await currencyGrpc.GetCurrencyAsync(code: price.BasePrice.Currency, cancellationToken: cancellationToken);
 
-            var money = price.BasePrice.ToMoney(currency.DecimalDigits);
-
-            prices.Add(Price.Create(price.BillingType, money, price.BillingModel, BasisPoints.FromPercentage(price.DiscountPercentage), BasisPoints.FromPercentage(price.TaxPercentage)));
+            prices.Add(price.ToPrice((short)currency.DecimalDigits));
         }
 
         return prices;

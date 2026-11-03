@@ -21,6 +21,9 @@
     "230": "Cette licence ne peut plus être renouvelée. Passez à une autre licence.",
     "231": "Vous ne pouvez passer qu'à une licence avec tous vos modules et des limites égales ou supérieures.",
     "232": "Cette licence n'est pas proposée à votre copropriété.",
-    "233": "Cette commande appartient à une autre copropriété."
+    "233": "Cette commande appartient à une autre copropriété.",
+    "234": "Cette licence n'est pas en vente. Si elle vous a été proposée, passez-y depuis Paramètres › Organisation.",
+    "235": "La licence n'améliore pas celle de l'une des copropriétés auxquelles elle est proposée : elle doit avoir tous ses modules et attributs égaux ou supérieurs et un prix dans sa périodicité et sa devise.",
+    "236": "L'une des copropriétés auxquelles la licence est proposée n'a pas d'abonnement payé."
   }
 }
