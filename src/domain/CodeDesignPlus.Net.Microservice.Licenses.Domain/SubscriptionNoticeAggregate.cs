@@ -71,6 +71,12 @@ public class SubscriptionNoticeAggregate(Guid id) : AggregateRoot(id)
     public bool Published { get; private set; }
 
     /// <summary>
+    /// Los paquetes vigentes de la copropiedad, que se suspenden con la licencia si no se renueva (pendings/739). No va al
+    /// constructor (regla 31): las constancias guardadas antes leen nulo.
+    /// </summary>
+    public List<string>? PackageNames { get; private set; }
+
+    /// <summary>
     /// El identificador de la constancia de un aviso.
     /// </summary>
     /// <param name="tenant">La copropiedad.</param>
@@ -88,8 +94,9 @@ public class SubscriptionNoticeAggregate(Guid id) : AggregateRoot(id)
     /// <param name="now">El instante actual.</param>
     /// <param name="graceDays">Los días de gracia.</param>
     /// <param name="createdBy">El sistema.</param>
+    /// <param name="packageNames">Los paquetes vigentes de la copropiedad, que vencen o se suspenden con la licencia.</param>
     /// <returns>La constancia, con su evento.</returns>
-    public static SubscriptionNoticeAggregate Create(SubscriptionTimeline subscription, ExpirationNotice notice, Instant now, int graceDays, Guid createdBy)
+    public static SubscriptionNoticeAggregate Create(SubscriptionTimeline subscription, ExpirationNotice notice, Instant now, int graceDays, Guid createdBy, List<string>? packageNames = null)
     {
         DomainGuard.IsNull(subscription, Errors.SubscriptionIsRequired);
         DomainGuard.IsNull(notice, Errors.SubscriptionIsRequired);
@@ -111,7 +118,8 @@ public class SubscriptionNoticeAggregate(Guid id) : AggregateRoot(id)
             DaysRemaining = subscription.DaysRemaining(now),
             IsActive = true,
             CreatedAt = now,
-            CreatedBy = createdBy
+            CreatedBy = createdBy,
+            PackageNames = packageNames ?? []
         };
 
         aggregate.AddEvent(aggregate.ToEvent());
@@ -124,7 +132,7 @@ public class SubscriptionNoticeAggregate(Guid id) : AggregateRoot(id)
     /// </summary>
     /// <returns>El evento.</returns>
     public SubscriptionExpiringDomainEvent ToEvent() =>
-        new(Id, Tenant, TenantName, LicenseId, LicenseName, PeriodEnd, GraceEndsAt, TimeZone, Stage.ToString(), DaysRemaining, eventId: Id, occurredAt: CreatedAt);
+        new(Id, Tenant, TenantName, LicenseId, LicenseName, PeriodEnd, GraceEndsAt, TimeZone, Stage.ToString(), DaysRemaining, eventId: Id, occurredAt: CreatedAt) { PackageNames = PackageNames ?? [] };
 
     /// <summary>
     /// Marca el evento como publicado.

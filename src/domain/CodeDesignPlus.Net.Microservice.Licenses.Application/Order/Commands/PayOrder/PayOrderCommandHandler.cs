@@ -17,7 +17,8 @@ public class PayOrderCommandHandler(
     IPaymentGrpc paymentGrpc,
     ITenantGrpc tenantGrpc,
     IOrderRepository orders,
-    IOptions<OnlinePaymentOptions> onlinePayment
+    IOptions<OnlinePaymentOptions> onlinePayment,
+    IPackageRepository packages
 ) : IRequestHandler<PayOrderCommand, PaymentResponse>
 {
     public const string MODULE = "Licenses";
@@ -74,7 +75,11 @@ public class PayOrderCommandHandler(
             licenseAggregate.Modules.Select(m => new Domain.ValueObjects.LicenseModule(m.Id, m.Name, m.Description)).ToList()
         ).WithBillingTerms(price, licenseAggregate.InvoiceConcept);
 
-        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, buyer, request.TenantDetail, user.IdUser);
+        // Los paquetes van en la misma orden y el mismo pago que la licencia; en la landing solo los que están a la venta
+        // (pendings/739).
+        var quotes = await Package.Services.PackageSelections.QuoteAsync(packages, request.Packages, price.Total.Currency, x => x.IsForSale, Errors.PackageIsNotForSale, cancellationToken);
+
+        var order = OrderAggregate.Create(request.Id, Guid.NewGuid(), license, buyer, request.TenantDetail, user.IdUser, [.. quotes.Select(x => x.ToLine(Guid.NewGuid(), null))]);
 
         order.RecordAcceptedTerms(request.AcceptedTermsVersion);
 
@@ -124,25 +129,28 @@ public class PayOrderCommandHandler(
 
         ApplicationGuard.IsNull(price, Errors.PriceInvalid);
 
+        // La orden entera: la licencia y sus paquetes (pendings/739).
         payRequest.SubTotal = new Amount
         {
-            Currency = price.BasePrice.Currency, 
-            Value = price.SubTotal.Amount
+            Currency = order.SubTotal.Currency,
+            Value = order.SubTotal.Amount
         };
 
         payRequest.Tax = new Amount
         {
-            Currency = price.BasePrice.Currency,
-            Value = price.Tax.Amount
+            Currency = order.Tax.Currency,
+            Value = order.Tax.Amount
         };
 
         payRequest.Total = new Amount
         {
-            Currency = price.BasePrice.Currency,
-            Value = price.Total.Amount
+            Currency = order.Total.Currency,
+            Value = order.Total.Amount
         };
 
-        payRequest.Description = $"Payment for license {license.Name} to tenant {order.TenantDetail.Name}.";
+        payRequest.Description = (order.Packages ?? []).Count == 0
+            ? $"Payment for license {license.Name} to tenant {order.TenantDetail.Name}."
+            : $"Payment for license {license.Name} and {order.Packages!.Count} package(s) to tenant {order.TenantDetail.Name}.";
 
         return await paymentGrpc.InitiatePaymentAsync(payRequest, cancellationToken);
     }

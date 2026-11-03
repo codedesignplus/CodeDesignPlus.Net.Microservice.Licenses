@@ -53,15 +53,17 @@ public class SubscriptionSettlement(IOrderRepository orders, ICreditBalanceRepos
             return;
         }
 
-        if (order.Type != OrderType.Change)
+        if (order.Type != OrderType.Change && order.Type != OrderType.Package)
         {
             return;
         }
 
-        await orders.DeactivateAsync([.. (order.CreditedPeriods ?? []).Select(x => x.OrderId).Distinct()], order.Buyer.BuyerId, cancellationToken);
+        // Solo se inactivan las órdenes cuya licencia se acreditó: lo acreditado de un paquete lo reemplaza su línea nueva, y
+        // la orden de esa línea puede seguir pagando la licencia (pendings/739).
+        await orders.DeactivateAsync([.. (order.CreditedPeriods ?? []).Where(x => x.LineId is null).Select(x => x.OrderId).Distinct()], order.Buyer.BuyerId, cancellationToken);
 
-        // Del crédito por lo no prestado, lo que no alcanzó a gastarse en el precio de la licencia nueva.
-        var creditApplied = order.License.Total - order.AmountToCharge - (order.CreditBalanceApplied ?? Money.Zero(order.License.Total.Currency));
+        // Del crédito por lo no prestado, lo que no alcanzó a gastarse en el precio de lo nuevo.
+        var creditApplied = order.Total - order.AmountToCharge - (order.CreditBalanceApplied ?? Money.Zero(order.Total.Currency));
         var leftover = order.ProrationCredit - creditApplied;
 
         await ApplyAsync(order, CreditMovement.ForOrder(order.Id, CreditMovementKind.CreditNote, leftover, now), cancellationToken);

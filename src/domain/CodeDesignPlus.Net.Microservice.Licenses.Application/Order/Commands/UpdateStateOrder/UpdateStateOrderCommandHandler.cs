@@ -41,7 +41,7 @@ public class UpdateStateOrderCommandHandler(
             return;
         }
 
-        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage);
+        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage, await LicensePeriodEndAsync(order, request.PaymentStatus, cancellationToken));
 
         // Escritura condicional: si el webhook y la conciliacion aplican el mismo pago a la vez, solo uno gana, y
         // solo ese publica el aprovisionamiento. Nunca UpdateAsync: el documento entero pisaria los pasos que
@@ -94,7 +94,7 @@ public class UpdateStateOrderCommandHandler(
 
             try
             {
-                var currency = await currencyGrpc.GetCurrencyAsync(code: order.License.Total.Currency, cancellationToken: cancellationToken);
+                var currency = await currencyGrpc.GetCurrencyAsync(code: order.Total.Currency, cancellationToken: cancellationToken);
                 var variables = ReceiptEmailVariables.Build(order, currency);
                 var tenant = order.TenantDetail.Id;
 
@@ -143,6 +143,8 @@ public class UpdateStateOrderCommandHandler(
                         OrderType.Renewal => ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency)),
                         // Un cambio no es una compra: dice lo descontado y lo pagado, y el comprobante va adjunto (pendings/738).
                         OrderType.Change => (ChangeEmailVariables.Template, ChangeEmailVariables.Build(order, currency)),
+                        // Un paquete: lo que se agregó, su vigencia, lo descontado y lo pagado (pendings/739).
+                        OrderType.Package => (ChangeEmailVariables.PackageTemplate, ChangeEmailVariables.Build(order, currency)),
                         _ => ("PurchaseConfirmation", variables)
                     };
 
@@ -183,6 +185,23 @@ public class UpdateStateOrderCommandHandler(
         var subscription = Domain.ServiceDomain.SubscriptionTimeline.From(paid.Where(x => x.Id != order.Id));
 
         return subscription is not null && subscription.PaidThrough > now ? subscription.PaidThrough : now;
+    }
+
+    /// <summary>
+    /// En una orden de paquete con licencia anual, hasta cuándo va el periodo de la licencia en curso: ahí vence el paquete
+    /// (pendings/739). Con licencia mensual el paquete dura un año y no hace falta.
+    /// </summary>
+    private async Task<Instant?> LicensePeriodEndAsync(OrderAggregate order, PaymentStatus status, CancellationToken cancellationToken)
+    {
+        if (status != PaymentStatus.Succeeded || order.Type != OrderType.Package || !Domain.ServiceDomain.PackageTerm.IsCoterminous(order.License.BillingType))
+        {
+            return null;
+        }
+
+        var now = SystemClock.Instance.GetCurrentInstant();
+        var subscription = Domain.ServiceDomain.SubscriptionTimeline.From(await orderRepository.FindPaidByTenantAsync(order.TenantDetail.Id, cancellationToken));
+
+        return subscription?.CurrentAt(now).PeriodEnd;
     }
 
     private Task SettleAsync(OrderAggregate order, CancellationToken cancellationToken)

@@ -30,6 +30,12 @@ public sealed record CreditedPeriod(Guid OrderId, Instant From, Instant To, int 
     public int TaxBasisPoints { get; private set; }
 
     /// <summary>
+    /// La línea de paquete que se acredita; nula si es la licencia (pendings/739). Nula también en los cambios guardados
+    /// antes de existir los paquetes, que solo acreditaban la licencia.
+    /// </summary>
+    public Guid? LineId { get; private set; }
+
+    /// <summary>
     /// Lo que se acredita en total: la base acreditada más su IVA.
     /// </summary>
     public Money Total => Tax is null ? Amount : Amount + Tax;
@@ -51,4 +57,11 @@ public sealed record CreditedPeriod(Guid OrderId, Instant From, Instant To, int 
     {
         return new CreditedPeriod(orderId, from, to, unusedDays, periodDays, @base, amount) { Tax = tax, TaxBasisPoints = taxBasisPoints };
     }
+
+    /// <summary>
+    /// El mismo periodo acreditado, de una línea de paquete.
+    /// </summary>
+    /// <param name="lineId">La línea.</param>
+    /// <returns>El periodo acreditado de esa línea.</returns>
+    public CreditedPeriod ForLine(Guid lineId) => this with { LineId = lineId };
 }

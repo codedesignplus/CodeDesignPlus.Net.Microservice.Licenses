@@ -86,4 +86,14 @@ public class SubscriptionDto
     /// Si hay una renovación o un cambio de licencia esperando su pago.
     /// </summary>
     public bool HasPaymentInProgress { get; set; }
+
+    /// <summary>
+    /// Los paquetes vigentes y los ya pagados que empiezan después (pendings/739); <c>isActive</c> dice si cuentan hoy.
+    /// </summary>
+    public List<Package.DataTransferObjects.PackageLineDto> Packages { get; set; } = [];
+
+    /// <summary>
+    /// Los atributos efectivos hoy: los de la licencia combinados con los de los paquetes que cuentan (pendings/739).
+    /// </summary>
+    public Dictionary<string, string> EffectiveAttributes { get; set; } = [];
 }

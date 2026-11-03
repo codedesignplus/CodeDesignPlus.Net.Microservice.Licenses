@@ -79,7 +79,8 @@ public sealed class SubscriptionTimeline
     public static SubscriptionTimeline? From(IEnumerable<OrderAggregate> orders)
     {
         var paying = orders
-            .Where(x => x.IsActive && x.PaymentStatus == PaymentStatus.Succeeded && x.PeriodStart is not null && x.PeriodEnd is not null)
+            // Una orden de paquete no paga la licencia: su periodo es el del paquete (pendings/739).
+            .Where(x => x.IsActive && x.Type != OrderType.Package && x.PaymentStatus == PaymentStatus.Succeeded && x.PeriodStart is not null && x.PeriodEnd is not null)
             .OrderBy(x => x.PeriodStart)
             .ThenBy(x => x.CreatedAt)
             .ToList();

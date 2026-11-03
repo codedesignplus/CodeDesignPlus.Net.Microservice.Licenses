@@ -41,7 +41,7 @@ public class ChangeSubscriptionTest
         checkout.Setup(x => x.StartAsync(It.IsAny<OrderAggregate>(), It.IsAny<IReadOnlyCollection<OrderAggregate>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PaymentResponse());
     }
 
-    private ChangeSubscriptionCommandHandler Handler() => new(orders.Object, licenses.Object, creditBalances.Object, checkout.Object, user.Object);
+    private ChangeSubscriptionCommandHandler Handler() => new(orders.Object, licenses.Object, creditBalances.Object, checkout.Object, user.Object, Mock.Of<IPackageRepository>());
 
     /// <summary>
     /// Una licencia sin nada más que la actual no se ofrece ni se acepta: no se baja ni se cambia de lado.
@@ -69,7 +69,7 @@ public class ChangeSubscriptionTest
             .Callback<OrderAggregate, IReadOnlyCollection<OrderAggregate>, CancellationToken>((order, _, _) => created = order)
             .ReturnsAsync(new PaymentResponse());
 
-        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
+        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object, Mock.Of<IPackageRepository>()).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
 
         // Act
         await Handler().Handle(new ChangeSubscriptionCommand(Guid.NewGuid(), Upgrade, null), CancellationToken.None);
@@ -89,7 +89,7 @@ public class ChangeSubscriptionTest
     public async Task GetChangeOptions_ListsOnlyGreaterLicensesWithTheirQuote()
     {
         // Act
-        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
+        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object, Mock.Of<IPackageRepository>()).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
 
         // Assert
         var option = Assert.Single(options);

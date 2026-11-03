@@ -58,13 +58,14 @@ public class SubscriptionExpirationJob(
         failed += await RepublishUnconfirmedAsync(active, now, cancellationToken);
 
         var paid = await orders.FindAllPaidAsync(cancellationToken);
+        var withPackages = (await orders.FindAllPaidWithPackagesAsync(cancellationToken) ?? []).ToLookup(x => x.TenantDetail.Id);
         var emitted = 0;
 
         foreach (var tenantOrders in paid.GroupBy(x => x.TenantDetail.Id).Where(x => active.Contains(x.Key)))
         {
             try
             {
-                emitted += await NotifyAsync(tenantOrders, now, cancellationToken) ? 1 : 0;
+                emitted += await NotifyAsync(tenantOrders, withPackages[tenantOrders.Key], now, cancellationToken) ? 1 : 0;
             }
             catch (Exception ex)
             {
@@ -85,7 +86,7 @@ public class SubscriptionExpirationJob(
         }
     }
 
-    private async Task<bool> NotifyAsync(IEnumerable<OrderAggregate> tenantOrders, Instant now, CancellationToken cancellationToken)
+    private async Task<bool> NotifyAsync(IEnumerable<OrderAggregate> tenantOrders, IEnumerable<OrderAggregate> packageOrders, Instant now, CancellationToken cancellationToken)
     {
         var subscription = SubscriptionTimeline.From(tenantOrders);
 
@@ -102,7 +103,10 @@ public class SubscriptionExpirationJob(
             return false;
         }
 
-        var aggregate = SubscriptionNoticeAggregate.Create(subscription, notice, now, settings.GraceDays, Guid.Empty);
+        // Los paquetes vigentes vencen o se suspenden con la licencia: el aviso los nombra (pendings/739).
+        var packages = PackageTerm.Current(PackageTerm.PaidLines(packageOrders), now).Select(x => x.Line.Name).Distinct().ToList();
+
+        var aggregate = SubscriptionNoticeAggregate.Create(subscription, notice, now, settings.GraceDays, Guid.Empty, packages);
 
         // Persistir, publicar, confirmar (regla 23): si ya existía, ese aviso ya salió o lo reintenta la constancia.
         if (!await notices.CreateIfAbsentAsync(aggregate, cancellationToken))

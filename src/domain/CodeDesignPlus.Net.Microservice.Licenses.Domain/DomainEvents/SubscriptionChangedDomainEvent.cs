@@ -65,6 +65,12 @@ public class SubscriptionChangedDomainEvent(
     public Guid BuyerId { get; } = buyerId;
 
     /// <summary>
+    /// Los paquetes de la orden con su periodo, para que ms-tenants los combine con la licencia (pendings/739). Vacío si la
+    /// orden no trae paquetes: los que la copropiedad ya tenía siguen como estaban.
+    /// </summary>
+    public List<PackageTenant> Packages { get; init; } = [];
+
+    /// <summary>
     /// Crea el evento.
     /// </summary>
     /// <param name="aggregateId">La orden.</param>
@@ -74,9 +80,10 @@ public class SubscriptionChangedDomainEvent(
     /// <param name="creditedPeriods">Lo no prestado de cada orden anterior.</param>
     /// <param name="billing">Lo que se factura.</param>
     /// <param name="buyerId">Quien pagó.</param>
+    /// <param name="packages">Los paquetes recotizados al periodo nuevo, si la licencia es anual.</param>
     /// <returns>El evento.</returns>
-    public static SubscriptionChangedDomainEvent Create(Guid aggregateId, Tenant tenantDetail, LicenseTenant license, Guid previousLicenseId, List<CreditedPeriod> creditedPeriods, SubscriptionBilling billing, Guid buyerId)
+    public static SubscriptionChangedDomainEvent Create(Guid aggregateId, Tenant tenantDetail, LicenseTenant license, Guid previousLicenseId, List<CreditedPeriod> creditedPeriods, SubscriptionBilling billing, Guid buyerId, List<PackageTenant>? packages = null)
     {
-        return new SubscriptionChangedDomainEvent(aggregateId, tenantDetail, license, previousLicenseId, creditedPeriods, billing, buyerId);
+        return new SubscriptionChangedDomainEvent(aggregateId, tenantDetail, license, previousLicenseId, creditedPeriods, billing, buyerId) { Packages = packages ?? [] };
     }
 }

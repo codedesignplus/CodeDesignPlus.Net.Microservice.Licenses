@@ -132,6 +132,30 @@ public interface IOrderRepository : IRepositoryBase
     Task<List<OrderAggregate>> FindPaidByTenantAsync(Guid tenantId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Las órdenes pagadas de una copropiedad que traen paquetes, activas o no: un cambio de licencia inactiva la orden de la
+    /// compra, pero sus paquetes siguen si no se recotizaron (pendings/739).
+    /// </summary>
+    /// <param name="tenantId">La copropiedad.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las órdenes.</returns>
+    Task<List<OrderAggregate>> FindPaidWithPackagesByTenantAsync(Guid tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las órdenes pagadas de todas las copropiedades que traen paquetes, para los avisos de vencimiento (pendings/739).
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las órdenes.</returns>
+    Task<List<OrderAggregate>> FindAllPaidWithPackagesAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las compras o ampliaciones de paquete de una copropiedad que esperan todavía su pago (pendings/739).
+    /// </summary>
+    /// <param name="tenantId">La copropiedad.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Las órdenes.</returns>
+    Task<List<OrderAggregate>> FindAwaitingPackagePaymentAsync(Guid tenantId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Las órdenes pagadas y activas de todas las copropiedades, para el job de avisos de vencimiento (pendings/736).
     /// </summary>
     /// <param name="cancellationToken">Token de cancelación.</param>

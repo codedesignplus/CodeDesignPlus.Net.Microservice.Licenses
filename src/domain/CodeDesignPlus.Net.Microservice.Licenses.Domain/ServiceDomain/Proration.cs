@@ -33,34 +33,59 @@ public static class Proration
 
         foreach (var order in subscription.Orders)
         {
-            var start = order.PeriodStart!.Value;
-            var end = order.PeriodEnd!.Value;
+            var period = CreditOf(order.Id, order.PeriodStart!.Value, order.PeriodEnd!.Value, order.License.SubTotal, order.License.Tax, order.License.TaxBasisPoints, subscription.Zone, today, now);
 
-            if (end <= now)
+            if (period is not null)
             {
-                continue;
+                credited.Add(period);
             }
-
-            var startDate = start.InZone(subscription.Zone).Date;
-            var endDate = end.InZone(subscription.Zone).Date;
-            var periodDays = Math.Max(Period.DaysBetween(startDate, endDate), 1);
-
-            var notStarted = start > now;
-            var unusedDays = notStarted ? periodDays : Math.Clamp(Period.DaysBetween(today, endDate), 0, periodDays);
-
-            if (unusedDays == 0)
-            {
-                continue;
-            }
-
-            var from = notStarted ? start : today.AtStartOfDayInZone(subscription.Zone).ToInstant();
-            var amount = Prorate(order.License.SubTotal, unusedDays, periodDays);
-            var tax = ProrateTax(order.License, amount, unusedDays, periodDays);
-
-            credited.Add(CreditedPeriod.Create(order.Id, from, end, unusedDays, periodDays, order.License.SubTotal, amount, tax, order.License.TaxBasisPoints));
         }
 
         return credited;
+    }
+
+    /// <summary>
+    /// Lo no usado de una línea de paquete, con la misma regla que la licencia: la nota crédito de una ampliación o de la
+    /// recotización de un cambio (pendings/739).
+    /// </summary>
+    /// <param name="orderId">La orden de la línea.</param>
+    /// <param name="line">La línea con su periodo.</param>
+    /// <param name="zone">La zona horaria de la copropiedad.</param>
+    /// <param name="now">El instante de la ampliación o del cambio.</param>
+    /// <returns>El periodo acreditado de la línea, o <c>null</c> si ya no tiene nada por prestar.</returns>
+    public static CreditedPeriod? CreditLine(Guid orderId, PackageLine line, DateTimeZone zone, Instant now)
+    {
+        DomainGuard.IsTrue(line.PeriodStart is null || line.PeriodEnd is null, Errors.OrderHasNoPeriod);
+
+        var today = now.InZone(zone).Date;
+
+        return CreditOf(orderId, line.PeriodStart!.Value, line.PeriodEnd!.Value, line.SubTotal, line.Tax, line.TaxBasisPoints, zone, today, now)?.ForLine(line.LineId);
+    }
+
+    private static CreditedPeriod? CreditOf(Guid orderId, Instant start, Instant end, Money subTotal, Money invoicedTax, int taxBasisPoints, DateTimeZone zone, LocalDate today, Instant now)
+    {
+        if (end <= now)
+        {
+            return null;
+        }
+
+        var startDate = start.InZone(zone).Date;
+        var endDate = end.InZone(zone).Date;
+        var periodDays = Math.Max(Period.DaysBetween(startDate, endDate), 1);
+
+        var notStarted = start > now;
+        var unusedDays = notStarted ? periodDays : Math.Clamp(Period.DaysBetween(today, endDate), 0, periodDays);
+
+        if (unusedDays == 0)
+        {
+            return null;
+        }
+
+        var from = notStarted ? start : today.AtStartOfDayInZone(zone).ToInstant();
+        var amount = Prorate(subTotal, unusedDays, periodDays);
+        var tax = ProrateTax(invoicedTax, taxBasisPoints, amount, unusedDays, periodDays);
+
+        return CreditedPeriod.Create(orderId, from, end, unusedDays, periodDays, subTotal, amount, tax, taxBasisPoints);
     }
 
     /// <summary>
@@ -90,23 +115,34 @@ public static class Proration
     /// <param name="unusedDays">Los días no prestados.</param>
     /// <param name="periodDays">Los días del periodo.</param>
     /// <returns>El IVA que se acredita; cero si la factura no llevó IVA.</returns>
-    public static Money ProrateTax(License license, Money credited, int unusedDays, int periodDays)
+    public static Money ProrateTax(License license, Money credited, int unusedDays, int periodDays) => ProrateTax(license.Tax, license.TaxBasisPoints, credited, unusedDays, periodDays);
+
+    /// <summary>
+    /// El IVA de la base acreditada con la tarifa facturada, redondeado hacia arriba y sin pasar del IVA facturado.
+    /// </summary>
+    /// <param name="invoicedTax">El IVA facturado.</param>
+    /// <param name="taxBasisPoints">La tarifa facturada.</param>
+    /// <param name="credited">La base acreditada.</param>
+    /// <param name="unusedDays">Los días no prestados.</param>
+    /// <param name="periodDays">Los días del periodo.</param>
+    /// <returns>El IVA que se acredita; cero si la factura no llevó IVA.</returns>
+    public static Money ProrateTax(Money invoicedTax, int taxBasisPoints, Money credited, int unusedDays, int periodDays)
     {
-        if (license.Tax.Amount == 0)
+        if (invoicedTax.Amount == 0)
         {
-            return Money.Zero(license.Tax.Currency);
+            return Money.Zero(invoicedTax.Currency);
         }
 
-        if (license.TaxBasisPoints <= 0)
+        if (taxBasisPoints <= 0)
         {
             // Una orden comprada antes de guardar la tarifa (pendings/662): su IVA, en la misma proporción de los días.
-            return Prorate(license.Tax, unusedDays, periodDays);
+            return Prorate(invoicedTax, unusedDays, periodDays);
         }
 
         // Puntos básicos: 10.000 es el ciento por ciento (regla 05).
-        var numerator = credited.Amount * license.TaxBasisPoints;
+        var numerator = credited.Amount * taxBasisPoints;
         var amount = numerator / 10_000 + (numerator % 10_000 == 0 ? 0 : 1);
 
-        return Money.FromLong(Math.Min(amount, license.Tax.Amount), license.Tax.Currency);
+        return Money.FromLong(Math.Min(amount, invoicedTax.Amount), invoicedTax.Currency);
     }
 }

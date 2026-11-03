@@ -160,7 +160,8 @@ public class OrderReconciliationJob(
                     order.Id, attempt, OrderAggregate.MaxProvisioningAttempts, missing);
 
                 // Con el periodo que se fijó al aprobarse el pago, no con uno calculado desde la creación (pendings/735).
-                var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(order.Id, order.TenantDetail, order.ToLicenseTenant(), order.Buyer.BuyerId);
+                // Con sus paquetes: si el primer evento se perdió, la copropiedad nace con ellos (pendings/739).
+                var @event = OrderPaidAndReadyForProvisioningDomainEvent.Create(order.Id, order.TenantDetail, order.ToLicenseTenant(), order.Buyer.BuyerId, order.ToPackageTenants());
 
                 await pubsub.PublishAsync(@event, cancellationToken);
 

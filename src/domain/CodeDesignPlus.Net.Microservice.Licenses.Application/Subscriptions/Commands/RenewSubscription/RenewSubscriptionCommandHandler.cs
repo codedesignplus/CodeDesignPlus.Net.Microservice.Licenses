@@ -20,7 +20,8 @@ public class RenewSubscriptionCommandHandler(
     ILicenseRepository licenses,
     ICreditBalanceRepository creditBalances,
     ISubscriptionCheckout checkout,
-    IUserContext user
+    IUserContext user,
+    IPackageRepository packages
 ) : IRequestHandler<RenewSubscriptionCommand, PaymentResponse>
 {
     public async Task<PaymentResponse> Handle(RenewSubscriptionCommand request, CancellationToken cancellationToken)
@@ -39,14 +40,18 @@ public class RenewSubscriptionCommandHandler(
             return PaymentResponses.Of(stored);
         }
 
-        var subscription = SubscriptionTimeline.From(await orders.FindPaidByTenantAsync(tenant, cancellationToken));
+        var state = await TenantPackages.LoadAsync(orders, tenant, cancellationToken);
 
-        ApplicationGuard.IsNull(subscription, Errors.SubscriptionNotFound);
+        ApplicationGuard.IsNull(state, Errors.SubscriptionNotFound);
 
-        var current = subscription.CurrentAt(SystemClock.Instance.GetCurrentInstant());
+        var now = SystemClock.Instance.GetCurrentInstant();
+        var current = state!.Subscription.CurrentAt(now);
         var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(tenant, cancellationToken);
 
-        var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Renewal && x.License.Id == current.License.Id);
+        // Los paquetes que se renuevan con la licencia anual, al precio vigente (pendings/739).
+        var renewed = await state.RenewalQuotesAsync(packages, request.Packages, now, cancellationToken);
+
+        var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Renewal && x.License.Id == current.License.Id && RenewalQuote.SamePackages(x, renewed));
 
         if (pending is not null)
         {
@@ -66,7 +71,9 @@ public class RenewSubscriptionCommandHandler(
         var balance = await creditBalances.FindAsync<CreditBalanceAggregate>(tenant, tenant, cancellationToken);
         var currency = price!.Total.Currency;
 
-        var charge = SubscriptionCharge.Compute(price.Total, Money.Zero(currency), SubscriptionCheckout.AvailableCreditBalance(balance, awaiting, currency));
+        var lines = renewed.Select(x => x.Quote.ToLine(Guid.NewGuid(), x.Replaces)).ToList();
+        var total = renewed.Aggregate(price.Total, (sum, x) => sum + x.Quote.Total);
+        var charge = SubscriptionCharge.Compute(total, Money.Zero(currency), SubscriptionCheckout.AvailableCreditBalance(balance, awaiting, currency));
 
         var order = OrderAggregate.CreateRenewal(
             request.Id,
@@ -75,7 +82,8 @@ public class RenewSubscriptionCommandHandler(
             SubscriptionSnapshots.Payer(current.Buyer, user.IdUser),
             current.TenantDetail,
             charge,
-            user.IdUser);
+            user.IdUser,
+            lines);
 
         order.RecordAcceptedTerms(request.AcceptedTermsVersion);
 

@@ -85,4 +85,9 @@ public class SubscriptionExpiringDomainEvent(
     /// Los días de calendario que faltan.
     /// </summary>
     public int DaysRemaining { get; } = daysRemaining;
+
+    /// <summary>
+    /// Los paquetes vigentes de la copropiedad: dejan de contar si la licencia no se renueva (pendings/739). Vacío si no tiene.
+    /// </summary>
+    public List<string> PackageNames { get; init; } = [];
 }

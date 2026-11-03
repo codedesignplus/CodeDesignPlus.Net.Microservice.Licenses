@@ -1,6 +1,7 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.ValueObjects.Financial;
 using NodaTime.Text;
 using Currency = CodeDesignPlus.Net.ValueObjects.Financial.Currency;
 
@@ -62,7 +63,10 @@ public static class ReceiptEmailVariables
     {
         var zone = SubscriptionTimeline.ZoneOf(order.TenantDetail);
         var purchasedAt = PurchasedAt(order).InZone(zone);
-        var credit = order.License.Total - order.AmountToCharge;
+        var credit = order.Total - order.AmountToCharge;
+        var packages = order.Packages ?? [];
+        var packagesTotal = packages.Aggregate(Money.Zero(order.Total.Currency), (sum, x) => sum + x.Total);
+        var isPackageOrder = order.Type == OrderType.Package;
 
         return new()
         {
@@ -72,7 +76,8 @@ public static class ReceiptEmailVariables
             ["organization_document"] = $"{order.TenantDetail.TypeDocument.Code} {order.TenantDetail.NumberDocument}",
             ["buyer_name"] = order.Buyer.Name,
             ["buyer_email"] = order.Buyer.Email,
-            ["license_name"] = order.License.Name,
+            // Una orden de paquete no cobra la licencia: el comprobante nombra los paquetes (pendings/739).
+            ["license_name"] = isPackageOrder ? string.Join(", ", packages.Select(x => x.Name)) : order.License.Name,
             ["billing_type"] = BillingTypeLabel(order.License.BillingType),
             ["subtotal"] = ReceiptText.Amount(order.License.SubTotal, currency),
             ["tax"] = ReceiptText.Amount(order.License.Tax, currency),
@@ -80,8 +85,13 @@ public static class ReceiptEmailVariables
             ["tax_rate"] = TaxRate(order.License.TaxBasisPoints),
             ["tax_legal_basis"] = order.License.TaxLegalBasis ?? string.Empty,
             ["invoice_concept"] = order.License.InvoiceConcept ?? order.License.Name,
-            ["total"] = ReceiptText.Amount(order.License.Total, currency),
-            ["price"] = ReceiptText.Amount(order.License.Total, currency),
+            // El precio de la orden entera: la licencia y sus paquetes (pendings/739).
+            ["total"] = ReceiptText.Amount(order.Total, currency),
+            ["price"] = ReceiptText.Amount(order.Total, currency),
+            ["license_row_display"] = isPackageOrder ? "none" : "table-row",
+            ["packages_row_display"] = packages.Count == 0 ? "none" : "table-row",
+            ["packages_list"] = ReceiptText.Packages(order, currency),
+            ["packages_total"] = ReceiptText.Amount(packagesTotal, currency),
             ["credit_applied"] = ReceiptText.Amount(credit, currency),
             // Sin crédito la fila no se muestra: «Crédito aplicado -$ 0,00» en una renovación sin saldo a favor confundía.
             // La plantilla no tiene condicionales (solo reemplaza variables), así que el micro decide si la fila se ve.
@@ -139,7 +149,7 @@ public static class ReceiptEmailVariables
     /// Qué pagó la orden, en el idioma de las plantillas.
     /// </summary>
     /// <remarks>
-    /// No es un catálogo: son los tres tipos de orden que el micro sabe cobrar, y uno nuevo exige código antes que una
+    /// No es un catálogo: son los tipos de orden que el micro sabe cobrar, y uno nuevo exige código antes que una
     /// etiqueta.
     /// </remarks>
     private static string OrderTypeLabel(OrderType type) => type switch
@@ -147,6 +157,7 @@ public static class ReceiptEmailVariables
         OrderType.Purchase => "Compra",
         OrderType.Renewal => "Renovación",
         OrderType.Change => "Cambio de licencia",
+        OrderType.Package => "Paquete complementario",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "The order type has no label.")
     };
 

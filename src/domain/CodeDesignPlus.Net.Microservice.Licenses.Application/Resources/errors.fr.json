@@ -24,6 +24,14 @@
     "233": "Cette commande appartient à une autre copropriété.",
     "234": "Cette licence n'est pas en vente. Si elle vous a été proposée, passez-y depuis Paramètres › Organisation.",
     "235": "La licence n'améliore pas celle de l'une des copropriétés auxquelles elle est proposée : elle doit avoir tous ses modules et attributs égaux ou supérieurs et un prix dans sa périodicité et sa devise.",
-    "236": "L'une des copropriétés auxquelles la licence est proposée n'a pas d'abonnement payé."
+    "236": "L'une des copropriétés auxquelles la licence est proposée n'a pas d'abonnement payé.",
+    "265": "Nous n'avons pas trouvé ce forfait.",
+    "266": "Ce forfait n'est pas proposé à ta copropriété.",
+    "267": "Tu as déjà ce forfait : pour l'étendre, chaque caractéristique doit rester égale ou augmenter, et au moins une doit augmenter. On le réduit au renouvellement.",
+    "268": "Le forfait a un prix dans une autre devise que la licence.",
+    "269": "Ta licence n'est pas à jour : renouvelle-la avant d'ajouter ou d'étendre un forfait.",
+    "270": "Le même forfait apparaît plus d'une fois dans la demande.",
+    "271": "Ce forfait n'est pas en vente.",
+    "272": "Les forfaits se renouvellent avec une licence annuelle ; avec une licence mensuelle, chaque forfait dure douze mois et se rachète."
   }
 }

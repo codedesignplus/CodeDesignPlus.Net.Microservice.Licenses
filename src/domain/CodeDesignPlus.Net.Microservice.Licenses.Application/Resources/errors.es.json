@@ -24,6 +24,14 @@
     "233": "Esa orden es de otra copropiedad.",
     "234": "Esta licencia no está a la venta. Si te la ofrecieron, cámbiate a ella desde Configuración › Organización.",
     "235": "La licencia no mejora la de alguna de las copropiedades a las que se ofrece: necesita todos sus módulos y atributos iguales o mayores y un precio en su periodicidad y moneda.",
-    "236": "Una de las copropiedades a las que se ofrece la licencia no tiene una suscripción pagada."
+    "236": "Una de las copropiedades a las que se ofrece la licencia no tiene una suscripción pagada.",
+    "265": "No encontramos ese paquete.",
+    "266": "Ese paquete no se le ofrece a tu copropiedad.",
+    "267": "Ya tienes ese paquete: para ampliarlo cada característica debe quedar igual o mayor, y al menos una mayor. Reducirlo se hace al renovar.",
+    "268": "El paquete tiene precio en otra moneda distinta de la licencia.",
+    "269": "Tu licencia no está al día: renuévala antes de agregar o ampliar un paquete.",
+    "270": "El mismo paquete aparece más de una vez en la solicitud.",
+    "271": "Ese paquete no está a la venta.",
+    "272": "Los paquetes se renuevan junto con una licencia anual; con licencia mensual cada paquete dura doce meses y se vuelve a comprar."
   }
 }

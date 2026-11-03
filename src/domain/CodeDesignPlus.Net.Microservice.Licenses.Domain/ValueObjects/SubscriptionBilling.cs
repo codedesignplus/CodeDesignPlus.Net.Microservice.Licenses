@@ -20,4 +20,11 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 /// <param name="TaxBasisPoints">La tarifa del impuesto en puntos básicos; cero si no es gravado.</param>
 /// <param name="TaxLegalBasis">La base legal de un precio excluido o exento.</param>
 /// <param name="InvoiceConcept">El concepto de la factura.</param>
-public sealed record SubscriptionBilling(Money SubTotal, Money Tax, Money Total, Money ProrationCredit, Money AdvanceApplied, Money AmountPaid, Instant PeriodStart, Instant PeriodEnd, Instant PaidAt, TaxTreatment TaxTreatment, int TaxBasisPoints, string? TaxLegalBasis, string? InvoiceConcept);
+public sealed record SubscriptionBilling(Money SubTotal, Money Tax, Money Total, Money ProrationCredit, Money AdvanceApplied, Money AmountPaid, Instant PeriodStart, Instant PeriodEnd, Instant PaidAt, TaxTreatment TaxTreatment, int TaxBasisPoints, string? TaxLegalBasis, string? InvoiceConcept)
+{
+    /// <summary>
+    /// Las líneas de la factura: la licencia (salvo en una orden de paquete) y cada paquete con su concepto, su impuesto y su
+    /// periodo (pendings/739). <see cref="SubTotal"/>, <see cref="Tax"/> y <see cref="Total"/> son la suma de todas.
+    /// </summary>
+    public List<BillingLine> Lines { get; init; } = [];
+}

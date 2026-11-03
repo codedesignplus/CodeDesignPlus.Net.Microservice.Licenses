@@ -22,5 +22,11 @@ public enum OrderType
     /// <summary>
     /// El cambio a una licencia mayor: al pagarse empieza un periodo nuevo con ella y la anterior se inactiva.
     /// </summary>
-    Change = 2
+    Change = 2,
+
+    /// <summary>
+    /// La compra o la ampliación de un paquete complementario para una copropiedad que ya existe (pendings/739): no toca la
+    /// licencia ni su periodo.
+    /// </summary>
+    Package = 3
 }

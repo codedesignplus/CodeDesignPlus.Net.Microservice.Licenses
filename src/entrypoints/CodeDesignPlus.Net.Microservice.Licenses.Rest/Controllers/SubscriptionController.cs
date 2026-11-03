@@ -3,6 +3,9 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Command
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.RenewSubscription;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Queries.GetChangeOptions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.PurchasePackage;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 
@@ -85,4 +88,38 @@ public class SubscriptionController(IMediator mediator, IMapper mapper, IUserCon
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Quote the renewal of the license with its add-on packages (pendings/739).
+    /// </summary>
+    /// <param name="data">The packages to renew; absent renews the current ones as they are.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <response code="200">The quote of the renewal.</response>
+    [HttpPost("renewal-quote")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(RenewalQuoteDto))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> RenewalQuote([FromBody] RenewalQuoteRequest data, CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetRenewalQuoteQuery(userContext.Tenant, data?.Packages), cancellationToken));
+    }
+
+    /// <summary>
+    /// Buy or extend an add-on package for the authenticated tenant (pendings/739).
+    /// </summary>
+    /// <param name="data">The order id, generated once per attempt by the client, the package and the chosen values.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <response code="200">The payment was initiated or, when the credit covers it, confirmed without payment.</response>
+    [HttpPost("packages")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PaymentResponse))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> PurchasePackage([FromBody] PurchasePackageDto data, CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(mapper.Map<PurchasePackageCommand>(data), cancellationToken));
+    }
 }
+
+/// <summary>
+/// The body of the renewal quote.
+/// </summary>
+/// <param name="Packages">The packages to renew; absent renews the current ones as they are.</param>
+public sealed record RenewalQuoteRequest(List<PackageSelectionInput>? Packages);

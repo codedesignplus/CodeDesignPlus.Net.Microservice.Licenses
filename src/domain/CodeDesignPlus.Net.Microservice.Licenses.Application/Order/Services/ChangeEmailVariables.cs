@@ -19,6 +19,11 @@ public static class ChangeEmailVariables
     public const string Template = "SubscriptionChanged";
 
     /// <summary>
+    /// La plantilla del correo de la compra o la ampliación de un paquete pagada (pendings/739).
+    /// </summary>
+    public const string PackageTemplate = "SubscriptionPackagePurchased";
+
+    /// <summary>
     /// Arma el diccionario que consume la plantilla.
     /// </summary>
     /// <param name="order">El cambio ya pagado.</param>

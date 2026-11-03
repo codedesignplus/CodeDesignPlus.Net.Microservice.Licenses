@@ -145,7 +145,7 @@ public class CustomLicenseCatalogTest
         SubscribedWith(custom);
 
         // Act
-        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
+        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object, Mock.Of<IPackageRepository>()).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
 
         // Assert
         var option = Assert.Single(options);
@@ -163,7 +163,7 @@ public class CustomLicenseCatalogTest
         SubscribedWith(custom);
 
         // Act
-        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
+        var options = await new GetChangeOptionsQueryHandler(orders.Object, licenses.Object, creditBalances.Object, Mock.Of<IPackageRepository>()).Handle(new GetChangeOptionsQuery(TestOrders.TenantId), CancellationToken.None);
 
         // Assert
         Assert.Empty(options);
@@ -265,7 +265,8 @@ public class CustomLicenseCatalogTest
             payments.Object,
             Mock.Of<ITenantGrpc>(),
             orders.Object,
-            Microsoft.Extensions.Options.Options.Create(new OnlinePaymentOptions { ReturnUrl = "https://www.kappali.test/purchase/payment-return" }));
+            Microsoft.Extensions.Options.Options.Create(new OnlinePaymentOptions { ReturnUrl = "https://www.kappali.test/purchase/payment-return" }),
+            Mock.Of<IPackageRepository>());
     }
 
     private static CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects.BuyerDto Buyer() => new()

@@ -124,4 +124,29 @@ public class Errors : IErrorCodes
     public static readonly Error UntaxedPriceRequiresALegalBasis = new("174");
     public static readonly Error InvoiceConceptIsRequired = new("175");
     public static readonly Error OfferedTenantIsRequired = new("176");
+
+    // Paquetes complementarios (pendings/739).
+    public static readonly Error PackageIdIsRequired = new("240");
+    public static readonly Error PackageNameIsRequired = new("241");
+    public static readonly Error PackageKindIsInvalid = new("242");
+    public static readonly Error FixedPackageRequiresAttributes = new("243");
+    public static readonly Error FixedPackageRequiresAPrice = new("244");
+    public static readonly Error ConfigurablePackageRequiresComponents = new("245");
+    public static readonly Error PackageAttributeKeyIsRequired = new("246");
+    public static readonly Error PackageAttributeKeyIsRepeated = new("247");
+    public static readonly Error PackageAttributeCombinationIsInvalid = new("248");
+    public static readonly Error PackageAttributeValueIsInvalid = new("249");
+    public static readonly Error PackageComponentRangeIsInvalid = new("250");
+    public static readonly Error PackageComponentTiersAreInvalid = new("251");
+    public static readonly Error PackageComponentPerUnitOfIsInvalid = new("252");
+    public static readonly Error PackagePriceCannotBeNegative = new("253");
+    public static readonly Error PackageSelectionIsUnknown = new("254");
+    public static readonly Error PackageSelectionIsInvalid = new("255");
+    public static readonly Error PackageRequiredComponentIsOff = new("256");
+    public static readonly Error PackageSelectionIsEmpty = new("257");
+    public static readonly Error PackageCurrencyIsRequired = new("258");
+    public static readonly Error PackageDescriptionIsRequired = new("259");
+    public static readonly Error PackageLineIsInvalid = new("260");
+    public static readonly Error PackageOrderRequiresOneLine = new("261");
+    public static readonly Error PackageIsRepeatedInOrder = new("262");
 }

@@ -1,4 +1,5 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -145,6 +146,17 @@ public class ChangeOptionDto
     /// Todos sus atributos.
     /// </summary>
     public Dictionary<string, string> Attributes { get; set; } = [];
+
+    /// <summary>
+    /// Los paquetes vigentes recotizados al periodo nuevo, con licencia anual (pendings/739); vacío con licencia mensual,
+    /// cuyos paquetes siguen como están.
+    /// </summary>
+    public List<PackageQuoteDto> Packages { get; set; } = [];
+
+    /// <summary>
+    /// El precio completo de esos paquetes con impuestos. <see cref="Total"/> ya lo incluye.
+    /// </summary>
+    public long PackagesTotal { get; set; }
 }
 
 /// <summary>
@@ -201,4 +213,9 @@ public class CreditedPeriodDto
     /// Lo que se acredita en total: la base más su IVA.
     /// </summary>
     public long Total { get; set; }
+
+    /// <summary>
+    /// La línea de paquete acreditada; nula si es la licencia (pendings/739).
+    /// </summary>
+    public Guid? LineId { get; set; }
 }

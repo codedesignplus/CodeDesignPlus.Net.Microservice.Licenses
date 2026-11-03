@@ -6,6 +6,9 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.License.Commands.Upda
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.PayOrder;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.ChangeSubscription;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.RenewSubscription;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Commands.PurchasePackage;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.Commands.CreatePackage;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.Commands.UpdatePackage;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -45,7 +48,11 @@ public static class MapsterConfigLicense
                 SupersededBy = src.SupersededBy,
                 AcceptedTermsVersion = src.AcceptedTermsVersion,
                 FailureReason = src.FailureReason,
-                Error = src.Error
+                Error = src.Error,
+                Packages = (src.Packages ?? new List<PackageLine>()).Select(x => Package.DataTransferObjects.PackageLineDto.From(x, src.Id, false)).ToList(),
+                SubTotal = src.SubTotal.Amount,
+                Tax = src.Tax.Amount,
+                Total = src.Total.Amount
             });
 
 
@@ -65,12 +72,25 @@ public static class MapsterConfigLicense
                 src.Buyer,
                 src.License,
                 src.TenantDetail,
-                src.AcceptedTermsVersion
+                src.AcceptedTermsVersion,
+                src.Packages
             ));
 
         TypeAdapterConfig<RenewSubscriptionDto, RenewSubscriptionCommand>
             .NewConfig()
-            .MapWith(src => new RenewSubscriptionCommand(src.Id, src.AcceptedTermsVersion));
+            .MapWith(src => new RenewSubscriptionCommand(src.Id, src.AcceptedTermsVersion, src.Packages));
+
+        TypeAdapterConfig<PurchasePackageDto, PurchasePackageCommand>
+            .NewConfig()
+            .MapWith(src => new PurchasePackageCommand(src.Id, src.PackageId, src.Selections, src.AcceptedTermsVersion));
+
+        TypeAdapterConfig<CreatePackageDto, CreatePackageCommand>
+            .NewConfig()
+            .MapWith(src => new CreatePackageCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Icon, src.IsActive, src.IsPopular, src.ShowInLandingPage, src.OfferedTo, src.Kind, src.Currency, src.BasePrice, src.MinimumPrice, src.TaxTreatment, src.TaxPercentage, src.TaxLegalBasis, src.InvoiceConcept, src.Attributes, src.Components));
+
+        TypeAdapterConfig<UpdatePackageDto, UpdatePackageCommand>
+            .NewConfig()
+            .MapWith(src => new UpdatePackageCommand(src.Id, src.Name, src.ShortDescription, src.Description, src.Icon, src.IsActive, src.IsPopular, src.ShowInLandingPage, src.OfferedTo, src.Kind, src.Currency, src.BasePrice, src.MinimumPrice, src.TaxTreatment, src.TaxPercentage, src.TaxLegalBasis, src.InvoiceConcept, src.Attributes, src.Components));
 
         TypeAdapterConfig<ChangeSubscriptionDto, ChangeSubscriptionCommand>
             .NewConfig()

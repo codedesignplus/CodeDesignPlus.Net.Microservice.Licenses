@@ -1,5 +1,6 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
@@ -13,18 +14,20 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Que
 /// Solo ofrece lo que el cambio acepta (regla 42): licencias que se le ofrecen a la copropiedad, con precio para su
 /// periodicidad y con todos sus módulos y atributos iguales o mayores. Las más baratas primero.
 /// </remarks>
-public class GetChangeOptionsQueryHandler(IOrderRepository orders, ILicenseRepository licenses, ICreditBalanceRepository creditBalances) : IRequestHandler<GetChangeOptionsQuery, List<ChangeOptionDto>>
+public class GetChangeOptionsQueryHandler(IOrderRepository orders, ILicenseRepository licenses, ICreditBalanceRepository creditBalances, IPackageRepository packages) : IRequestHandler<GetChangeOptionsQuery, List<ChangeOptionDto>>
 {
     public async Task<List<ChangeOptionDto>> Handle(GetChangeOptionsQuery request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
         ApplicationGuard.GuidIsEmpty(request.TenantId, Errors.TenantIdIsRequired);
 
-        var subscription = SubscriptionTimeline.From(await orders.FindPaidByTenantAsync(request.TenantId, cancellationToken));
+        var state = await TenantPackages.LoadAsync(orders, request.TenantId, cancellationToken);
 
-        ApplicationGuard.IsNull(subscription, Errors.SubscriptionNotFound);
+        ApplicationGuard.IsNull(state, Errors.SubscriptionNotFound);
 
+        var subscription = state!.Subscription;
         var now = SystemClock.Instance.GetCurrentInstant();
+        var packageLines = await state.ChangeLinesAsync(packages, now, cancellationToken);
         var currency = subscription.CurrentAt(now).License.Total.Currency;
         var balance = await creditBalances.FindAsync<CreditBalanceAggregate>(request.TenantId, request.TenantId, cancellationToken);
         var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(request.TenantId, cancellationToken);
@@ -33,7 +36,7 @@ public class GetChangeOptionsQueryHandler(IOrderRepository orders, ILicenseRepos
         var catalog = await licenses.FindOnSaleAsync(cancellationToken);
 
         return [.. catalog
-            .Select(x => SubscriptionChangeQuote.For(subscription, x, available, now))
+            .Select(x => SubscriptionChangeQuote.For(subscription, x, available, now, packageLines))
             .Where(x => x is not null)
             .Select(x => ToDto(x!))
             .OrderBy(x => x.Price)
@@ -80,7 +83,10 @@ public class GetChangeOptionsQueryHandler(IOrderRepository orders, ILicenseRepos
             Tax = x.Tax?.Amount ?? 0,
             TaxBasisPoints = x.TaxBasisPoints,
             Total = x.Total.Amount,
+            LineId = x.LineId,
         })],
+        Packages = [.. quote.PackageQuotes.Select(PackageQuoteDto.From)],
+        PackagesTotal = quote.PackageQuotes.Sum(x => x.Total.Amount),
         GainedModules = [.. quote.Upgrade.GainedModules.Select(ToModule)],
         GainedAttributes = new Dictionary<string, string>(quote.Upgrade.GainedAttributes),
         Modules = [.. quote.Target.Modules.Select(ToModule)],

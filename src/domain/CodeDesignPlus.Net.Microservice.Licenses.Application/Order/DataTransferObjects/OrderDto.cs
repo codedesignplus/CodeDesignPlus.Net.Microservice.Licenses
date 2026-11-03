@@ -81,4 +81,24 @@ public class OrderDto : IDtoBase
     /// Lo que dijo el banco o la pasarela al no aprobar el pago, tal como lo dijo.
     /// </summary>
     public string? Error { get; set; }
+
+    /// <summary>
+    /// Los paquetes de la orden (pendings/739).
+    /// </summary>
+    public List<Package.DataTransferObjects.PackageLineDto> Packages { get; set; } = [];
+
+    /// <summary>
+    /// La base de la orden: licencia más paquetes, en unidades mínimas.
+    /// </summary>
+    public long SubTotal { get; set; }
+
+    /// <summary>
+    /// El impuesto de la orden, en unidades mínimas.
+    /// </summary>
+    public long Tax { get; set; }
+
+    /// <summary>
+    /// El precio completo de la orden con impuestos, en unidades mínimas. En una orden de paquete la licencia va en cero.
+    /// </summary>
+    public long Total { get; set; }
 }

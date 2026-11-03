@@ -21,7 +21,8 @@ public class ChangeSubscriptionCommandHandler(
     ILicenseRepository licenses,
     ICreditBalanceRepository creditBalances,
     ISubscriptionCheckout checkout,
-    IUserContext user
+    IUserContext user,
+    IPackageRepository packages
 ) : IRequestHandler<ChangeSubscriptionCommand, PaymentResponse>
 {
     public async Task<PaymentResponse> Handle(ChangeSubscriptionCommand request, CancellationToken cancellationToken)
@@ -40,9 +41,11 @@ public class ChangeSubscriptionCommandHandler(
             return PaymentResponses.Of(stored);
         }
 
-        var subscription = SubscriptionTimeline.From(await orders.FindPaidByTenantAsync(tenant, cancellationToken));
+        var state = await TenantPackages.LoadAsync(orders, tenant, cancellationToken);
 
-        ApplicationGuard.IsNull(subscription, Errors.SubscriptionNotFound);
+        ApplicationGuard.IsNull(state, Errors.SubscriptionNotFound);
+
+        var subscription = state!.Subscription;
 
         var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(tenant, cancellationToken);
         var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Change && x.License.Id == request.LicenseId);
@@ -62,7 +65,8 @@ public class ChangeSubscriptionCommandHandler(
         var balance = await creditBalances.FindAsync<CreditBalanceAggregate>(tenant, tenant, cancellationToken);
         var available = SubscriptionCheckout.AvailableCreditBalance(balance, awaiting, current.License.Total.Currency);
 
-        var quote = SubscriptionChangeQuote.For(subscription, target, available, now);
+        // Con licencia anual, los paquetes vigentes se recotizan al periodo nuevo en la misma orden (pendings/739).
+        var quote = SubscriptionChangeQuote.For(subscription, target, available, now, await state.ChangeLinesAsync(packages, now, cancellationToken));
 
         ApplicationGuard.IsNull(quote, Errors.LicenseIsNotAnUpgrade);
 
@@ -75,7 +79,8 @@ public class ChangeSubscriptionCommandHandler(
             current.License.Id,
             quote.CreditedPeriods,
             quote.Charge,
-            user.IdUser);
+            user.IdUser,
+            quote.PackageLines);
 
         order.RecordAcceptedTerms(request.AcceptedTermsVersion);
 

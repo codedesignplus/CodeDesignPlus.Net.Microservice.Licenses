@@ -47,6 +47,15 @@ public static class ReceiptText
     public static string Date(LocalDate date) => $"{date.Day} de {Months[date.Month - 1]} de {date.Year}";
 
     /// <summary>
+    /// Los paquetes de la orden en una línea: «Virtual Básico ($ 2.368.100,00); Sala a la medida ($ 1.190.000,00)», con el
+    /// precio de cada uno con impuestos (pendings/739).
+    /// </summary>
+    /// <param name="order">La orden.</param>
+    /// <param name="currency">La moneda.</param>
+    /// <returns>La lista; vacía si la orden no trae paquetes.</returns>
+    public static string Packages(OrderAggregate order, Currency currency) => string.Join("; ", (order.Packages ?? []).Select(x => $"{x.Name} ({Amount(x.Total, currency)})"));
+
+    /// <summary>
     /// El periodo que paga la orden, con las fechas del calendario de la copropiedad (regla 11): «28 de nov de 2026 — 28 de
     /// dic de 2026».
     /// </summary>
@@ -70,7 +79,7 @@ public static class ReceiptText
     /// <param name="order">La orden ya pagada.</param>
     /// <returns>El nombre del archivo.</returns>
     /// <remarks>
-    /// No es un catálogo: son los tres tipos de orden que el micro sabe cobrar, y uno nuevo exige código antes que un
+    /// No es un catálogo: son los tipos de orden que el micro sabe cobrar, y uno nuevo exige código antes que un
     /// nombre. Antes todos se llamaban <c>PurchaseReceipt.pdf</c>, también una renovación o un cambio.
     /// </remarks>
     public static string ReceiptFileName(OrderAggregate order) => order.Type switch
@@ -78,6 +87,7 @@ public static class ReceiptText
         OrderType.Purchase => $"ComprobanteCompra-{order.Id}.pdf",
         OrderType.Renewal => $"ComprobanteRenovacion-{order.Id}.pdf",
         OrderType.Change => $"ComprobanteCambio-{order.Id}.pdf",
+        OrderType.Package => $"ComprobantePaquete-{order.Id}.pdf",
         _ => throw new ArgumentOutOfRangeException(nameof(order), order.Type, "The order type has no receipt name.")
     };
 }

@@ -102,6 +102,7 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
             .Set(x => x.ProvisioningHistory, order.ProvisioningHistory)
             .Set(x => x.PeriodStart, order.PeriodStart)
             .Set(x => x.PeriodEnd, order.PeriodEnd)
+            .Set(x => x.Packages, order.Packages)
             .Set(x => x.FailureReason, order.FailureReason)
             .Set(x => x.Error, order.Error)
             .Set(x => x.UpdatedAt, order.UpdatedAt);
@@ -313,6 +314,43 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
         var filter = Builders<OrderAggregate>.Filter.And(
             Builders<OrderAggregate>.Filter.Eq(x => x.TenantDetail.Id, tenantId),
             Builders<OrderAggregate>.Filter.Eq(x => x.PaymentStatus, PaymentStatus.Succeeded),
+            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true)
+        );
+
+        return GetCollection<OrderAggregate>().Find(filter).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<List<OrderAggregate>> FindPaidWithPackagesByTenantAsync(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.TenantDetail.Id, tenantId),
+            WithPaidPackages());
+
+        return GetCollection<OrderAggregate>().Find(filter).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<List<OrderAggregate>> FindAllPaidWithPackagesAsync(CancellationToken cancellationToken)
+    {
+        return GetCollection<OrderAggregate>().Find(WithPaidPackages()).ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Pagadas, con al menos un paquete y sin reemplazar: lo pagado de una orden reemplazada fue a saldo a favor.
+    /// </summary>
+    private static FilterDefinition<OrderAggregate> WithPaidPackages() => Builders<OrderAggregate>.Filter.And(
+        Builders<OrderAggregate>.Filter.Eq(x => x.PaymentStatus, PaymentStatus.Succeeded),
+        Builders<OrderAggregate>.Filter.Eq(x => x.SupersededBy, null),
+        Builders<OrderAggregate>.Filter.SizeGt(x => x.Packages, 0));
+
+    /// <inheritdoc />
+    public Task<List<OrderAggregate>> FindAwaitingPackagePaymentAsync(Guid tenantId, CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.TenantDetail.Id, tenantId),
+            Builders<OrderAggregate>.Filter.Eq(x => x.Type, OrderType.Package),
+            Builders<OrderAggregate>.Filter.In(x => x.PaymentStatus, [PaymentStatus.Unknown, PaymentStatus.Initiated, PaymentStatus.Pending]),
             Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true)
         );
 

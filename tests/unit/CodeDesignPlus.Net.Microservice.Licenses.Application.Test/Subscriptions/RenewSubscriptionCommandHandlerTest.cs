@@ -32,7 +32,7 @@ public class RenewSubscriptionCommandHandlerTest
         orders.Setup(x => x.FindAwaitingSubscriptionPaymentAsync(TestOrders.TenantId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
         checkout.Setup(x => x.StartAsync(It.IsAny<OrderAggregate>(), It.IsAny<IReadOnlyCollection<OrderAggregate>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PaymentResponse());
 
-        handler = new RenewSubscriptionCommandHandler(orders.Object, licenses.Object, creditBalances.Object, checkout.Object, user.Object);
+        handler = new RenewSubscriptionCommandHandler(orders.Object, licenses.Object, creditBalances.Object, checkout.Object, user.Object, Mock.Of<IPackageRepository>());
     }
 
     /// <summary>

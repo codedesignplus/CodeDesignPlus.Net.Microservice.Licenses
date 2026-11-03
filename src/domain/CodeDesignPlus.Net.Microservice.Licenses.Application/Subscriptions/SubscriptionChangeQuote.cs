@@ -20,6 +20,16 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions;
 public sealed record SubscriptionChangeQuote(LicenseAggregate Target, Price Price, LicenseUpgradeResult Upgrade, List<CreditedPeriod> CreditedPeriods, SubscriptionCharge Charge)
 {
     /// <summary>
+    /// Los paquetes vigentes recotizados al periodo nuevo, con licencia anual (pendings/739). Vacío con licencia mensual.
+    /// </summary>
+    public List<PackageQuote> PackageQuotes { get; init; } = [];
+
+    /// <summary>
+    /// Las líneas de esos paquetes para la orden del cambio, cada una reemplazando a la vigente.
+    /// </summary>
+    public List<PackageLine> PackageLines { get; init; } = [];
+
+    /// <summary>
     /// Cotiza el cambio, o devuelve <c>null</c> si la licencia no se le puede ofrecer a la copropiedad: no está a la venta
     /// para ella, no tiene precio para su periodicidad o no es mayor que la que tiene.
     /// </summary>
@@ -27,8 +37,9 @@ public sealed record SubscriptionChangeQuote(LicenseAggregate Target, Price Pric
     /// <param name="target">La licencia del catálogo.</param>
     /// <param name="creditBalance">El saldo a favor disponible.</param>
     /// <param name="now">El instante del cambio.</param>
+    /// <param name="packages">Los paquetes recotizados y lo no usado de cada uno (pendings/739); nada si no tiene.</param>
     /// <returns>La cotización, o <c>null</c>.</returns>
-    public static SubscriptionChangeQuote? For(SubscriptionTimeline subscription, LicenseAggregate target, Money creditBalance, Instant now)
+    public static SubscriptionChangeQuote? For(SubscriptionTimeline subscription, LicenseAggregate target, Money creditBalance, Instant now, (List<PackageQuote> Quotes, List<PackageLine> Lines, List<CreditedPeriod> Credited)? packages = null)
     {
         var current = subscription.CurrentAt(now).License;
 
@@ -52,8 +63,14 @@ public sealed record SubscriptionChangeQuote(LicenseAggregate Target, Price Pric
         }
 
         var credited = Proration.Credit(subscription, now);
-        var credit = credited.Aggregate(Money.Zero(price.Total.Currency), (sum, x) => sum + x.Total);
+        var quotes = packages?.Quotes ?? [];
+        var lines = packages?.Lines ?? [];
 
-        return new SubscriptionChangeQuote(target, price, upgrade, credited, SubscriptionCharge.Compute(price.Total, credit, creditBalance));
+        credited.AddRange(packages?.Credited ?? []);
+
+        var credit = credited.Aggregate(Money.Zero(price.Total.Currency), (sum, x) => sum + x.Total);
+        var total = quotes.Aggregate(price.Total, (sum, x) => sum + x.Total);
+
+        return new SubscriptionChangeQuote(target, price, upgrade, credited, SubscriptionCharge.Compute(total, credit, creditBalance)) { PackageQuotes = quotes, PackageLines = lines };
     }
 }

@@ -24,6 +24,14 @@
     "233": "Esse pedido é de outro condomínio.",
     "234": "Esta licença não está à venda. Se ela foi oferecida a você, mude para ela em Configurações › Organização.",
     "235": "A licença não melhora a de algum dos condomínios aos quais é oferecida: precisa de todos os seus módulos e atributos iguais ou maiores e de um preço na sua periodicidade e moeda.",
-    "236": "Um dos condomínios aos quais a licença é oferecida não tem uma assinatura paga."
+    "236": "Um dos condomínios aos quais a licença é oferecida não tem uma assinatura paga.",
+    "265": "Não encontramos esse pacote.",
+    "266": "Esse pacote não é oferecido ao seu condomínio.",
+    "267": "Você já tem esse pacote: para ampliá-lo cada característica deve ficar igual ou maior, e ao menos uma maior. Reduzi-lo se faz ao renovar.",
+    "268": "O pacote tem preço em outra moeda diferente da licença.",
+    "269": "Sua licença não está em dia: renove-a antes de adicionar ou ampliar um pacote.",
+    "270": "O mesmo pacote aparece mais de uma vez na solicitação.",
+    "271": "Esse pacote não está à venda.",
+    "272": "Os pacotes são renovados junto com uma licença anual; com licença mensal cada pacote dura doze meses e é comprado de novo."
   }
 }

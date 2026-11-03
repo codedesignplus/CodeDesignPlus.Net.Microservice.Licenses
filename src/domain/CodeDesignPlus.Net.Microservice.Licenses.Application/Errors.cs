@@ -40,4 +40,14 @@ public class Errors: IErrorCodes
     public static readonly Error LicenseIsNotForSale = new("234");
     public static readonly Error LicenseIsNotAnUpgradeForAnOfferedTenant = new("235");
     public static readonly Error OfferedTenantHasNoSubscription = new("236");
+
+    // Paquetes complementarios (pendings/739).
+    public static readonly Error PackageNotFound = new("265");
+    public static readonly Error PackageIsNotOffered = new("266");
+    public static readonly Error PackageIsNotAnUpgrade = new("267");
+    public static readonly Error PackageCurrencyDoesNotMatch = new("268");
+    public static readonly Error LicenseIsNotPaidUp = new("269");
+    public static readonly Error PackageIsRepeated = new("270");
+    public static readonly Error PackageIsNotForSale = new("271");
+    public static readonly Error PackagesRenewOnlyWithAnnualLicense = new("272");
 }

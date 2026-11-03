@@ -158,9 +158,12 @@ public class SubscriptionCheckout(
         request.Tax = new Amount { Currency = tax.Currency, Value = tax.Amount };
         request.Total = new Amount { Currency = order.AmountToCharge.Currency, Value = order.AmountToCharge.Amount };
 
-        request.Description = order.Type == OrderType.Renewal
-            ? $"Renewal of license {order.License.Name} for tenant {order.TenantDetail.Name}."
-            : $"Change to license {order.License.Name} for tenant {order.TenantDetail.Name}.";
+        request.Description = order.Type switch
+        {
+            OrderType.Renewal => $"Renewal of license {order.License.Name} for tenant {order.TenantDetail.Name}.",
+            OrderType.Package => $"Package {string.Join(", ", (order.Packages ?? []).Select(x => x.Name))} for tenant {order.TenantDetail.Name}.",
+            _ => $"Change to license {order.License.Name} for tenant {order.TenantDetail.Name}."
+        };
 
         return request;
     }

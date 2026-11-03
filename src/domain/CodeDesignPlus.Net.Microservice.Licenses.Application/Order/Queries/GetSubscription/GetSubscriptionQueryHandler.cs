@@ -1,6 +1,7 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 using Microsoft.Extensions.Options;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetSubscription;
@@ -20,14 +21,19 @@ public class GetSubscriptionQueryHandler(IOrderRepository repository, ICreditBal
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
         ApplicationGuard.GuidIsEmpty(request.TenantId, Errors.TenantIdIsRequired);
 
-        var subscription = SubscriptionTimeline.From(await repository.FindPaidByTenantAsync(request.TenantId, cancellationToken));
+        var state = await Subscriptions.TenantPackages.LoadAsync(repository, request.TenantId, cancellationToken);
 
-        ApplicationGuard.IsNull(subscription, Errors.OrderNotFound);
+        ApplicationGuard.IsNull(state, Errors.OrderNotFound);
+
+        var subscription = state!.Subscription;
 
         var now = SystemClock.Instance.GetCurrentInstant();
         var order = subscription.CurrentAt(now);
         var balance = await creditBalances.FindAsync<CreditBalanceAggregate>(request.TenantId, request.TenantId, cancellationToken);
         var awaiting = await repository.FindAwaitingSubscriptionPaymentAsync(request.TenantId, cancellationToken);
+        var paidUp = state.IsPaidUp(now);
+        var current = state.Current(now).Select(x => PackageLineDto.From(x.Line, x.Order.Id, paidUp));
+        var upcoming = PackageTerm.Upcoming(state.Lines, now).Select(x => PackageLineDto.From(x.Line, x.Order.Id, false));
 
         return new SubscriptionDto
         {
@@ -45,6 +51,8 @@ public class GetSubscriptionQueryHandler(IOrderRepository repository, ICreditBal
             Currency = order.License.Total.Currency,
             BillingType = order.License.BillingType,
             HasPaymentInProgress = awaiting.Count > 0,
+            Packages = [.. current.Concat(upcoming)],
+            EffectiveAttributes = state.EffectiveAttributes(now),
             License = new SubscriptionLicenseDto
             {
                 Id = order.License.Id,

@@ -51,6 +51,12 @@ public class SubscriptionRenewedDomainEvent(
     public Guid BuyerId { get; } = buyerId;
 
     /// <summary>
+    /// Los paquetes de la orden con su periodo, para que ms-tenants los combine con la licencia (pendings/739). Vacío si la
+    /// orden no trae paquetes: los que la copropiedad ya tenía siguen como estaban.
+    /// </summary>
+    public List<PackageTenant> Packages { get; init; } = [];
+
+    /// <summary>
     /// Crea el evento.
     /// </summary>
     /// <param name="aggregateId">La orden.</param>
@@ -58,9 +64,10 @@ public class SubscriptionRenewedDomainEvent(
     /// <param name="license">La licencia con el periodo renovado.</param>
     /// <param name="billing">Lo que se factura.</param>
     /// <param name="buyerId">Quien pagó.</param>
+    /// <param name="packages">Los paquetes renovados con la licencia.</param>
     /// <returns>El evento.</returns>
-    public static SubscriptionRenewedDomainEvent Create(Guid aggregateId, Tenant tenantDetail, LicenseTenant license, SubscriptionBilling billing, Guid buyerId)
+    public static SubscriptionRenewedDomainEvent Create(Guid aggregateId, Tenant tenantDetail, LicenseTenant license, SubscriptionBilling billing, Guid buyerId, List<PackageTenant>? packages = null)
     {
-        return new SubscriptionRenewedDomainEvent(aggregateId, tenantDetail, license, billing, buyerId);
+        return new SubscriptionRenewedDomainEvent(aggregateId, tenantDetail, license, billing, buyerId) { Packages = packages ?? [] };
     }
 }

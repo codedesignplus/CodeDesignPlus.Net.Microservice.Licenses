@@ -31,6 +31,8 @@ public static class RenewalEmailVariables
         {
             ["organization_name"] = order.TenantDetail.Name,
             ["license_name"] = order.License.Name,
+            ["packages_row_display"] = (order.Packages ?? []).Count == 0 ? "none" : "table-row",
+            ["packages_list"] = ReceiptText.Packages(order, currency),
             ["next_billing_date"] = DatePattern.Format(periodEnd.InZone(zone).Date),
             ["total"] = ReceiptText.Amount(order.AmountToCharge, currency),
             ["period"] = ReceiptText.Period(order, zone),
