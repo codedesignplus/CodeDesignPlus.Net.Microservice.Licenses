@@ -53,6 +53,7 @@ public class GetChangeOptionsQueryHandler(IOrderRepository orders, ILicenseRepos
         Description = quote.Target.Description,
         Icon = quote.Target.Icon,
         IsPopular = quote.Target.IsPopular,
+        IsTailored = !quote.Target.ShowInLandingPage,
         BillingType = quote.Price.BillingType,
         Currency = quote.Price.Total.Currency,
         Price = quote.Price.Total.Amount,

@@ -46,6 +46,11 @@ public class ChangeOptionDto
     public bool IsPopular { get; set; }
 
     /// <summary>
+    /// Si es una licencia a medida: privada (no se ve en la landing) y ofrecida a esta copropiedad (pendings/464).
+    /// </summary>
+    public bool IsTailored { get; set; }
+
+    /// <summary>
     /// La periodicidad: la misma de la copropiedad.
     /// </summary>
     public BillingType BillingType { get; set; }

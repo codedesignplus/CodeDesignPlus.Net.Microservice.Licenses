@@ -80,7 +80,9 @@ public class CustomLicenseCatalogTest
         OrderAggregate? created = null;
 
         licenses.Setup(x => x.FindAsync<LicenseAggregate>(Elite, It.IsAny<CancellationToken>())).ReturnsAsync(license);
-        orders.Setup(x => x.CreateIfAbsentAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>())).Callback<OrderAggregate, CancellationToken>((order, _) => created = order).ReturnsAsync(true);
+        // La orden se lee al guardarla; el guardado responde como el de un envío repetido para que la prueba no pase por la
+        // pasarela ni por Mapster, cuya configuración global la cambian en paralelo otras clases de prueba.
+        orders.Setup(x => x.CreateIfAbsentAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>())).Callback<OrderAggregate, CancellationToken>((order, _) => created = order).ReturnsAsync(false);
         payments.Setup(x => x.InitiatePaymentAsync(It.IsAny<GrpcPayment.InitiatePaymentRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new GrpcPayment.InitiatePaymentResponse { PaymentId = Guid.NewGuid().ToString(), Success = true });
 
         var request = new PayOrderCommand(Guid.NewGuid(), Buyer(), new OrderLicenseDto { Id = Elite, BillingType = BillingType.Monthly }, TestOrders.BuildTenant(), "2026-11-02");
@@ -147,7 +149,7 @@ public class CustomLicenseCatalogTest
 
         // Assert
         var option = Assert.Single(options);
-        Assert.Equal((Elite, TaxTreatment.Excluded, 0), (option.LicenseId, option.TaxTreatment, option.TaxBasisPoints));
+        Assert.Equal((Elite, true, TaxTreatment.Excluded, 0), (option.LicenseId, option.IsTailored, option.TaxTreatment, option.TaxBasisPoints));
     }
 
     /// <summary>
