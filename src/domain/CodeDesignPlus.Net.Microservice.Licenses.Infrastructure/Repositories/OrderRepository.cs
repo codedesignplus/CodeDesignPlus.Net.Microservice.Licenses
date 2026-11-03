@@ -186,24 +186,67 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
     }
 
     /// <inheritdoc/>
+    public async Task<bool> TouchPaymentPendingAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var collection = GetCollection<OrderAggregate>();
+
+        var filter = Builders<OrderAggregate>.Filter.And(
+            Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId),
+            Builders<OrderAggregate>.Filter.Eq(x => x.ProvisioningStatus, ProvisioningStatus.PaymentPending));
+
+        var update = Builders<OrderAggregate>.Update.Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant());
+
+        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount > 0;
+    }
+
+    /// <inheritdoc/>
     public async Task<List<OrderAggregate>> FindStuckOrdersAsync(ProvisioningStatus status, Duration stuckDuration, int limit, CancellationToken cancellationToken)
     {
         var collection = GetCollection<OrderAggregate>();
         var cutoff = SystemClock.Instance.GetCurrentInstant().Minus(stuckDuration);
 
-        var filter = Builders<OrderAggregate>.Filter.And(
-            Builders<OrderAggregate>.Filter.Eq(x => x.ProvisioningStatus, status),
-            Builders<OrderAggregate>.Filter.Eq(x => x.IsActive, true),
-            Builders<OrderAggregate>.Filter.Lt(x => x.UpdatedAt, cutoff)
-        );
+        return await collection.Aggregate(StuckOrdersPipeline(status, cutoff, limit), cancellationToken: cancellationToken).ToListAsync(cancellationToken);
+    }
 
-        var sort = Builders<OrderAggregate>.Sort.Ascending(x => x.UpdatedAt);
+    /// <summary>
+    /// El campo auxiliar con la fecha efectiva de la última actualización: solo vive dentro del pipeline.
+    /// </summary>
+    public const string EffectiveUpdatedAtField = "_EffectiveUpdatedAt";
 
-        return await collection
-            .Find(filter)
-            .Sort(sort)
+    /// <summary>
+    /// Las órdenes atascadas en un estado desde antes de <paramref name="cutoff"/>, de la más antigua a la más reciente.
+    /// </summary>
+    /// <remarks>
+    /// Una orden que nunca se actualizó tiene <c>UpdatedAt</c> nulo, y Mongo no incluye un nulo en <c>$lt</c>: antes la
+    /// conciliación nunca recogía una orden cuyo primer aviso de pago se perdió (orden <c>65b77cd4</c>, pendings/738). La
+    /// fecha efectiva es <c>UpdatedAt</c> o, si no la tiene, <c>CreatedAt</c>; el orden también sale de ella, y el campo
+    /// auxiliar se quita antes de leer el documento.
+    /// </remarks>
+    /// <param name="status">El estado de aprovisionamiento.</param>
+    /// <param name="cutoff">Desde cuándo se considera atascada.</param>
+    /// <param name="limit">Cuántas como mucho.</param>
+    /// <returns>El pipeline.</returns>
+    public static PipelineDefinition<OrderAggregate, OrderAggregate> StuckOrdersPipeline(ProvisioningStatus status, Instant cutoff, int limit)
+    {
+        var filter = Builders<OrderAggregate>.Filter;
+
+        var match = filter.And(
+            filter.Eq(x => x.ProvisioningStatus, status),
+            filter.Eq(x => x.IsActive, true),
+            filter.Or(
+                filter.Lt(x => x.UpdatedAt, cutoff),
+                filter.And(
+                    filter.Eq(x => x.UpdatedAt, null),
+                    filter.Lt(x => x.CreatedAt, cutoff))));
+
+        return new EmptyPipelineDefinition<OrderAggregate>()
+            .Match(match)
+            .AppendStage<OrderAggregate, OrderAggregate, OrderAggregate>(new BsonDocument("$addFields", new BsonDocument(EffectiveUpdatedAtField, new BsonDocument("$ifNull", new BsonArray { "$UpdatedAt", "$CreatedAt" }))))
+            .AppendStage<OrderAggregate, OrderAggregate, OrderAggregate>(new BsonDocument("$sort", new BsonDocument(EffectiveUpdatedAtField, 1)))
             .Limit(limit)
-            .ToListAsync(cancellationToken);
+            .AppendStage<OrderAggregate, OrderAggregate, OrderAggregate>(new BsonDocument("$project", new BsonDocument(EffectiveUpdatedAtField, 0)));
     }
 
     /// <inheritdoc/>

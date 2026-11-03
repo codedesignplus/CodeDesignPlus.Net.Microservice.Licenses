@@ -64,12 +64,32 @@ public class OrderReconciliationJob(
                     await mediator.Send(new UpdateStateOrderCommand(order.Id, paymentStatus), cancellationToken);
 
                     logger.LogInformation("Reconciled order {OrderId}: payment {Status}.", order.Id, paymentStatus);
+
+                    continue;
                 }
+
+                // Sin desenlace todavía: se mueve su marca para que no ocupe el lote en cada ciclo y deje sin revisar a las
+                // siguientes. La consulta recoge también las que nunca se actualizaron (pendings/738).
+                await orderRepository.TouchPaymentPendingAsync(order.Id, cancellationToken);
             }
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Failed to reconcile PaymentPending order {OrderId}. Will retry next cycle.", order.Id);
+
+                await TouchQuietlyAsync(order.Id, cancellationToken);
             }
+        }
+    }
+
+    private async Task TouchQuietlyAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await orderRepository.TouchPaymentPendingAsync(orderId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to move the reconciliation mark of order {OrderId}.", orderId);
         }
     }
 

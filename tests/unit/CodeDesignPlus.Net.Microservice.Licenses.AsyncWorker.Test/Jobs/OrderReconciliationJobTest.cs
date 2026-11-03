@@ -98,4 +98,33 @@ public class OrderReconciliationJobTest
             It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(x => x.UpdateAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_StuckPaymentStillPending_MovesItsMarkSoTheBatchAdvances()
+    {
+        // Pending orders never left the oldest batch: with the orders never updated now included, an abandoned
+        // checkout would hold a slot every cycle (pendings/738).
+        var order = TestOrders.Build();
+        Stuck(ProvisioningStatus.PaymentPending, order);
+        var response = new GetPaymentStatusResponse();
+        var status = typeof(GetPaymentStatusResponse).GetProperty(nameof(GetPaymentStatusResponse.Status))!;
+        status.SetValue(response, Enum.ToObject(status.PropertyType, (int)DomainPaymentStatus.Pending));
+        paymentGrpc.Setup(x => x.GetPaymentStatusAsync(order.PaymentId, It.IsAny<CancellationToken>())).ReturnsAsync(response);
+
+        await Job().ExecuteAsync(Token());
+
+        repository.Verify(x => x.TouchPaymentPendingAsync(order.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_PaymentStatusFails_MovesItsMarkSoTheBatchAdvances()
+    {
+        var order = TestOrders.Build();
+        Stuck(ProvisioningStatus.PaymentPending, order);
+        paymentGrpc.Setup(x => x.GetPaymentStatusAsync(order.PaymentId, It.IsAny<CancellationToken>())).ThrowsAsync(new InvalidOperationException("payment not found"));
+
+        await Job().ExecuteAsync(Token());
+
+        repository.Verify(x => x.TouchPaymentPendingAsync(order.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

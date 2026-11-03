@@ -74,6 +74,15 @@ public interface IOrderRepository : IRepositoryBase
     Task<int?> RegisterProvisioningAttemptAsync(Guid orderId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Mueve <c>UpdatedAt</c> de una orden que sigue esperando su pago, para que la conciliación pase a las siguientes del
+    /// lote y vuelva a ella en otro ciclo (pendings/738).
+    /// </summary>
+    /// <param name="orderId">La orden.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>true</c> si la orden seguía esperando su pago.</returns>
+    Task<bool> TouchPaymentPendingAsync(Guid orderId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Finds orders stuck in a given provisioning status for longer than the specified duration.
     /// Used by the reconciliation job to detect and recover failed provisioning flows.
     /// </summary>
@@ -81,7 +90,7 @@ public interface IOrderRepository : IRepositoryBase
     /// <param name="stuckDuration">The minimum time the order must have been stuck.</param>
     /// <param name="limit">The maximum number of orders to return.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns>A list of stuck orders ordered by UpdatedAt ascending.</returns>
+    /// <returns>A list of stuck orders, oldest first by UpdatedAt or, if never updated, by CreatedAt.</returns>
     Task<List<OrderAggregate>> FindStuckOrdersAsync(ProvisioningStatus status, Duration stuckDuration, int limit, CancellationToken cancellationToken);
 
     /// <summary>
