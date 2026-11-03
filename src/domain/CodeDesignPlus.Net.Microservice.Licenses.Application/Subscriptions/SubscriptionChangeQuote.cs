@@ -52,7 +52,7 @@ public sealed record SubscriptionChangeQuote(LicenseAggregate Target, Price Pric
         }
 
         var credited = Proration.Credit(subscription, now);
-        var credit = credited.Aggregate(Money.Zero(price.Total.Currency), (sum, x) => sum + x.Amount);
+        var credit = credited.Aggregate(Money.Zero(price.Total.Currency), (sum, x) => sum + x.Total);
 
         return new SubscriptionChangeQuote(target, price, upgrade, credited, SubscriptionCharge.Compute(price.Total, credit, creditBalance));
     }

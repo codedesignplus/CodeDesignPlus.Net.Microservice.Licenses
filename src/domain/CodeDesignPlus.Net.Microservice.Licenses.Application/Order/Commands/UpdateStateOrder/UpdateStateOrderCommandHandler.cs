@@ -41,7 +41,7 @@ public class UpdateStateOrderCommandHandler(
             return;
         }
 
-        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken));
+        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage);
 
         // Escritura condicional: si el webhook y la conciliacion aplican el mismo pago a la vez, solo uno gana, y
         // solo ese publica el aprovisionamiento. Nunca UpdateAsync: el documento entero pisaria los pasos que
@@ -127,9 +127,13 @@ public class UpdateStateOrderCommandHandler(
                     // Solo el recibo: a estas alturas los pasos de aprovisionamiento ya se estan marcando.
                     await orderRepository.AttachReceiptAsync(order.Id, order.Receipt!, order.Buyer.BuyerId, cancellationToken);
 
-                    var (template, emailVariables) = order.Type == OrderType.Renewal
-                        ? ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency))
-                        : ("PurchaseConfirmation", variables);
+                    var (template, emailVariables) = order.Type switch
+                    {
+                        OrderType.Renewal => ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency)),
+                        // Un cambio no es una compra: dice lo descontado y lo pagado, y el comprobante va adjunto (pendings/738).
+                        OrderType.Change => (ChangeEmailVariables.Template, ChangeEmailVariables.Build(order, currency)),
+                        _ => ("PurchaseConfirmation", variables)
+                    };
 
                     var sendEmailEvent = new SendEmailDomainEvent(
                         Guid.NewGuid(),

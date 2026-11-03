@@ -4,8 +4,8 @@ using static CodeDesignPlus.Net.Microservice.Licenses.Domain.Test.Subscriptions.
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.Test.Subscriptions;
 
 /// <summary>
-/// El crédito por lo no prestado al cambiar de licencia (pendings/738): días reales del periodo guardado, base sin
-/// impuestos y redondeo a favor del cliente.
+/// El crédito por lo no prestado al cambiar de licencia (pendings/738): días reales del periodo guardado, la base sin
+/// impuestos más su IVA, y redondeo a favor del cliente.
 /// </summary>
 public class ProrationTest
 {
@@ -41,11 +41,11 @@ public class ProrationTest
     }
 
     /// <summary>
-    /// La base es lo facturado sin impuestos: con el periodo entero por delante se acredita la base (150.000), no el total
-    /// con IVA (178.500).
+    /// Con el periodo entero por delante se acredita lo facturado: la base (150.000) y su IVA (28.500), 178.500. Esta orden
+    /// no guarda la tarifa (comprada antes de pendings/662): su IVA se acredita en la misma proporción de los días.
     /// </summary>
     [Fact]
-    public void Credit_TheWholePeriodLeft_CreditsTheBaseWithoutTaxes()
+    public void Credit_TheWholePeriodLeft_CreditsTheBaseAndItsTax()
     {
         // Arrange
         var start = Bogota(2027, 3, 1, 10);
@@ -55,7 +55,7 @@ public class ProrationTest
         var credited = Proration.Credit(subscription, start.Plus(Duration.FromHours(1)));
 
         // Assert
-        Assert.Equal(15_000_000L, credited.Single().Amount.Amount);
+        Assert.Equal((15_000_000L, 17_850_000L), (credited.Single().Amount.Amount, credited.Single().Total.Amount));
     }
 
     /// <summary>

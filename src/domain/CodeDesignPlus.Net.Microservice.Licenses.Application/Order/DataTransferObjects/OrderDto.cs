@@ -42,9 +42,14 @@ public class OrderDto : IDtoBase
     public Instant? PeriodEnd { get; set; }
 
     /// <summary>
-    /// En un cambio, el crédito por lo no prestado de la licencia anterior, en unidades mínimas.
+    /// En un cambio, el crédito por lo no prestado de la licencia anterior con su IVA, en unidades mínimas.
     /// </summary>
     public long ProrationCredit { get; set; }
+
+    /// <summary>
+    /// El IVA de ese crédito, en unidades mínimas (pendings/738).
+    /// </summary>
+    public long ProrationCreditTax { get; set; }
 
     /// <summary>
     /// El saldo a favor aplicado, en unidades mínimas.
@@ -65,4 +70,15 @@ public class OrderDto : IDtoBase
     /// La versión de los términos del servicio que aceptó quien pidió la orden (pendings/662).
     /// </summary>
     public string? AcceptedTermsVersion { get; set; }
+
+    /// <summary>
+    /// Por qué no se aprobó el pago (número de <see cref="PaymentFailureReason"/>); nulo si se aprobó o aún no hay
+    /// resultado (pendings/738).
+    /// </summary>
+    public PaymentFailureReason? FailureReason { get; set; }
+
+    /// <summary>
+    /// Lo que dijo el banco o la pasarela al no aprobar el pago, tal como lo dijo.
+    /// </summary>
+    public string? Error { get; set; }
 }

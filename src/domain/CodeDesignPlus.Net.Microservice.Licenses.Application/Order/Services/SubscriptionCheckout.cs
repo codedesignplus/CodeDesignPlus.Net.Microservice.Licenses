@@ -150,7 +150,9 @@ public class SubscriptionCheckout(
         request.PlatformAccount = true;
         request.ReturnUrl = onlinePayment.Value.SubscriptionReturnUrl;
 
-        var (subTotal, tax) = Split(order.License, order.AmountToCharge);
+        // La base y el IVA de lo cobrado, no un reparto del neto como si llevara el IVA del precio dentro: el crédito por lo
+        // no prestado devuelve su propio IVA (pendings/738).
+        var (subTotal, tax) = order.ChargeBreakdown();
 
         request.SubTotal = new Amount { Currency = subTotal.Currency, Value = subTotal.Amount };
         request.Tax = new Amount { Currency = tax.Currency, Value = tax.Amount };
@@ -161,21 +163,5 @@ public class SubscriptionCheckout(
             : $"Change to license {order.License.Name} for tenant {order.TenantDetail.Name}.";
 
         return request;
-    }
-
-    /// <summary>
-    /// Reparte lo que se cobra entre base e impuestos en la misma proporción del precio, porque ms-payments exige que el
-    /// total sea la base más los impuestos. Cobrando el precio completo, es el mismo reparto del precio.
-    /// </summary>
-    internal static (Money SubTotal, Money Tax) Split(Domain.ValueObjects.License license, Money due)
-    {
-        if (license.Total.Amount == 0 || due == license.Total)
-        {
-            return (Money.FromLong(due.Amount - Math.Min(license.Tax.Amount, due.Amount), due.Currency), Money.FromLong(Math.Min(license.Tax.Amount, due.Amount), due.Currency));
-        }
-
-        var tax = (long)((decimal)license.Tax.Amount * due.Amount / license.Total.Amount);
-
-        return (Money.FromLong(due.Amount - tax, due.Currency), Money.FromLong(tax, due.Currency));
     }
 }

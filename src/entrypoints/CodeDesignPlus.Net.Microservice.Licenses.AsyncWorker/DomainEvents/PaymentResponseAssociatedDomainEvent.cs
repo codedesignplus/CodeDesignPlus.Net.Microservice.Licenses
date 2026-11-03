@@ -10,6 +10,8 @@ public class PaymentResponseAssociatedDomainEvent(
     PaymentStatus status,
     Dictionary<string, string?> response,
     Guid? tenant,
+    int failureReason = 0,
+    string? providerMessage = null,
     Guid? eventId = null,
     Instant? occurredAt = null,
     Dictionary<string, object>? metadata = null
@@ -21,4 +23,14 @@ public class PaymentResponseAssociatedDomainEvent(
     public PaymentStatus Status { get; } = status;
     public Dictionary<string, string?> Response { get; } = response;
     public Guid? Tenant { get; } = tenant;
+
+    /// <summary>
+    /// Por qué no se aprobó, como número de <c>PaymentFailureReason</c> de ms-payments; cero si se aprobó o no lo supo.
+    /// </summary>
+    public int FailureReason { get; } = failureReason;
+
+    /// <summary>
+    /// Lo que dijo el banco o la pasarela del resultado, tal como lo dijo; nulo si no dijo nada.
+    /// </summary>
+    public string? ProviderMessage { get; } = providerMessage;
 }

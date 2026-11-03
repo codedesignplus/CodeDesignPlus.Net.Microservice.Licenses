@@ -39,10 +39,13 @@ public static class MapsterConfigLicense
                 PeriodStart = src.PeriodStart,
                 PeriodEnd = src.PeriodEnd,
                 ProrationCredit = src.ProrationCredit.Amount,
+                ProrationCreditTax = src.ProrationCreditTax.Amount,
                 CreditBalanceApplied = src.CreditBalanceApplied == null ? 0 : src.CreditBalanceApplied.Amount,
                 AmountDue = src.AmountToCharge.Amount,
                 SupersededBy = src.SupersededBy,
-                AcceptedTermsVersion = src.AcceptedTermsVersion
+                AcceptedTermsVersion = src.AcceptedTermsVersion,
+                FailureReason = src.FailureReason,
+                Error = src.Error
             });
 
 

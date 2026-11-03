@@ -91,9 +91,15 @@ public class ChangeOptionDto
     public string? TaxLegalBasis { get; set; }
 
     /// <summary>
-    /// El crédito por lo no prestado de la licencia actual.
+    /// El crédito por lo no prestado de la licencia actual, con su IVA: la base no prestada más el IVA que se pagó por
+    /// ella (pendings/738).
     /// </summary>
     public long Credit { get; set; }
+
+    /// <summary>
+    /// El IVA incluido en <see cref="Credit"/>.
+    /// </summary>
+    public long CreditTax { get; set; }
 
     /// <summary>
     /// La parte del crédito que paga este precio (el crédito, hasta el precio).
@@ -177,7 +183,22 @@ public class CreditedPeriodDto
     public long Base { get; set; }
 
     /// <summary>
-    /// Lo que se acredita.
+    /// La base que se acredita, sin impuestos.
     /// </summary>
     public long Amount { get; set; }
+
+    /// <summary>
+    /// El IVA que se acredita, con la tarifa de la factura de ese periodo.
+    /// </summary>
+    public long Tax { get; set; }
+
+    /// <summary>
+    /// La tarifa de esa factura, en puntos básicos; cero si no fue gravada.
+    /// </summary>
+    public int TaxBasisPoints { get; set; }
+
+    /// <summary>
+    /// Lo que se acredita en total: la base más su IVA.
+    /// </summary>
+    public long Total { get; set; }
 }

@@ -153,14 +153,50 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public string? AcceptedTermsVersion { get; private set; }
 
     /// <summary>
-    /// El crédito por lo no prestado de la licencia anterior: la suma de <see cref="CreditedPeriods"/>.
+    /// Por qué no se aprobó el pago, tal como lo normaliza ms-payments; nulo si se aprobó o si aún no hay resultado
+    /// (pendings/738). El texto del banco o de la pasarela queda en <see cref="Error"/>.
     /// </summary>
-    public Money ProrationCredit => (CreditedPeriods ?? []).Aggregate(Money.Zero(License.Total.Currency), (sum, period) => sum + period.Amount);
+    public PaymentFailureReason? FailureReason { get; private set; }
+
+    /// <summary>
+    /// El crédito por lo no prestado de la licencia anterior, con su IVA: la suma de <see cref="CreditedPeriods"/>.
+    /// </summary>
+    public Money ProrationCredit => (CreditedPeriods ?? []).Aggregate(Money.Zero(License.Total.Currency), (sum, period) => sum + period.Total);
+
+    /// <summary>
+    /// El IVA del crédito por lo no prestado: lo que la nota crédito devuelve de impuestos.
+    /// </summary>
+    public Money ProrationCreditTax => (CreditedPeriods ?? []).Aggregate(Money.Zero(License.Total.Currency), (sum, period) => period.Tax is null ? sum : sum + period.Tax);
 
     /// <summary>
     /// Lo que cobra la pasarela por esta orden.
     /// </summary>
     public Money AmountToCharge => AmountDue ?? License.Total;
+
+    /// <summary>
+    /// Reparte lo que cobra la pasarela entre base e IVA, para que el pago diga lo mismo que la orden (pendings/738).
+    /// </summary>
+    /// <remarks>
+    /// Al precio completo se le resta el crédito por lo no prestado con su base y su IVA exactos. Lo que paga el saldo a
+    /// favor se reparte en la proporción de lo que queda, porque el saldo no distingue base de impuesto. Si el crédito
+    /// devuelve más IVA del que lleva el precio (una licencia excluida tras una gravada), lo cobrado es todo base.
+    /// </remarks>
+    /// <returns>La base y el IVA de <see cref="AmountToCharge"/>; suman exactamente lo cobrado.</returns>
+    public (Money SubTotal, Money Tax) ChargeBreakdown()
+    {
+        var due = AmountToCharge;
+        var afterCredit = License.Total - Money.Min(ProrationCredit, License.Total);
+
+        if (due.Amount == 0 || afterCredit.Amount == 0)
+        {
+            return (Money.Zero(due.Currency), Money.Zero(due.Currency));
+        }
+
+        var taxAfterCredit = Math.Clamp(License.Tax.Amount - ProrationCreditTax.Amount, 0, afterCredit.Amount);
+        var tax = due == afterCredit ? taxAfterCredit : (long)((decimal)taxAfterCredit * due.Amount / afterCredit.Amount);
+
+        return (Money.FromLong(due.Amount - tax, due.Currency), Money.FromLong(tax, due.Currency));
+    }
 
     /// <summary>
     /// Si la orden espera todavía el resultado de su pago.
@@ -317,7 +353,9 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// <param name="periodStart">
     /// When the paid period starts; <c>null</c> is now. A renewal paid in advance starts where the paid period ends.
     /// </param>
-    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId, Instant? periodStart = null)
+    /// <param name="failureReason">Por qué no se aprobó, si no se aprobó.</param>
+    /// <param name="providerMessage">Lo que dijo el banco o la pasarela, si no se aprobó.</param>
+    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId, Instant? periodStart = null, PaymentFailureReason? failureReason = null, string? providerMessage = null)
     {
         // Idempotent: if already at this status, skip (message redelivery)
         if (PaymentStatus == paymentStatus)
@@ -360,7 +398,12 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         {
             var now = SystemClock.Instance.GetCurrentInstant();
             ProvisioningStatus = ProvisioningStatus.PaymentFailed;
-            ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.Payment, ProvisioningStepStatus.Failed, now));
+            var reason = failureReason ?? PaymentFailureReason.None;
+
+            // Una sesión vencida sin motivo publicado venció: no se queda sin explicación.
+            FailureReason = reason == PaymentFailureReason.None && paymentStatus == PaymentStatus.Expired ? PaymentFailureReason.Expired : reason;
+            Error = string.IsNullOrWhiteSpace(providerMessage) ? null : providerMessage.Trim();
+            ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.Payment, ProvisioningStepStatus.Failed, now, Error));
         }
 
         UpdatedAt = SystemClock.Instance.GetCurrentInstant();

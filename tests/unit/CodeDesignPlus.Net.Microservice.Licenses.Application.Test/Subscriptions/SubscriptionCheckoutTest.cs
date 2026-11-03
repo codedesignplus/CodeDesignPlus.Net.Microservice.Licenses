@@ -71,6 +71,27 @@ public class SubscriptionCheckoutTest
     }
 
     /// <summary>
+    /// Élite (650.000 + IVA 123.500) cambiando desde Estándar con los 30 días por delante (290.000 + IVA 55.100): ms-payments
+    /// recibe 428.400 con base 360.000 e IVA 68.400, no el neto partido como si llevara el IVA del precio dentro
+    /// (pendings/738, validación del 2026-11-02).
+    /// </summary>
+    [Fact]
+    public async Task StartAsync_AChangeWithTaxedCredit_SendsTheBaseAndTaxOfWhatIsCharged()
+    {
+        // Arrange
+        GrpcPayment.InitiatePaymentRequest? sent = null;
+        payments.Setup(x => x.InitiatePaymentAsync(It.IsAny<GrpcPayment.InitiatePaymentRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<GrpcPayment.InitiatePaymentRequest, CancellationToken>((request, _) => sent = request)
+            .ReturnsAsync(new GrpcPayment.InitiatePaymentResponse { PaymentId = Guid.NewGuid().ToString(), Success = true, NextAction = GrpcPayment.NextActionType.Redirect });
+
+        // Act
+        await checkout.StartAsync(ChangeValidationFixesTest.EliteChange(), [], CancellationToken.None);
+
+        // Assert
+        Assert.Equal((42_840_000L, 36_000_000L, 6_840_000L), (sent!.Total.Value, sent.SubTotal.Value, sent.Tax.Value));
+    }
+
+    /// <summary>
     /// Si el saldo a favor paga todo, no hay pasarela: la orden se confirma por el mismo camino que un pago aprobado.
     /// </summary>
     [Fact]

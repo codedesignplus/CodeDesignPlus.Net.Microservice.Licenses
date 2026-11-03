@@ -10,7 +10,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 /// Por cada orden que paga la suscripción:
 /// <list type="bullet">
 /// <item>la del periodo en curso acredita su base facturada sin impuestos por los días que faltan sobre los días de su
-/// periodo, contados con el inicio y el fin guardados, en la zona de la copropiedad;</item>
+/// periodo, contados con el inicio y el fin guardados, en la zona de la copropiedad, y el IVA de esa base con la tarifa
+/// de su factura: si la factura llevó IVA, la nota crédito lleva el IVA proporcional (experto contable, 2026-11-02);</item>
 /// <item>una renovación pagada que aún no empieza se acredita entera;</item>
 /// <item>un periodo ya terminado no acredita nada.</item>
 /// </list>
@@ -54,8 +55,9 @@ public static class Proration
 
             var from = notStarted ? start : today.AtStartOfDayInZone(subscription.Zone).ToInstant();
             var amount = Prorate(order.License.SubTotal, unusedDays, periodDays);
+            var tax = ProrateTax(order.License, amount, unusedDays, periodDays);
 
-            credited.Add(new CreditedPeriod(order.Id, from, end, unusedDays, periodDays, order.License.SubTotal, amount));
+            credited.Add(CreditedPeriod.Create(order.Id, from, end, unusedDays, periodDays, order.License.SubTotal, amount, tax, order.License.TaxBasisPoints));
         }
 
         return credited;
@@ -77,5 +79,34 @@ public static class Proration
         var amount = numerator / periodDays + (numerator % periodDays == 0 ? 0 : 1);
 
         return Money.FromLong(amount, @base.Currency);
+    }
+
+    /// <summary>
+    /// El IVA de la base acreditada con la tarifa de la factura de la orden, redondeado hacia arriba y sin pasar del IVA
+    /// facturado.
+    /// </summary>
+    /// <param name="license">La copia de la licencia de la orden acreditada.</param>
+    /// <param name="credited">La base acreditada.</param>
+    /// <param name="unusedDays">Los días no prestados.</param>
+    /// <param name="periodDays">Los días del periodo.</param>
+    /// <returns>El IVA que se acredita; cero si la factura no llevó IVA.</returns>
+    public static Money ProrateTax(License license, Money credited, int unusedDays, int periodDays)
+    {
+        if (license.Tax.Amount == 0)
+        {
+            return Money.Zero(license.Tax.Currency);
+        }
+
+        if (license.TaxBasisPoints <= 0)
+        {
+            // Una orden comprada antes de guardar la tarifa (pendings/662): su IVA, en la misma proporción de los días.
+            return Prorate(license.Tax, unusedDays, periodDays);
+        }
+
+        // Puntos básicos: 10.000 es el ciento por ciento (regla 05).
+        var numerator = credited.Amount * license.TaxBasisPoints;
+        var amount = numerator / 10_000 + (numerator % 10_000 == 0 ? 0 : 1);
+
+        return Money.FromLong(Math.Min(amount, license.Tax.Amount), license.Tax.Currency);
     }
 }

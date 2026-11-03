@@ -102,6 +102,8 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
             .Set(x => x.ProvisioningHistory, order.ProvisioningHistory)
             .Set(x => x.PeriodStart, order.PeriodStart)
             .Set(x => x.PeriodEnd, order.PeriodEnd)
+            .Set(x => x.FailureReason, order.FailureReason)
+            .Set(x => x.Error, order.Error)
             .Set(x => x.UpdatedAt, order.UpdatedAt);
 
         var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);

@@ -7,9 +7,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions.Com
 /// </summary>
 /// <param name="Id">El identificador de la orden, generado por el cliente una vez por intento (regla 66).</param>
 /// <param name="LicenseId">La licencia del catálogo a la que se cambia.</param>
-/// <param name="AcceptedTermsVersion">La versión de los términos que aceptó, si la pantalla los pidió (pendings/662).</param>
+/// <param name="AcceptedTermsVersion">La versión de los términos que aceptó en el diálogo del cambio: obligatoria, como en la compra (pendings/662, 738).</param>
 [DtoGenerator]
-public record ChangeSubscriptionCommand(Guid Id, Guid LicenseId, string? AcceptedTermsVersion) : IRequest<PaymentResponse>;
+public record ChangeSubscriptionCommand(Guid Id, Guid LicenseId, string AcceptedTermsVersion) : IRequest<PaymentResponse>;
 
 /// <summary>
 /// Valida el comando.
@@ -23,6 +23,6 @@ public class Validator : AbstractValidator<ChangeSubscriptionCommand>
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.LicenseId).NotEmpty();
-        RuleFor(x => x.AcceptedTermsVersion).MaximumLength(FieldLength.Name);
+        RuleFor(x => x.AcceptedTermsVersion).NotEmpty().MaximumLength(FieldLength.Name);
     }
 }
