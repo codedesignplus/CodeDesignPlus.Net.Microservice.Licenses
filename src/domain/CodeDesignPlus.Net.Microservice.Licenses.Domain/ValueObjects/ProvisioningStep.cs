@@ -15,4 +15,10 @@ public record ProvisioningStep(string StepName, ProvisioningStepStatus Status, I
     /// El paso que registra el resultado del pago: su instante es el de la compra (pendings/264).
     /// </summary>
     public const string Payment = "Payment";
+
+    /// <summary>
+    /// El paso que lleva la licencia pagada a la copropiedad. Solo queda en el historial si falla: el pago está aprobado y
+    /// la licencia no se pudo aplicar (pendings/738).
+    /// </summary>
+    public const string LicenseApplication = "LicenseApplication";
 }

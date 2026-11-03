@@ -30,7 +30,7 @@ public static class OrdenDePrueba
     public static OrderAggregate Nueva() => OrderAggregate.Create(
         OrderId, PaymentId, Licencia(), Comprador(), Copropiedad(), UserId);
 
-    public static License Licencia()
+    public static License Licencia(string name = "Esencial")
     {
         var modules = new List<LicenseModule>
         {
@@ -39,7 +39,7 @@ public static class OrdenDePrueba
 
         return License.Create(
             id: Guid.Parse("44000000-0000-4000-8000-000000000009"),
-            name: "Esencial",
+            name: name,
             total: Money.FromLong(178_500L, "COP"),
             tax: Money.FromLong(28_500L, "COP"),
             subTotal: Money.FromLong(150_000L, "COP"),

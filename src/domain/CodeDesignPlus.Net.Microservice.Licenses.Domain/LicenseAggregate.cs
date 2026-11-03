@@ -1,5 +1,6 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain;
@@ -118,6 +119,8 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     {
         DomainGuard.GuidIsEmpty(id, Errors.IdLicenseIsRequired);
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
+        // La misma regla que la copia que se aplica a la copropiedad: lo que aquí se acepta, allí se puede aplicar (pendings/738).
+        DomainGuard.IsFalse(LicenseName.IsValid(name), Errors.LicenseNameIsInvalid.With(FieldLength.Name));
         DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(prices, Errors.PriceLicenseIsRequired);
@@ -169,6 +172,8 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     public void Update(string name, string shortDescription, string description, List<ModuleEntity> modules, List<Price> prices, Icon icon, string TermsOfService, Dictionary<string, string> attributes, bool isActive, bool isPopular, bool showInLandingPage, string invoiceConcept, List<OfferedTenant> offeredTo, Guid updatedBy)
     {
         DomainGuard.IsEmpty(name, Errors.NameLicenseIsRequired);
+        // La misma regla que la copia que se aplica a la copropiedad: lo que aquí se acepta, allí se puede aplicar (pendings/738).
+        DomainGuard.IsFalse(LicenseName.IsValid(name), Errors.LicenseNameIsInvalid.With(FieldLength.Name));
         DomainGuard.IsEmpty(shortDescription, Errors.ShortDescriptionLicenseIsRequired);
         DomainGuard.IsEmpty(description, Errors.DescriptionLicenseIsRequired);
         DomainGuard.IsNull(prices, Errors.PriceLicenseIsRequired);

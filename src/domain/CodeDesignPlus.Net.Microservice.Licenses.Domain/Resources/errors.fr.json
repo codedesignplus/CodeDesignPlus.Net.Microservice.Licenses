@@ -71,7 +71,7 @@
     "189": "Le nom de la licence n'est pas valide.",
     "190": "La date de début de la licence est postérieure à celle de fin.",
     "191": "Les données complémentaires de la licence sont manquantes.",
-    "192": "Le nom de la licence n'est pas valide.",
+    "192": "Le nom de la licence n'admet que des lettres, des chiffres, des espaces et les signes · - + . , & ( ) / ', doit contenir au moins une lettre ou un chiffre et peut compter jusqu'à {0} caractères.",
     "193": "L'identifiant de l'acheteur est obligatoire.",
     "194": "L'identifiant du paiement est obligatoire.",
     "195": "La taxe de la licence ne peut pas être négative.",

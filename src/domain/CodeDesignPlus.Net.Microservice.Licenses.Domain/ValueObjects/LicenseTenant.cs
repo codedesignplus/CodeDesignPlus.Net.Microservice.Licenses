@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using System.Collections.ObjectModel;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -10,11 +10,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 /// This is immutable — it captures the modules included at the moment of purchase,
 /// ensuring that future changes to the license catalog do not affect existing tenants.
 /// </summary>
-public sealed partial record LicenseTenant
+public sealed record LicenseTenant
 {
-    [GeneratedRegex(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{1,128}$", RegexOptions.Compiled)]
-    private static partial Regex Regex();
-
     /// <summary>
     /// The unique identifier of the license.
     /// </summary>
@@ -54,7 +51,7 @@ public sealed partial record LicenseTenant
 
         DomainGuard.GuidIsEmpty(id, Errors.LicenseIdIsEmpty);
         DomainGuard.IsNullOrEmpty(normalizedName, Errors.LicenseNameIsEmpty);
-        DomainGuard.IsFalse(Regex().IsMatch(normalizedName), Errors.LicenseNameIsInvalid);
+        DomainGuard.IsFalse(LicenseName.IsValid(normalizedName), Errors.LicenseNameIsInvalid.With(FieldLength.Name));
         DomainGuard.IsGreaterThan(startDate, endDate, Errors.LicenseStartDateGreaterThanEndDate);
         DomainGuard.IsNull(metadata, Errors.LicenseMetadataIsNull);
 

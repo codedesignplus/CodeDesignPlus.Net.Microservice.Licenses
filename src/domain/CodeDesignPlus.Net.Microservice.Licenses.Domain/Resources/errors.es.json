@@ -71,7 +71,7 @@
     "189": "El nombre de la licencia no es válido.",
     "190": "La fecha de inicio de la licencia es posterior a la de fin.",
     "191": "Faltan los datos adicionales de la licencia.",
-    "192": "El nombre de la licencia no es válido.",
+    "192": "El nombre de la licencia solo admite letras, números, espacios y los signos · - + . , & ( ) / ', debe llevar al menos una letra o un número y puede tener hasta {0} caracteres.",
     "193": "El identificador del comprador es obligatorio.",
     "194": "El identificador del pago es obligatorio.",
     "195": "El impuesto de la licencia no puede ser negativo.",

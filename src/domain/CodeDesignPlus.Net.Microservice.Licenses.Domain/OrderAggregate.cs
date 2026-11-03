@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.Exceptions;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
@@ -380,19 +381,14 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
                 ProvisioningHistory.Add(new ProvisioningStep("TenantProvisioning", ProvisioningStepStatus.Pending, now));
                 ProvisioningHistory.Add(new ProvisioningStep("UserProvisioning", ProvisioningStepStatus.Pending, now));
-
-                AddEvent(OrderPaidAndReadyForProvisioningDomainEvent.Create(this.Id, TenantDetail, ToLicenseTenant(), buyerId));
             }
             else
             {
                 // La copropiedad ya existe: no hay nada que aprovisionar, solo aplicarle la licencia.
                 ProvisioningStatus = ProvisioningStatus.Completed;
-
-                if (SupersededBy is null)
-                {
-                    AddSubscriptionEvent(buyerId, now);
-                }
             }
+
+            AddPaidEvent(buyerId, now);
         }
         else if (paymentStatus == PaymentStatus.Failed || paymentStatus == PaymentStatus.Expired)
         {
@@ -421,6 +417,50 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
         return new SubscriptionBilling(License.SubTotal, License.Tax, License.Total, ProrationCredit, License.Total - AmountToCharge, AmountToCharge, PeriodStart!.Value, PeriodEnd!.Value, paidAt, License.TaxTreatment, License.TaxBasisPoints, License.TaxLegalBasis, License.InvoiceConcept);
     }
+
+    /// <summary>
+    /// Publica lo que sigue al pago aprobado: el aprovisionamiento de una compra, o la renovación o el cambio de la licencia
+    /// de una copropiedad que ya existe.
+    /// </summary>
+    /// <remarks>
+    /// Si la licencia de la orden no se puede convertir en la que se le aplica a la copropiedad, el pago queda registrado
+    /// igual y la orden en <see cref="ProvisioningStatus.PartiallyFailed"/> con el motivo en el historial y
+    /// <see cref="OrderProvisioningFailedDomainEvent"/>, como cuando la conciliación se rinde. Antes la excepción subía
+    /// hasta el consumidor del pago, que no guardaba nada: el pago aprobado se perdía y cada reentrega volvía a fallar
+    /// (pendings/738, «Élite Plus · Conjunto Prueba Licencias»).
+    /// </remarks>
+    private void AddPaidEvent(Guid buyerId, Instant paidAt)
+    {
+        try
+        {
+            if (Type == OrderType.Purchase)
+            {
+                AddEvent(OrderPaidAndReadyForProvisioningDomainEvent.Create(Id, TenantDetail, ToLicenseTenant(), buyerId));
+
+                return;
+            }
+
+            if (SupersededBy is null)
+            {
+                AddSubscriptionEvent(buyerId, paidAt);
+            }
+        }
+        catch (CodeDesignPlusException exception) when (exception.Layer == Layer.Domain)
+        {
+            var error = $"{exception.Code}: {exception.Message}";
+
+            ProvisioningStatus = ProvisioningStatus.PartiallyFailed;
+            ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.LicenseApplication, ProvisioningStepStatus.Failed, paidAt, error));
+
+            AddEvent(OrderProvisioningFailedDomainEvent.Create(Id, ProvisioningStep.LicenseApplication, error, buyerId));
+        }
+    }
+
+    /// <summary>
+    /// Si el pago se aprobó pero la licencia no se pudo aplicar a la copropiedad: lo que sigue al pago (inactivar la licencia
+    /// anterior, el comprobante y el correo) espera a que se resuelva (pendings/738).
+    /// </summary>
+    public bool LicenseApplicationFailed => ProvisioningHistory.Any(x => x.StepName == ProvisioningStep.LicenseApplication && x.Status == ProvisioningStepStatus.Failed);
 
     private void AddSubscriptionEvent(Guid buyerId, Instant paidAt)
     {

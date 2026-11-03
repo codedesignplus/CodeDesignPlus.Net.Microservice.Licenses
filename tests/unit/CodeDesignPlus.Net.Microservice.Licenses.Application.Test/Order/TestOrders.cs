@@ -48,9 +48,9 @@ internal static class TestOrders
         return order;
     }
 
-    internal static LicenseSnapshot BuildLicense() => LicenseSnapshot.Create(
+    internal static LicenseSnapshot BuildLicense(string name = "Esencial") => LicenseSnapshot.Create(
         id: Guid.Parse("44000000-0000-4000-8000-000000000109"),
-        name: "Esencial",
+        name: name,
         total: Money.FromLong(14_280_000L, "COP"),
         tax: Money.FromLong(2_280_000L, "COP"),
         subTotal: Money.FromLong(12_000_000L, "COP"),

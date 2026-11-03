@@ -59,6 +59,17 @@ public class UpdateStateOrderCommandHandler(
             return;
         }
 
+        if (request.PaymentStatus == PaymentStatus.Succeeded && order.LicenseApplicationFailed)
+        {
+            // El pago quedó registrado, pero la licencia no llegó a la copropiedad: sin comprobante ni correo de algo que no
+            // se aplicó. La orden queda en PartiallyFailed, visible en /management/system/orders (pendings/738).
+            logger.LogError("Order {OrderId} of tenant {TenantId} was paid but its license could not be applied: {Error}", order.Id, order.TenantDetail.Id, order.ProvisioningHistory[^1].Error);
+
+            await NotifyLicenseApplicationFailedAsync(order, cancellationToken);
+
+            return;
+        }
+
         if (request.PaymentStatus == PaymentStatus.Succeeded)
         {
             try
@@ -176,7 +187,8 @@ public class UpdateStateOrderCommandHandler(
 
     private Task SettleAsync(OrderAggregate order, CancellationToken cancellationToken)
     {
-        if (order.Type == OrderType.Purchase)
+        // Sin licencia aplicada no se inactiva la anterior ni se mueve el saldo: la copropiedad sigue con la que tenía.
+        if (order.Type == OrderType.Purchase || order.LicenseApplicationFailed)
         {
             return Task.CompletedTask;
         }
@@ -187,6 +199,31 @@ public class UpdateStateOrderCommandHandler(
             PaymentStatus.Failed or PaymentStatus.Expired => settlement.ReleaseAsync(order, cancellationToken),
             _ => Task.CompletedTask,
         };
+    }
+
+    /// <summary>
+    /// Le dice a quien pagó, en vivo, que la licencia no se pudo aplicar, con el mismo aviso que un aprovisionamiento fallido.
+    /// </summary>
+    private async Task NotifyLicenseApplicationFailedAsync(OrderAggregate order, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await liveChannel.PushToUserAsync(
+                order.Buyer.BuyerId,
+                "OrderProvisioningFailed",
+                new
+                {
+                    orderId = order.Id,
+                    stepName = ProvisioningStep.LicenseApplication,
+                    message = order.ProvisioningHistory[^1].Error
+                },
+                order.TenantDetail.Id,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send SignalR notification for Order {OrderId}. Non-critical.", order.Id);
+        }
     }
 
     /// <summary>

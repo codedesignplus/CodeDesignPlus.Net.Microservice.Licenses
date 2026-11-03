@@ -71,7 +71,7 @@
     "189": "The license name is invalid.",
     "190": "The license start date is greater than the end date.",
     "191": "The license metadata is null.",
-    "192": "The license name is invalid.",
+    "192": "The license name may only contain letters, digits, spaces and the signs · - + . , & ( ) / ', must include a letter or a digit, and can be up to {0} characters long.",
     "193": "The Id Buyer is required.",
     "194": "The Id Payment is required.",
     "195": "The Tax of the license cannot be less than zero.",
