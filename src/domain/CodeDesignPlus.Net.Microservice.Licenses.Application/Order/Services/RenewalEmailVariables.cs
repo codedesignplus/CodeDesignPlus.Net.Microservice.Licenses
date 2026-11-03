@@ -1,5 +1,6 @@
 using System.Globalization;
 using NodaTime.Text;
+using Currency = CodeDesignPlus.Net.ValueObjects.Financial.Currency;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 
@@ -19,9 +20,9 @@ public static class RenewalEmailVariables
     /// Arma el diccionario que consume la plantilla.
     /// </summary>
     /// <param name="order">La renovación ya pagada.</param>
-    /// <param name="decimalDigits">Los decimales de la moneda de la orden.</param>
+    /// <param name="currency">La moneda de la orden, del catálogo de ms-locations: da el símbolo y los decimales.</param>
     /// <returns>Las variables de la plantilla.</returns>
-    public static Dictionary<string, string> Build(OrderAggregate order, short decimalDigits)
+    public static Dictionary<string, string> Build(OrderAggregate order, Currency currency)
     {
         var zone = Domain.ServiceDomain.SubscriptionTimeline.ZoneOf(order.TenantDetail);
         var periodEnd = order.PeriodEnd ?? SystemClock.Instance.GetCurrentInstant();
@@ -31,7 +32,9 @@ public static class RenewalEmailVariables
             ["organization_name"] = order.TenantDetail.Name,
             ["license_name"] = order.License.Name,
             ["next_billing_date"] = DatePattern.Format(periodEnd.InZone(zone).Date),
-            ["total"] = order.AmountToCharge.ToDecimal(decimalDigits).ToString("N2", CultureInfo.InvariantCulture),
+            ["total"] = ReceiptText.Amount(order.AmountToCharge, currency),
+            ["period"] = ReceiptText.Period(order, zone),
+            // El total ya lleva el símbolo; el código sigue viajando para la plantilla guardada antes de pendings/738.
             ["currency"] = order.AmountToCharge.Currency,
             ["current_year"] = SystemClock.Instance.GetCurrentInstant().InZone(zone).Year.ToString(CultureInfo.InvariantCulture),
         };

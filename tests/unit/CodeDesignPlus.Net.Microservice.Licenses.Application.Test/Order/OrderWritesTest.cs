@@ -74,7 +74,7 @@ public class OrderWritesTest
         Assert.Equal(TestOrders.BuyerId.ToString(), stored.UploadedBy);
         Assert.Equal([1, 2, 3], stored.Content.ToByteArray());
         repository.Verify(x => x.AttachReceiptAsync(order.Id,
-            It.Is<FileAttachment>(r => r.Id == Guid.Parse(stored.Id) && r.Target == "licenses-pdf" && r.Name == "PurchaseReceipt.pdf"),
+            It.Is<FileAttachment>(r => r.Id == Guid.Parse(stored.Id) && r.Target == "licenses-pdf" && r.Name == $"ComprobanteCompra-{order.Id}.pdf"),
             TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 

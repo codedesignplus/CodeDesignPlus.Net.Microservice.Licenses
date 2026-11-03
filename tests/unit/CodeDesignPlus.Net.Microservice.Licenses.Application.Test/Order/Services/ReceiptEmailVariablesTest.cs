@@ -20,7 +20,7 @@ public class ReceiptEmailVariablesTest
         var order = PaidAt(Instant.FromUtc(2026, 11, 2, 15, 0));
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
         Assert.Equal("NIT 900123456", variables["organization_document"]);
@@ -33,7 +33,7 @@ public class ReceiptEmailVariablesTest
         var order = PaidAt(Instant.FromUtc(2026, 11, 2, 15, 0));
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
         Assert.DoesNotContain(variables, x => x.Value.Contains("CodeDesignPlus.", StringComparison.Ordinal) || x.Value.Contains("NodaTime", StringComparison.Ordinal));
@@ -48,7 +48,7 @@ public class ReceiptEmailVariablesTest
         var order = PaidAt(Instant.FromUtc(2026, 11, 2, 15, 0), billingType);
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
         Assert.Equal(expected, variables["billing_type"]);
@@ -61,7 +61,7 @@ public class ReceiptEmailVariablesTest
         var order = PaidAt(Instant.FromUtc(2026, 11, 2, 3, 0));
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
         Assert.Equal("01/11/2026", variables["purchase_date"]);
@@ -74,7 +74,7 @@ public class ReceiptEmailVariablesTest
         var order = PaidAt(Instant.FromUtc(2031, 1, 1, 3, 0));
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
         Assert.Equal("2030", variables["current_year"]);
@@ -91,10 +91,10 @@ public class ReceiptEmailVariablesTest
         var order = ChangeWithCredit(4_280_000);
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
-        Assert.Equal((142_800m.ToString("N2"), 42_800m.ToString("N2"), 100_000m.ToString("N2")), (variables["price"], variables["credit_applied"], variables["amount_paid"]));
+        Assert.Equal(("$ 142.800,00", "$ 42.800,00", "$ 100.000,00"), (variables["price"], variables["credit_applied"], variables["amount_paid"]));
     }
 
     /// <summary>
@@ -108,10 +108,10 @@ public class ReceiptEmailVariablesTest
         var order = ChangeWithCredit(16_000_000);
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
-        Assert.Equal((142_800m.ToString("N2"), 0m.ToString("N2")), (variables["credit_applied"], variables["amount_paid"]));
+        Assert.Equal(("$ 142.800,00", "$ 0,00"), (variables["credit_applied"], variables["amount_paid"]));
     }
 
     [Fact]
@@ -121,10 +121,74 @@ public class ReceiptEmailVariablesTest
         var order = SubscriptionFixtures.AwaitingRenewal(creditBalanceApplied: 2_280_000);
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
-        Assert.Equal((22_800m.ToString("N2"), 120_000m.ToString("N2")), (variables["credit_applied"], variables["amount_paid"]));
+        Assert.Equal(("$ 22.800,00", "$ 120.000,00"), (variables["credit_applied"], variables["amount_paid"]));
+    }
+
+    /// <summary>
+    /// Los importes se leen como en las pantallas: «$ 142.800,00» y no «142,800.00 COP» (pendings/738). Vale también para
+    /// el recibo y el correo de una compra.
+    /// </summary>
+    [Fact]
+    public void Build_Purchase_AmountsAreWrittenWithTheSymbolAndTheColombianSeparators()
+    {
+        // Arrange
+        var order = PaidAt(Instant.FromUtc(2026, 11, 2, 15, 0));
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal("$ 142.800,00", variables["total"]);
+    }
+
+    /// <summary>
+    /// Una renovación sin saldo a favor no muestra «Crédito aplicado -$ 0,00» (pendings/738).
+    /// </summary>
+    [Fact]
+    public void Build_RenewalWithoutCredit_HidesTheCreditRow()
+    {
+        // Arrange
+        var order = SubscriptionFixtures.AwaitingRenewal();
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal("none", variables["credit_row_display"]);
+    }
+
+    [Fact]
+    public void Build_ChangePaidPartlyWithCredit_ShowsTheCreditRow()
+    {
+        // Arrange
+        var order = ChangeWithCredit(4_280_000);
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal("table-row", variables["credit_row_display"]);
+    }
+
+    /// <summary>
+    /// El recibo dice qué periodo se pagó, con las fechas del calendario de la copropiedad (pendings/738): el fin a las
+    /// 03:00 UTC del 29 de diciembre aún es el 28 en Bogotá.
+    /// </summary>
+    [Fact]
+    public void Build_PaidRenewal_PeriodIsTheTenantCalendarDaysOfThePaidPeriod()
+    {
+        // Arrange
+        var order = SubscriptionFixtures.AwaitingRenewal();
+        order.SetPaymentStatus(PaymentStatus.Succeeded, TestOrders.BuyerId, Instant.FromUtc(2026, 11, 29, 3, 0));
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal("28 de nov de 2026 — 28 de dic de 2026", variables["period"]);
     }
 
     [Fact]

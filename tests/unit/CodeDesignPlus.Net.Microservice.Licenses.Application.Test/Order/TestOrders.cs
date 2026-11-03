@@ -20,6 +20,11 @@ internal static class TestOrders
     public static readonly Guid BuyerId = Guid.Parse("cc000000-0000-4000-8000-000000000103");
     public static readonly Guid TenantId = Guid.Parse("dd000000-0000-4000-8000-000000000104");
 
+    /// <summary>
+    /// El peso colombiano como lo da el catálogo de monedas: símbolo «$» y dos decimales.
+    /// </summary>
+    public static readonly Currency Cop = Currency.Create(Guid.Parse("ee000000-0000-4000-8000-000000000105"), "Peso Colombiano", "COP", "$", 2, 170);
+
     public static OrderAggregate Build() => OrderAggregate.Create(
         OrderId, PaymentId, BuildLicense(), BuildBuyer(), BuildTenant(), BuyerId);
 

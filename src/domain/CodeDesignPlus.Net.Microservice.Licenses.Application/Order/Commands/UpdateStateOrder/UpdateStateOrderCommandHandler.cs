@@ -22,9 +22,6 @@ public class UpdateStateOrderCommandHandler(
     /// <summary>El target de ms-filestorage de los recibos de compra.</summary>
     public const string ReceiptTarget = "licenses-pdf";
 
-    /// <summary>El nombre del recibo: cada uno vive en su carpeta (licenses-pdf/{id}/), no necesita llevar el id.</summary>
-    public const string ReceiptFileName = "PurchaseReceipt.pdf";
-
     public async Task Handle(UpdateStateOrderCommand request, CancellationToken cancellationToken)
     {
         ApplicationGuard.IsNull(request, Errors.InvalidRequest);
@@ -87,7 +84,7 @@ public class UpdateStateOrderCommandHandler(
             try
             {
                 var currency = await currencyGrpc.GetCurrencyAsync(code: order.License.Total.Currency, cancellationToken: cancellationToken);
-                var variables = ReceiptEmailVariables.Build(order, currency.DecimalDigits);
+                var variables = ReceiptEmailVariables.Build(order, currency);
                 var tenant = order.TenantDetail.Id;
 
                 var pdfRequest = new GeneratePdfRequest
@@ -112,7 +109,8 @@ public class UpdateStateOrderCommandHandler(
                         Tenant = tenant.ToString(),
                         UploadedBy = order.Buyer.BuyerId.ToString(),
                         Target = ReceiptTarget,
-                        FileName = ReceiptFileName,
+                        // El nombre dice qué se pagó: una renovación ya no llega como «PurchaseReceipt.pdf» (pendings/738).
+                        FileName = ReceiptText.ReceiptFileName(order),
                         Content = pdfResult.PdfContent,
                     }, cancellationToken);
 
@@ -130,7 +128,7 @@ public class UpdateStateOrderCommandHandler(
                     await orderRepository.AttachReceiptAsync(order.Id, order.Receipt!, order.Buyer.BuyerId, cancellationToken);
 
                     var (template, emailVariables) = order.Type == OrderType.Renewal
-                        ? ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency.DecimalDigits))
+                        ? ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency))
                         : ("PurchaseConfirmation", variables);
 
                     var sendEmailEvent = new SendEmailDomainEvent(

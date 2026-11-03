@@ -235,7 +235,7 @@ public class CustomLicenseCatalogTest
         var order = TestOrders.PaidFrom(SubscriptionFixtures.Now, license: TestOrders.BuildLicense().WithBillingTerms(price, "Concepto"));
 
         // Act
-        var variables = ReceiptEmailVariables.Build(order, 2);
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
         Assert.Equal(expected, variables["tax_label"]);

@@ -2,6 +2,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using NodaTime.Text;
+using Currency = CodeDesignPlus.Net.ValueObjects.Financial.Currency;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 
@@ -55,12 +56,13 @@ public static class ReceiptEmailVariables
     /// Arma el diccionario que consume la plantilla.
     /// </summary>
     /// <param name="order">La orden ya pagada.</param>
-    /// <param name="decimalDigits">Los decimales de la moneda de la orden, resueltos por el llamador.</param>
-    /// <returns>Las variables de la plantilla, con los importes ya legibles.</returns>
-    public static Dictionary<string, string> Build(OrderAggregate order, short decimalDigits)
+    /// <param name="currency">La moneda de la orden, del catálogo de ms-locations: da el símbolo y los decimales.</param>
+    /// <returns>Las variables de la plantilla, con los importes ya legibles («$ 773.500,00», <see cref="ReceiptText"/>).</returns>
+    public static Dictionary<string, string> Build(OrderAggregate order, Currency currency)
     {
         var zone = SubscriptionTimeline.ZoneOf(order.TenantDetail);
         var purchasedAt = PurchasedAt(order).InZone(zone);
+        var credit = order.License.Total - order.AmountToCharge;
 
         return new()
         {
@@ -72,17 +74,22 @@ public static class ReceiptEmailVariables
             ["buyer_email"] = order.Buyer.Email,
             ["license_name"] = order.License.Name,
             ["billing_type"] = BillingTypeLabel(order.License.BillingType),
-            ["subtotal"] = order.License.SubTotal.ToDecimal(decimalDigits).ToString("N2"),
-            ["tax"] = order.License.Tax.ToDecimal(decimalDigits).ToString("N2"),
+            ["subtotal"] = ReceiptText.Amount(order.License.SubTotal, currency),
+            ["tax"] = ReceiptText.Amount(order.License.Tax, currency),
             ["tax_label"] = TaxLabel(order.License),
             ["tax_rate"] = TaxRate(order.License.TaxBasisPoints),
             ["tax_legal_basis"] = order.License.TaxLegalBasis ?? string.Empty,
             ["invoice_concept"] = order.License.InvoiceConcept ?? order.License.Name,
-            ["total"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
-            ["price"] = order.License.Total.ToDecimal(decimalDigits).ToString("N2"),
-            ["credit_applied"] = (order.License.Total - order.AmountToCharge).ToDecimal(decimalDigits).ToString("N2"),
-            ["amount_paid"] = order.AmountToCharge.ToDecimal(decimalDigits).ToString("N2"),
+            ["total"] = ReceiptText.Amount(order.License.Total, currency),
+            ["price"] = ReceiptText.Amount(order.License.Total, currency),
+            ["credit_applied"] = ReceiptText.Amount(credit, currency),
+            // Sin crédito la fila no se muestra: «Crédito aplicado -$ 0,00» en una renovación sin saldo a favor confundía.
+            // La plantilla no tiene condicionales (solo reemplaza variables), así que el micro decide si la fila se ve.
+            ["credit_row_display"] = credit.Amount == 0 ? "none" : "table-row",
+            ["amount_paid"] = ReceiptText.Amount(order.AmountToCharge, currency),
+            ["period"] = ReceiptText.Period(order, zone),
             ["order_type"] = OrderTypeLabel(order.Type),
+            // Los importes ya llevan el símbolo; el código sigue viajando para las plantillas guardadas antes de este cambio.
             ["currency"] = order.License.Total.Currency,
             ["purchase_date"] = DatePattern.Format(purchasedAt.Date),
             ["current_year"] = purchasedAt.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
