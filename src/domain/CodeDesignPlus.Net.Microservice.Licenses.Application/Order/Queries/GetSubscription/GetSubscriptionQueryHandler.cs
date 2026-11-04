@@ -2,6 +2,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
+using CodeDesignPlus.Net.Security.Abstractions.Options;
 using Microsoft.Extensions.Options;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetSubscription;
@@ -13,7 +14,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.Get
 /// <remarks>
 /// Money amounts are returned in minor units; the client converts for display.
 /// </remarks>
-public class GetSubscriptionQueryHandler(IOrderRepository repository, ICreditBalanceRepository creditBalances, IOptions<SubscriptionOptions> options)
+public class GetSubscriptionQueryHandler(IOrderRepository repository, ICreditBalanceRepository creditBalances, IOptions<SubscriptionOptions> options, IOptions<SecurityOptions> security)
     : IRequestHandler<GetSubscriptionQuery, SubscriptionDto>
 {
     public async Task<SubscriptionDto> Handle(GetSubscriptionQuery request, CancellationToken cancellationToken)
@@ -45,8 +46,8 @@ public class GetSubscriptionQueryHandler(IOrderRepository repository, ICreditBal
             PeriodStart = order.PeriodStart!.Value,
             PeriodEnd = subscription.PaidThrough,
             DaysRemaining = subscription.DaysRemaining(now),
-            Status = subscription.StatusAt(now, options.Value.ExpiringWindowDays, options.Value.GraceDays),
-            GraceEndsAt = subscription.GraceEndsAt(options.Value.GraceDays),
+            Status = subscription.StatusAt(now, options.Value.ExpiringWindowDays, security.Value.GraceDays),
+            GraceEndsAt = subscription.GraceEndsAt(security.Value.GraceDays),
             CreditBalance = balance?.Balance.Amount ?? 0,
             Currency = order.License.Total.Currency,
             BillingType = order.License.BillingType,

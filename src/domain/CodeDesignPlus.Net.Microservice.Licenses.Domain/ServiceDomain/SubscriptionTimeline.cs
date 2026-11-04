@@ -1,5 +1,7 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using LicenseStanding = CodeDesignPlus.Net.Security.Abstractions.Models.LicenseStanding;
+using LicenseStatus = CodeDesignPlus.Net.Security.Abstractions.Models.LicenseStatus;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 
@@ -128,33 +130,48 @@ public sealed class SubscriptionTimeline
     public int DaysRemaining(Instant now) => Period.DaysBetween(Today(now), EndDate);
 
     /// <summary>
-    /// Cuándo termina la gracia: los días de gracia después del vencimiento, en la zona de la copropiedad.
+    /// En qué punto de su licencia está, con el mismo cálculo que el middleware de licencias del SDK (pendings/737): activa
+    /// hasta el fin de lo pagado, en gracia hasta los días de gracia después y en solo lectura luego.
     /// </summary>
-    /// <param name="graceDays">Los días de gracia.</param>
+    /// <remarks>
+    /// Lo decide <see cref="LicenseStanding.Evaluate"/>, el mismo que usa Security con <c>Security:GraceDays</c>: si el aviso
+    /// o la pantalla calcularan la gracia por su lado, dirían «te quedan 3 días» cuando la API ya no deja escribir. El fin de
+    /// lo pagado es <see cref="PaidThrough"/>, que es la fecha de fin de la licencia que ms-tenants pone en el tenant.
+    /// </remarks>
+    /// <param name="now">El instante actual.</param>
+    /// <param name="graceDays">Los días de gracia, los de <c>Security:GraceDays</c>.</param>
+    /// <returns>El estado de la licencia.</returns>
+    public LicenseStanding Standing(Instant now, int graceDays) => LicenseStanding.Evaluate(PaidThrough, now, graceDays);
+
+    /// <summary>
+    /// Cuándo termina la gracia y la licencia queda en solo lectura (pendings/737).
+    /// </summary>
+    /// <param name="graceDays">Los días de gracia, los de <c>Security:GraceDays</c>.</param>
     /// <returns>El instante.</returns>
-    public Instant GraceEndsAt(int graceDays) => PaidThrough.InZone(Zone).LocalDateTime.PlusDays(graceDays).InZoneLeniently(Zone).ToInstant();
+    public Instant GraceEndsAt(int graceDays) => Standing(PaidThrough, graceDays).GraceEndsAt;
+
+    /// <summary>
+    /// Los días de calendario desde el día en que terminó la gracia, en la zona de la copropiedad: cero ese mismo día,
+    /// negativos antes.
+    /// </summary>
+    /// <param name="now">El instante actual.</param>
+    /// <param name="graceDays">Los días de gracia, los de <c>Security:GraceDays</c>.</param>
+    /// <returns>Los días.</returns>
+    public int DaysSinceGraceEnded(Instant now, int graceDays) => Period.DaysBetween(GraceEndsAt(graceDays).InZone(Zone).Date, Today(now));
 
     /// <summary>
     /// En qué punto de su vigencia está.
     /// </summary>
     /// <param name="now">El instante actual.</param>
     /// <param name="expiringWindowDays">Desde cuántos días antes del vencimiento se considera por vencer.</param>
-    /// <param name="graceDays">Los días de gracia.</param>
+    /// <param name="graceDays">Los días de gracia, los de <c>Security:GraceDays</c>.</param>
     /// <returns>El estado.</returns>
-    public SubscriptionStatus StatusAt(Instant now, int expiringWindowDays, int graceDays)
+    public SubscriptionStatus StatusAt(Instant now, int expiringWindowDays, int graceDays) => Standing(now, graceDays).Status switch
     {
-        if (now >= GraceEndsAt(graceDays))
-        {
-            return SubscriptionStatus.Expired;
-        }
-
-        if (now >= PaidThrough)
-        {
-            return SubscriptionStatus.Grace;
-        }
-
-        return DaysRemaining(now) <= expiringWindowDays ? SubscriptionStatus.Expiring : SubscriptionStatus.Active;
-    }
+        LicenseStatus.ReadOnly => SubscriptionStatus.Expired,
+        LicenseStatus.Grace => SubscriptionStatus.Grace,
+        _ => DaysRemaining(now) <= expiringWindowDays ? SubscriptionStatus.Expiring : SubscriptionStatus.Active,
+    };
 
     /// <summary>
     /// La licencia de la copropiedad como la aplica ms-tenants: la de la orden en curso, vigente desde

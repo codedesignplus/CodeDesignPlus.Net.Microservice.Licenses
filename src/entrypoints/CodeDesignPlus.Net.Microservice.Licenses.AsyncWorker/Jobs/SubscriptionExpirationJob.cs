@@ -4,6 +4,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Security.Abstractions;
+using CodeDesignPlus.Net.Security.Abstractions.Options;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,7 +13,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Jobs;
 
 /// <summary>
 /// Job diario que avisa de los vencimientos de las licencias: los días previos configurados, el día que vence y el día que
-/// termina la gracia (pendings/736).
+/// termina la gracia (pendings/736), con la gracia de <c>Security:GraceDays</c> (pendings/737).
 /// </summary>
 /// <remarks>
 /// Publica <c>SubscriptionExpiringDomainEvent</c> y nada más: ms-licenses es de CodeDesignPlus y no sabe quién administra
@@ -35,6 +36,7 @@ public class SubscriptionExpirationJob(
     IPubSub pubsub,
     ITenantDirectory tenants,
     IOptions<SubscriptionOptions> options,
+    IOptions<SecurityOptions> security,
     ILogger<SubscriptionExpirationJob> logger
 ) : IRecurrentJob
 {
@@ -96,7 +98,9 @@ public class SubscriptionExpirationJob(
         }
 
         var settings = options.Value;
-        var notice = ExpirationNotices.Due(subscription.DaysRemaining(now), settings.ReminderDays, settings.GraceDays, settings.NoticeCatchUpDays);
+        // La gracia es la de Security, la misma que aplica el middleware de licencias (pendings/737): un solo número.
+        var graceDays = security.Value.GraceDays;
+        var notice = ExpirationNotices.Due(subscription.DaysRemaining(now), subscription.Standing(now, graceDays), subscription.DaysSinceGraceEnded(now, graceDays), settings.ReminderDays, graceDays, settings.NoticeCatchUpDays);
 
         if (notice is null)
         {
@@ -106,7 +110,7 @@ public class SubscriptionExpirationJob(
         // Los paquetes vigentes vencen o se suspenden con la licencia: el aviso los nombra (pendings/739).
         var packages = PackageTerm.Current(PackageTerm.PaidLines(packageOrders), now).Select(x => x.Line.Name).Distinct().ToList();
 
-        var aggregate = SubscriptionNoticeAggregate.Create(subscription, notice, now, settings.GraceDays, Guid.Empty, packages);
+        var aggregate = SubscriptionNoticeAggregate.Create(subscription, notice, now, graceDays, Guid.Empty, packages);
 
         // Persistir, publicar, confirmar (regla 23): si ya existía, ese aviso ya salió o lo reintenta la constancia.
         if (!await notices.CreateIfAbsentAsync(aggregate, cancellationToken))

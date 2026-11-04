@@ -11,6 +11,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
 using CodeDesignPlus.Net.PubSub.Abstractions;
 using CodeDesignPlus.Net.Security.Abstractions;
+using CodeDesignPlus.Net.Security.Abstractions.Options;
 using Xunit;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Test.Jobs;
@@ -42,9 +43,10 @@ public class SubscriptionExpirationJobTest
             .Returns(Task.CompletedTask);
     }
 
-    private SubscriptionExpirationJob Job() => new(
+    private SubscriptionExpirationJob Job(int graceDays = 15) => new(
         orders.Object, notices.Object, pubsub.Object, tenants.Object,
-        Microsoft.Extensions.Options.Options.Create(new SubscriptionOptions { GraceDays = 15, ReminderDays = [30, 15, 7, 1], NoticeCatchUpDays = 3 }),
+        Microsoft.Extensions.Options.Options.Create(new SubscriptionOptions { ReminderDays = [30, 15, 7, 1], NoticeCatchUpDays = 3 }),
+        Microsoft.Extensions.Options.Options.Create(new SecurityOptions { GraceDays = graceDays }),
         new Mock<ILogger<SubscriptionExpirationJob>>().Object);
 
     /// <summary>
@@ -58,7 +60,7 @@ public class SubscriptionExpirationJobTest
     [InlineData(7, "Upcoming")]
     [InlineData(1, "Upcoming")]
     [InlineData(0, "Expired")]
-    [InlineData(-15, "Blocked")]
+    [InlineData(-16, "Blocked")]
     public async Task RunAsync_OnTheDayOfEachStage_PublishesThatStage(int daysBefore, string stage)
     {
         // Arrange
@@ -189,5 +191,40 @@ public class SubscriptionExpirationJobTest
 
         // Assert
         Assert.Empty(published);
+    }
+    /// <summary>
+    /// La mañana del último día de gracia la licencia todavía no está en solo lectura (venció a las 10 a. m.): el aviso de
+    /// que terminó la gracia no sale antes de que el middleware de licencias empiece a bloquear (pendings/737).
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_TheMorningOfTheLastGraceDay_DoesNotSayTheGraceEnded()
+    {
+        // Arrange
+        var order = TestOrders.PaidFrom(Instant.FromUtc(2027, 3, 1, 15, 0));
+        orders.Setup(x => x.FindAllPaidAsync(It.IsAny<CancellationToken>())).ReturnsAsync([order]);
+
+        // Act
+        await Job().RunAsync(MorningOf(order.PeriodEnd!.Value, -15), CancellationToken.None);
+
+        // Assert
+        Assert.Empty(published);
+    }
+
+    /// <summary>
+    /// La gracia del aviso es la de <c>Security:GraceDays</c> calculada con <c>LicenseStanding</c>, la misma del middleware:
+    /// con 10 días, el aviso dice que termina 10 días después del vencimiento, a la misma hora.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_WithTheGraceDaysOfSecurity_SendsTheGraceEndOfLicenseStanding()
+    {
+        // Arrange
+        var order = TestOrders.PaidFrom(Instant.FromUtc(2027, 3, 1, 15, 0));
+        orders.Setup(x => x.FindAllPaidAsync(It.IsAny<CancellationToken>())).ReturnsAsync([order]);
+
+        // Act
+        await Job(graceDays: 10).RunAsync(MorningOf(order.PeriodEnd!.Value, 0), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(CodeDesignPlus.Net.Security.Abstractions.Models.LicenseStanding.Evaluate(order.PeriodEnd!.Value, order.PeriodEnd!.Value, 10).GraceEndsAt, Assert.Single(published).GraceEndsAt);
     }
 }

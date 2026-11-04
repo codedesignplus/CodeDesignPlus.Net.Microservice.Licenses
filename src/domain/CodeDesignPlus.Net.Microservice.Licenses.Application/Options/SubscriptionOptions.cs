@@ -7,7 +7,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 /// </summary>
 /// <remarks>
 /// Es de la plataforma, no de cada copropiedad: la decide ExcellenceForge para todas sus licencias. Por eso vive en el
-/// <c>appsettings</c> y no en el código.
+/// <c>appsettings</c> y no en el código. Los días de gracia no van aquí: son los de <c>Security:GraceDays</c>, los mismos
+/// que aplica el middleware de licencias del SDK (pendings/737).
 /// </remarks>
 public class SubscriptionOptions
 {
@@ -15,11 +16,6 @@ public class SubscriptionOptions
     /// The configuration section.
     /// </summary>
     public static readonly string Section = "Subscription";
-
-    /// <summary>
-    /// Los días de gracia después del vencimiento, con todo funcionando (pendings/737: 15).
-    /// </summary>
-    public int GraceDays { get; set; }
 
     /// <summary>
     /// Los días antes del vencimiento en que se avisa (pendings/736: 30, 15, 7 y 1). El mayor marca desde cuándo la
@@ -52,11 +48,6 @@ public class SubscriptionOptionsValidator : IValidateOptions<SubscriptionOptions
     public ValidateOptionsResult Validate(string? name, SubscriptionOptions options)
     {
         var failures = new List<string>();
-
-        if (options.GraceDays < 0)
-        {
-            failures.Add($"'{nameof(SubscriptionOptions.GraceDays)}' cannot be negative.");
-        }
 
         if (options.ReminderDays.Count == 0 || options.ReminderDays.Any(x => x <= 0))
         {

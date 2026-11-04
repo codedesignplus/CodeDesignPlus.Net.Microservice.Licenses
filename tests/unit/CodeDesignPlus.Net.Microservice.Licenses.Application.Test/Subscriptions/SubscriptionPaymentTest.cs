@@ -85,10 +85,11 @@ public class SubscriptionPaymentTest
         var creditBalances = new Mock<ICreditBalanceRepository>();
         creditBalances.Setup(x => x.FindAsync<CreditBalanceAggregate>(TestOrders.TenantId, TestOrders.TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(balance);
 
-        var options = Microsoft.Extensions.Options.Options.Create(new SubscriptionOptions { GraceDays = 15, ReminderDays = [30, 15, 7, 1], NoticeCatchUpDays = 3 });
+        var options = Microsoft.Extensions.Options.Options.Create(new SubscriptionOptions { ReminderDays = [30, 15, 7, 1], NoticeCatchUpDays = 3 });
+        var security = Microsoft.Extensions.Options.Options.Create(new CodeDesignPlus.Net.Security.Abstractions.Options.SecurityOptions { GraceDays = 15 });
 
         // Act
-        var subscription = await new GetSubscriptionQueryHandler(orders.Object, creditBalances.Object, options).Handle(new GetSubscriptionQuery(TestOrders.TenantId), CancellationToken.None);
+        var subscription = await new GetSubscriptionQueryHandler(orders.Object, creditBalances.Object, options, security).Handle(new GetSubscriptionQuery(TestOrders.TenantId), CancellationToken.None);
 
         // Assert
         Assert.Equal(

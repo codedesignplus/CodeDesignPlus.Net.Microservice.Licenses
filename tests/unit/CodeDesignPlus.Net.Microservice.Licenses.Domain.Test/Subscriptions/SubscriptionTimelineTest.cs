@@ -95,23 +95,42 @@ public class SubscriptionTimelineTest
     }
 
     /// <summary>
-    /// Vencida, dentro de los días de gracia, está en gracia; pasada la gracia, vencida.
+    /// Con el mismo cálculo que el middleware de licencias (pendings/737): en el instante del vencimiento todavía está
+    /// vigente, un segundo después en gracia, en gracia hasta el último instante de los días de gracia y vencida después.
     /// </summary>
     [Theory]
-    [InlineData(0, SubscriptionStatus.Grace)]
-    [InlineData(14, SubscriptionStatus.Grace)]
-    [InlineData(15, SubscriptionStatus.Expired)]
-    public void StatusAt_AfterTheEnd_IsGraceThenExpired(int daysAfter, SubscriptionStatus expected)
+    [InlineData(0, SubscriptionStatus.Expiring)]
+    [InlineData(1, SubscriptionStatus.Grace)]
+    [InlineData(14 * 86_400, SubscriptionStatus.Grace)]
+    [InlineData(15 * 86_400, SubscriptionStatus.Grace)]
+    [InlineData(15 * 86_400 + 1, SubscriptionStatus.Expired)]
+    public void StatusAt_AfterTheEnd_FollowsTheLicenseStanding(int secondsAfter, SubscriptionStatus expected)
     {
         // Arrange
         var subscription = SubscriptionTimeline.From([Paid(Bogota(2027, 3, 1, 10))])!;
-        var now = subscription.PaidThrough.Plus(Duration.FromDays(daysAfter));
+        var now = subscription.PaidThrough.Plus(Duration.FromSeconds(secondsAfter));
 
         // Act
         var status = subscription.StatusAt(now, Window, Grace);
 
         // Assert
         Assert.Equal(expected, status);
+    }
+
+    /// <summary>
+    /// La gracia termina donde dice <c>LicenseStanding</c> del SDK, no en un cálculo propio.
+    /// </summary>
+    [Fact]
+    public void GraceEndsAt_IsTheOneOfTheLicenseStanding()
+    {
+        // Arrange
+        var subscription = SubscriptionTimeline.From([Paid(Bogota(2027, 3, 1, 10))])!;
+
+        // Act
+        var graceEndsAt = subscription.GraceEndsAt(Grace);
+
+        // Assert
+        Assert.Equal(CodeDesignPlus.Net.Security.Abstractions.Models.LicenseStanding.Evaluate(subscription.PaidThrough, subscription.PaidThrough, Grace).GraceEndsAt, graceEndsAt);
     }
 
     private static ValueObjects.License Annual() => ValueObjects.License.Create(
