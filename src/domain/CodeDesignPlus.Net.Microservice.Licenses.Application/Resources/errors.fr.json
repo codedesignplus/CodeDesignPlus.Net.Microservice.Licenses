@@ -24,7 +24,7 @@
     "233": "Cette commande appartient à une autre copropriété.",
     "234": "Cette licence n'est pas en vente. Si elle vous a été proposée, passez-y depuis Paramètres › Organisation.",
     "235": "La licence n'améliore pas celle de ces copropriétés auxquelles elle est proposée : {0}. Elle doit avoir tous leurs modules et attributs égaux ou supérieurs et un prix dans leur périodicité et leur devise.",
-    "236": "L'une des copropriétés auxquelles la licence est proposée n'a pas d'abonnement payé.",
+    "236": "Ces copropriétés auxquelles la licence est proposée n'ont pas d'abonnement payé : {0}.",
     "265": "Nous n'avons pas trouvé ce forfait.",
     "266": "Ce forfait n'est pas proposé à ta copropriété.",
     "267": "Tu as déjà ce forfait : pour l'étendre, chaque caractéristique doit rester égale ou augmenter, et au moins une doit augmenter. On le réduit au renouvellement.",

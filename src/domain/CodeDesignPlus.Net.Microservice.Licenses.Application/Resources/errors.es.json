@@ -24,7 +24,7 @@
     "233": "Esa orden es de otra copropiedad.",
     "234": "Esta licencia no está a la venta. Si te la ofrecieron, cámbiate a ella desde Configuración › Organización.",
     "235": "La licencia no mejora la de estas copropiedades a las que se ofrece: {0}. Necesita todos sus módulos y atributos iguales o mayores y un precio en su periodicidad y moneda.",
-    "236": "Una de las copropiedades a las que se ofrece la licencia no tiene una suscripción pagada.",
+    "236": "Estas copropiedades a las que se ofrece la licencia no tienen una suscripción pagada: {0}.",
     "265": "No encontramos ese paquete.",
     "266": "Ese paquete no se le ofrece a tu copropiedad.",
     "267": "Ya tienes ese paquete: para ampliarlo cada característica debe quedar igual o mayor, y al menos una mayor. Reducirlo se hace al renovar.",

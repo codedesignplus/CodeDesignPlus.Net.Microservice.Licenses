@@ -15,7 +15,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Services;
 /// atributos, aunque cueste menos. El cambio ya lo exige al cotizar; comprobarlo al ofrecerla le dice al Super Admin que
 /// la licencia no le aparecería a esa copropiedad, en vez de dejar una oferta que nadie puede tomar (regla 42). Es la misma
 /// cotización del cambio, así que lo que se acepta aquí es lo que el cambio acepta. Se salta la copropiedad que ya tiene
-/// esta licencia: para ella ya no es un cambio sino su renovación. El error nombra las copropiedades a las que no mejora.
+/// esta licencia: para ella ya no es un cambio sino su renovación. Los errores nombran las copropiedades sin suscripción pagada y
+/// aquellas a las que no mejora.
 /// </remarks>
 public static class LicenseOffers
 {
@@ -35,13 +36,19 @@ public static class LicenseOffers
         }
 
         var now = SystemClock.Instance.GetCurrentInstant();
+        var withoutSubscription = new List<string>();
         var notAnUpgrade = new List<string>();
 
         foreach (var offer in license.OfferedTo ?? [])
         {
             var subscription = SubscriptionTimeline.From(await orders.FindPaidByTenantAsync(offer.TenantId, cancellationToken));
 
-            ApplicationGuard.IsNull(subscription!, Errors.OfferedTenantHasNoSubscription);
+            if (subscription is null)
+            {
+                withoutSubscription.Add(offer.TenantName);
+
+                continue;
+            }
 
             var current = subscription!.CurrentAt(now).License;
 
@@ -59,6 +66,7 @@ public static class LicenseOffers
         }
 
         // Se nombran todas las que fallan, no solo la primera: el Super Admin corrige la oferta de una vez.
+        ApplicationGuard.IsTrue(withoutSubscription.Count > 0, Errors.OfferedTenantHasNoSubscription.With(string.Join(", ", withoutSubscription)));
         ApplicationGuard.IsTrue(notAnUpgrade.Count > 0, Errors.LicenseIsNotAnUpgradeForAnOfferedTenant.With(string.Join(", ", notAnUpgrade)));
     }
 

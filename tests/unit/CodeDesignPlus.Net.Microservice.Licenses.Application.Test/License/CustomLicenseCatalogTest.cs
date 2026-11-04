@@ -236,7 +236,26 @@ public class CustomLicenseCatalogTest
         var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => LicenseOffers.EnsureEachIsAnUpgradeAsync(custom, orders.Object, CancellationToken.None));
 
         // Assert
-        Assert.Equal(Errors.OfferedTenantHasNoSubscription.GetCode(), exception.Code);
+        Assert.Equal((Errors.OfferedTenantHasNoSubscription.GetCode(), "Las Acacias"), (exception.Code, exception.Error?.Arguments.Single()));
+    }
+
+    /// <summary>
+    /// El error nombra todas las copropiedades sin suscripción pagada, no solo la primera: el Super Admin corrige la oferta
+    /// de una vez.
+    /// </summary>
+    [Fact]
+    public async Task EnsureEachIsAnUpgrade_TwoTenantsWithoutSubscription_NamesBoth()
+    {
+        // Arrange
+        var custom = Private(Elite, 20_000_000, [new OfferedTenant(TestOrders.TenantId, "Las Acacias"), new OfferedTenant(OtherTenant, "Los Cerezos")], SubscriptionFixtures.Organization, SubscriptionFixtures.Parking);
+        orders.Setup(x => x.FindPaidByTenantAsync(TestOrders.TenantId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        orders.Setup(x => x.FindPaidByTenantAsync(OtherTenant, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        // Act
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => LicenseOffers.EnsureEachIsAnUpgradeAsync(custom, orders.Object, CancellationToken.None));
+
+        // Assert
+        Assert.Equal((Errors.OfferedTenantHasNoSubscription.GetCode(), "Las Acacias, Los Cerezos"), (exception.Code, exception.Error?.Arguments.Single()));
     }
 
     /// <summary>
