@@ -23,7 +23,7 @@
     "232": "Esta licença não é oferecida ao seu condomínio.",
     "233": "Esse pedido é de outro condomínio.",
     "234": "Esta licença não está à venda. Se ela foi oferecida a você, mude para ela em Configurações › Organização.",
-    "235": "A licença não melhora a de algum dos condomínios aos quais é oferecida: precisa de todos os seus módulos e atributos iguais ou maiores e de um preço na sua periodicidade e moeda.",
+    "235": "A licença não melhora a destes condomínios aos quais é oferecida: {0}. Precisa de todos os seus módulos e atributos iguais ou maiores e de um preço na sua periodicidade e moeda.",
     "236": "Um dos condomínios aos quais a licença é oferecida não tem uma assinatura paga.",
     "265": "Não encontramos esse pacote.",
     "266": "Esse pacote não é oferecido ao seu condomínio.",

@@ -23,7 +23,7 @@
     "232": "This license is not offered to your organization.",
     "233": "That order belongs to another organization.",
     "234": "This license is not for sale. If it was offered to you, switch to it from Settings › Organization.",
-    "235": "The license does not improve the one of some tenant it is offered to: it needs all its modules and attributes equal or greater and a price in its billing period and currency.",
+    "235": "The license does not improve the one of these tenants it is offered to: {0}. It needs all their modules and attributes equal or greater and a price in their billing period and currency.",
     "236": "One of the tenants the license is offered to has no paid subscription.",
     "265": "We could not find that package.",
     "266": "That package is not offered to your residential complex.",

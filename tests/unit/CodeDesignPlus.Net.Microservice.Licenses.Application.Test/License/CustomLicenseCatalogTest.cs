@@ -183,7 +183,26 @@ public class CustomLicenseCatalogTest
         var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => LicenseOffers.EnsureEachIsAnUpgradeAsync(custom, orders.Object, CancellationToken.None));
 
         // Assert
-        Assert.Equal(Errors.LicenseIsNotAnUpgradeForAnOfferedTenant.GetCode(), exception.Code);
+        Assert.Equal((Errors.LicenseIsNotAnUpgradeForAnOfferedTenant.GetCode(), "Las Acacias"), (exception.Code, exception.Error?.Arguments.Single()));
+    }
+
+    /// <summary>
+    /// El error nombra todas las copropiedades a las que la licencia no mejora, no solo la primera: el Super Admin corrige
+    /// la oferta de una vez.
+    /// </summary>
+    [Fact]
+    public async Task EnsureEachIsAnUpgrade_TwoTenantsWithoutAnUpgrade_NamesBoth()
+    {
+        // Arrange
+        var custom = Private(Elite, 5_000_000, [new OfferedTenant(TestOrders.TenantId, "Las Acacias"), new OfferedTenant(OtherTenant, "Los Cerezos")], SubscriptionFixtures.Organization);
+        SubscribedWith(custom);
+        orders.Setup(x => x.FindPaidByTenantAsync(OtherTenant, It.IsAny<CancellationToken>())).ReturnsAsync([TestOrders.PaidFrom(SubscriptionFixtures.Now.Minus(Duration.FromDays(10)))]);
+
+        // Act
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => LicenseOffers.EnsureEachIsAnUpgradeAsync(custom, orders.Object, CancellationToken.None));
+
+        // Assert
+        Assert.Equal("Las Acacias, Los Cerezos", exception.Error?.Arguments.Single());
     }
 
     /// <summary>
