@@ -192,4 +192,35 @@ public class OrderWritesTest
         repository.Verify(x => x.UpdateAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>()), Times.Never);
         pubsub.Verify(x => x.PublishAsync(It.IsAny<IReadOnlyList<IDomainEvent>>(), It.IsAny<CancellationToken>()), Times.Exactly(publishes));
     }
+
+    /// <summary>
+    /// The receipt and the email of a package purchase carry only what their templates show: never the license with a
+    /// $ 0 subtotal, «IVA (0 %)» or its modules (pendings/739).
+    /// </summary>
+    [Fact]
+    public async Task Handle_PackagePaid_SendsOnlyThePackageVariables()
+    {
+        // Arrange
+        var order = CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Packages.PackageFixtures.PackageOrder(BillingType.Monthly);
+        repository.Setup(x => x.FindAsync<OrderAggregate>(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        repository.Setup(x => x.ApplyPaymentStatusAsync(order, order.PaymentStatus, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        ReceiptCanBeGenerated();
+        GeneratePdfRequest? pdf = null;
+        emailGrpc
+            .Setup(x => x.GeneratePdfAsync(It.IsAny<GeneratePdfRequest>(), It.IsAny<CancellationToken>()))
+            .Callback((GeneratePdfRequest request, CancellationToken _) => pdf = request)
+            .ReturnsAsync(new GeneratePdfResponse { Success = true, PdfContent = Google.Protobuf.ByteString.CopyFrom([1, 2, 3]) });
+        CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents.SendEmailDomainEvent? email = null;
+        pubsub
+            .Setup(x => x.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
+            .Callback((IDomainEvent @event, CancellationToken _) => email = @event as CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents.SendEmailDomainEvent)
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await PaymentHandler().Handle(new UpdateStateOrderCommand(order.Id, PaymentStatus.Succeeded), CancellationToken.None);
+
+        // Assert
+        string[] licenseOnly = ["subtotal", "tax", "tax_label", "invoice_concept", "modules_list", "billing_type", "next_billing_date"];
+        Assert.Equal(("PackageReceipt", "SubscriptionPackagePurchased", false), (pdf!.TemplateType, email!.TemplateName, licenseOnly.Any(x => pdf.Values.ContainsKey(x) || email.Variables.ContainsKey(x))));
+    }
 }

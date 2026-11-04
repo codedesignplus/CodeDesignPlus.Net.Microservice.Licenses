@@ -8,8 +8,8 @@ using Currency = CodeDesignPlus.Net.ValueObjects.Financial.Currency;
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 
 /// <summary>
-/// Traduce una orden a las variables de las plantillas <c>PurchaseConfirmation</c>, <c>PurchaseReceipt</c> y
-/// <c>SubscriptionReceipt</c> de ms-emails.
+/// Traduce una orden a las variables de las plantillas <c>PurchaseConfirmation</c>, <c>PurchaseReceipt</c>,
+/// <c>SubscriptionReceipt</c> y <c>PackageReceipt</c> de ms-emails.
 /// </summary>
 /// <remarks>
 /// Esto es un <b>adaptador de salida</b>, y por eso vive fuera de <c>Commands/</c>. Es el unico sitio donde
@@ -65,24 +65,44 @@ public static class ReceiptEmailVariables
     };
 
     /// <summary>
-    /// Arma el diccionario que consume la plantilla.
+    /// Arma el diccionario que consume la plantilla del recibo de la orden (<see cref="ReceiptTemplateOf"/>).
     /// </summary>
     /// <param name="order">La orden ya pagada.</param>
     /// <param name="currency">La moneda de la orden, del catálogo de ms-locations: da el símbolo y los decimales.</param>
     /// <returns>Las variables de la plantilla, con los importes ya legibles («$ 773.500,00», <see cref="ReceiptText"/>).</returns>
+    /// <remarks>
+    /// Una orden de paquete no cobra la licencia: lleva solo las variables de <see cref="PackageReceiptTemplate"/>. Antes
+    /// arrastraba las de la licencia con valores falsos («subtotal» $ 0, «IVA (0 %)», los módulos), y las de la licencia
+    /// llevaban las del paquete vacías (pendings/739).
+    /// </remarks>
     public static Dictionary<string, string> Build(OrderAggregate order, Currency currency)
     {
         var zone = SubscriptionTimeline.ZoneOf(order.TenantDetail);
+        var variables = Common(order, zone, currency);
+
+        if (order.Type == OrderType.Package)
+        {
+            // Una orden de paquete lleva una sola línea (OrderAggregate.CreatePackagePurchase).
+            AddPackage(variables, order.Packages!.Single(), order.License.BillingType, zone, currency);
+
+            return variables;
+        }
+
+        AddLicense(variables, order, zone, currency);
+
+        return variables;
+    }
+
+    /// <summary>
+    /// Las variables de toda plantilla de recibo: quién compra y para quién, la orden, su fecha, el crédito aplicado y lo
+    /// pagado.
+    /// </summary>
+    private static Dictionary<string, string> Common(OrderAggregate order, DateTimeZone zone, Currency currency)
+    {
         var purchasedAt = PurchasedAt(order).InZone(zone);
         var credit = order.Total - order.AmountToCharge;
-        var packages = order.Packages ?? [];
-        var packagesTotal = packages.Aggregate(Money.Zero(order.Total.Currency), (sum, x) => sum + x.Total);
-        var isPackageOrder = order.Type == OrderType.Package;
-        // Una orden de paquete lleva una sola línea (OrderAggregate.CreatePackagePurchase); en las demás estas variables no
-        // las usa ninguna plantilla y van vacías.
-        var package = isPackageOrder ? packages.Single() : null;
 
-        var variables = new Dictionary<string, string>
+        return new Dictionary<string, string>
         {
             ["organization_name"] = order.TenantDetail.Name,
             ["organization_email"] = order.TenantDetail.Email,
@@ -90,59 +110,75 @@ public static class ReceiptEmailVariables
             ["organization_document"] = $"{order.TenantDetail.TypeDocument.Code} {order.TenantDetail.NumberDocument}",
             ["buyer_name"] = order.Buyer.Name,
             ["buyer_email"] = order.Buyer.Email,
-            // Una orden de paquete no cobra la licencia: el comprobante nombra los paquetes (pendings/739).
-            ["license_name"] = isPackageOrder ? string.Join(", ", packages.Select(x => x.Name)) : order.License.Name,
-            ["billing_type"] = BillingTypeLabel(order.License.BillingType),
-            ["subtotal"] = ReceiptText.Amount(order.License.SubTotal, currency),
-            ["tax"] = ReceiptText.Amount(order.License.Tax, currency),
-            ["tax_label"] = TaxLabel(order.License.TaxTreatment, order.License.TaxBasisPoints),
-            ["tax_rate"] = TaxRate(order.License.TaxBasisPoints),
-            ["tax_legal_basis"] = order.License.TaxLegalBasis ?? string.Empty,
-            ["invoice_concept"] = order.License.InvoiceConcept ?? order.License.Name,
-            // El precio de la orden entera: la licencia y sus paquetes (pendings/739).
-            ["total"] = ReceiptText.Amount(order.Total, currency),
-            ["price"] = ReceiptText.Amount(order.Total, currency),
-            ["license_row_display"] = isPackageOrder ? "none" : "table-row",
-            ["packages_row_display"] = packages.Count == 0 ? "none" : "table-row",
-            ["packages_list"] = ReceiptText.Packages(order, currency),
-            ["packages_total"] = ReceiptText.Amount(packagesTotal, currency),
             ["credit_applied"] = ReceiptText.Amount(credit, currency),
             // Sin crédito la fila no se muestra: «Crédito aplicado -$ 0,00» en una renovación sin saldo a favor confundía.
-            // La plantilla no tiene condicionales (solo reemplaza variables), así que el micro decide si la fila se ve.
-            ["credit_row_display"] = credit.Amount == 0 ? "none" : "table-row",
+            ["credit_row_display"] = RowDisplay(credit),
             ["amount_paid"] = ReceiptText.Amount(order.AmountToCharge, currency),
-            ["period"] = ReceiptText.Period(order, zone),
-            ["order_type"] = OrderTypeLabel(order.Type),
-            // Los importes ya llevan el símbolo; el código sigue viajando para las plantillas guardadas antes de este cambio.
-            ["currency"] = order.License.Total.Currency,
             ["purchase_date"] = DatePattern.Format(purchasedAt.Date),
             ["current_year"] = purchasedAt.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            ["order_id"] = order.Id.ToString(),
-            ["modules_list"] = string.Join(", ", order.License.Modules.Select(m => m.Name))
+            ["order_id"] = order.Id.ToString()
         };
+    }
 
-        AddPackage(variables, package, order.License.BillingType, zone, currency);
+    /// <summary>
+    /// Las variables de los recibos de la licencia (<see cref="PurchaseReceiptTemplate"/>, <see cref="SubscriptionReceiptTemplate"/>
+    /// y la confirmación de compra): la licencia con su impuesto, sus módulos y los paquetes que se compraron con ella.
+    /// </summary>
+    private static void AddLicense(Dictionary<string, string> variables, OrderAggregate order, DateTimeZone zone, Currency currency)
+    {
+        var packages = order.Packages ?? [];
+        var packagesTotal = packages.Aggregate(Money.Zero(order.Total.Currency), (sum, x) => sum + x.Total);
 
-        return variables;
+        variables["license_name"] = order.License.Name;
+        variables["billing_type"] = BillingTypeLabel(order.License.BillingType);
+        variables["subtotal"] = ReceiptText.Amount(order.License.SubTotal, currency);
+        variables["tax"] = ReceiptText.Amount(order.License.Tax, currency);
+        variables["tax_label"] = TaxLabel(order.License.TaxTreatment, order.License.TaxBasisPoints);
+        variables["tax_rate"] = TaxRate(order.License.TaxBasisPoints);
+        variables["tax_legal_basis"] = order.License.TaxLegalBasis ?? string.Empty;
+        variables["invoice_concept"] = order.License.InvoiceConcept ?? order.License.Name;
+        // El precio de la orden entera: la licencia y sus paquetes (pendings/739).
+        variables["total"] = ReceiptText.Amount(order.Total, currency);
+        variables["price"] = ReceiptText.Amount(order.Total, currency);
+        // SubscriptionReceipt la sigue pidiendo; desde PackageReceipt toda orden que la usa cobra la licencia.
+        variables["license_row_display"] = "table-row";
+        variables["packages_row_display"] = packages.Count == 0 ? "none" : "table-row";
+        variables["packages_list"] = ReceiptText.Packages(order, currency);
+        variables["packages_total"] = ReceiptText.Amount(packagesTotal, currency);
+        variables["period"] = ReceiptText.Period(order, zone);
+        variables["order_type"] = OrderTypeLabel(order.Type);
+        // Los importes ya llevan el símbolo; el código sigue viajando para las plantillas guardadas antes de este cambio.
+        variables["currency"] = order.License.Total.Currency;
+        variables["modules_list"] = string.Join(", ", order.License.Modules.Select(m => m.Name));
     }
 
     /// <summary>
     /// Las variables del recibo de un paquete (<see cref="PackageReceiptTemplate"/>): su base, su impuesto y su total, y su
     /// vigencia con las fechas del calendario de la copropiedad (pendings/739).
     /// </summary>
-    private static void AddPackage(Dictionary<string, string> variables, PackageLine? package, BillingType billingType, DateTimeZone zone, Currency currency)
+    /// <remarks>
+    /// El IVA depende del tratamiento del paquete: sin IVA su fila no se muestra, como la del crédito.
+    /// </remarks>
+    private static void AddPackage(Dictionary<string, string> variables, PackageLine package, BillingType billingType, DateTimeZone zone, Currency currency)
     {
-        variables["package_name"] = package?.Name ?? string.Empty;
-        variables["package_concept"] = package is null ? string.Empty : package.InvoiceConcept ?? package.Name;
-        variables["package_subtotal"] = package is null ? string.Empty : ReceiptText.Amount(package.SubTotal, currency);
-        variables["package_tax"] = package is null ? string.Empty : ReceiptText.Amount(package.Tax, currency);
-        variables["package_tax_label"] = package is null ? string.Empty : TaxLabel(package.TaxTreatment, package.TaxBasisPoints);
-        variables["package_total"] = package is null ? string.Empty : ReceiptText.Amount(package.Total, currency);
-        variables["package_period"] = package?.PeriodStart is null || package.PeriodEnd is null
+        variables["package_name"] = package.Name;
+        variables["package_concept"] = package.InvoiceConcept ?? package.Name;
+        variables["package_subtotal"] = ReceiptText.Amount(package.SubTotal, currency);
+        variables["package_tax"] = ReceiptText.Amount(package.Tax, currency);
+        variables["package_tax_label"] = TaxLabel(package.TaxTreatment, package.TaxBasisPoints);
+        variables["package_tax_row_display"] = RowDisplay(package.Tax);
+        variables["package_total"] = ReceiptText.Amount(package.Total, currency);
+        variables["package_period"] = package.PeriodStart is null || package.PeriodEnd is null
             ? string.Empty
             : $"{ReceiptText.Date(package.PeriodStart.Value.InZone(zone).Date)} — {ReceiptText.Date(package.PeriodEnd.Value.InZone(zone).Date)}";
-        variables["package_term"] = package is null ? string.Empty : PackageTermText(billingType);
+        variables["package_term"] = PackageTermText(billingType);
     }
+
+    /// <summary>
+    /// Si se ve la fila de un importe: en cero no se muestra. La plantilla no tiene condicionales (solo reemplaza
+    /// variables), así que el micro decide con el <c>display</c> de la fila.
+    /// </summary>
+    private static string RowDisplay(Money amount) => amount.Amount == 0 ? "none" : "table-row";
 
     /// <summary>
     /// Hasta cuándo dura el paquete según la periodicidad de la licencia, como lo decide <see cref="PackageTerm"/>: con

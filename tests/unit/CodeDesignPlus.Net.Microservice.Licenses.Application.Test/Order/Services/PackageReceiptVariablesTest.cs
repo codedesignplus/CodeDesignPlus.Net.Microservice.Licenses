@@ -69,7 +69,7 @@ public class PackageReceiptVariablesTest
     }
 
     [Fact]
-    public void Build_LicensePurchase_LeavesThePackageVariablesEmpty()
+    public void Build_LicensePurchase_CarriesNoPackageVariable()
     {
         // Arrange
         var order = PackageFixtures.PaidPurchase(PaidAt, PackageFixtures.AnnualLicense(), PackageFixtures.Basic());
@@ -78,28 +78,102 @@ public class PackageReceiptVariablesTest
         var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
 
         // Assert
-        Assert.Equal((string.Empty, string.Empty), (variables["package_total"], variables["package_period"]));
+        Assert.DoesNotContain(variables.Keys, x => x.StartsWith("package_", StringComparison.Ordinal));
     }
 
     /// <summary>
-    /// Virtual Básico ($ 1.990.000 + IVA del 19 %) bought for an existing tenant, paid at <see cref="PaidAt"/>.
+    /// A package order does not charge the license: the receipt carries exactly the variables of the PackageReceipt
+    /// template, never the license ones with a $ 0 subtotal, «IVA (0 %)» or its modules.
     /// </summary>
-    private static OrderAggregate PaidPackageOrder(BillingType billingType, Instant? licensePeriodEnd = null)
+    [Fact]
+    public void Build_PackageOrder_CarriesOnlyTheVariablesOfThePackageReceipt()
     {
-        var line = PackagePricing.Quote(PackageFixtures.Basic(), null).ToLine(Guid.NewGuid(), null);
-        var reference = PackageFixtures.AnnualLicense();
-        var zero = PackageFixtures.Cop(0);
-        var license = LicenseSnapshot.Create(
-            reference.Id, reference.Name, zero, zero, zero, billingType, reference.BillingModel, reference.Description, reference.ShortDescription,
-            reference.Icon, reference.TermsOfService, reference.IsPopular, reference.ShowInLandingPage, reference.Attributes, reference.Modules);
-        var charge = SubscriptionCharge.Compute(line.Total, zero, zero);
-        var order = OrderAggregate.CreatePackagePurchase(Guid.NewGuid(), Guid.NewGuid(), license, Buyer(), TestOrders.BuildTenant(), line, new List<CreditedPeriod>(), charge, TestOrders.BuyerId);
+        // Arrange
+        var order = PaidPackageOrder(BillingType.Monthly);
+        string[] expected =
+        [
+            "organization_name", "organization_email", "organization_phone", "organization_document", "buyer_name", "buyer_email", "order_id",
+            "purchase_date", "current_year", "package_name", "package_concept", "package_subtotal", "package_tax_label", "package_tax",
+            "package_tax_row_display", "package_total", "credit_applied", "credit_row_display", "amount_paid", "package_period", "package_term"
+        ];
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal(expected.Order(StringComparer.Ordinal), variables.Keys.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Build_TaxedPackage_ShowsTheTaxRow()
+    {
+        // Arrange
+        var order = PaidPackageOrder(BillingType.Monthly);
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal("table-row", variables["package_tax_row_display"]);
+    }
+
+    /// <summary>
+    /// A package without IVA hides the tax row: no row of the receipt shows $ 0.
+    /// </summary>
+    [Fact]
+    public void Build_PackageWithoutTax_HidesTheTaxRow()
+    {
+        // Arrange
+        var order = PaidPackageOrder(BillingType.Monthly, untaxed: true);
+
+        // Act
+        var variables = ReceiptEmailVariables.Build(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal(("none", "none"), (variables["package_tax_row_display"], variables["credit_row_display"]));
+    }
+
+    /// <summary>
+    /// The email of a package purchase carries exactly the variables of the SubscriptionPackagePurchased template: the
+    /// package, its term, its price, the credit and what was paid.
+    /// </summary>
+    [Fact]
+    public void BuildPackage_PackageOrder_CarriesOnlyTheVariablesOfThePackageEmail()
+    {
+        // Arrange
+        var order = PaidPackageOrder(BillingType.Monthly);
+        string[] expected = ["organization_name", "license_name", "period", "price", "credit_applied", "credit_row_display", "amount_paid", "current_year"];
+
+        // Act
+        var variables = ChangeEmailVariables.BuildPackage(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal(expected.Order(StringComparer.Ordinal), variables.Keys.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void BuildPackage_PackageOrder_NamesThePackageWithItsTermAndPrice()
+    {
+        // Arrange
+        var order = PaidPackageOrder(BillingType.Monthly);
+
+        // Act
+        var variables = ChangeEmailVariables.BuildPackage(order, TestOrders.Cop);
+
+        // Assert
+        Assert.Equal(("Virtual Básico", "3 de nov de 2026 — 3 de nov de 2027", "$ 2.368.100,00", "$ 2.368.100,00"), (variables["license_name"], variables["period"], variables["price"], variables["amount_paid"]));
+    }
+
+    /// <summary>
+    /// Virtual Básico bought for an existing tenant, paid at <see cref="PaidAt"/>.
+    /// </summary>
+    private static OrderAggregate PaidPackageOrder(BillingType billingType, Instant? licensePeriodEnd = null, bool untaxed = false)
+    {
+        var order = PackageFixtures.PackageOrder(billingType, untaxed);
 
         order.SetPaymentStatus(PaymentStatus.Succeeded, TestOrders.BuyerId, PaidAt, licensePeriodEnd: licensePeriodEnd);
         order.GetAndClearEvents();
 
         return order;
     }
-
-    private static CodeDesignPlus.Net.ValueObjects.User.Buyer Buyer() => CodeDesignPlus.Net.ValueObjects.User.Buyer.CreateMinimal(TestOrders.BuyerId, "Buyer", "+573001234567", "buyer@example.com");
 }

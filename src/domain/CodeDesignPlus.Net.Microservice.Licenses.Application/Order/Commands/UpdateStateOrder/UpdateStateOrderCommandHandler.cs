@@ -144,7 +144,7 @@ public class UpdateStateOrderCommandHandler(
                         // Un cambio no es una compra: dice lo descontado y lo pagado, y el comprobante va adjunto (pendings/738).
                         OrderType.Change => (ChangeEmailVariables.Template, ChangeEmailVariables.Build(order, currency)),
                         // Un paquete: lo que se agregó, su vigencia, lo descontado y lo pagado (pendings/739).
-                        OrderType.Package => (ChangeEmailVariables.PackageTemplate, ChangeEmailVariables.Build(order, currency)),
+                        OrderType.Package => (ChangeEmailVariables.PackageTemplate, ChangeEmailVariables.BuildPackage(order, currency)),
                         _ => ("PurchaseConfirmation", variables)
                     };
 

@@ -29,6 +29,17 @@ internal static class PackageFixtures
         ],
         []), Guid.NewGuid());
 
+    /// <summary>
+    /// Virtual Básico excluded from IVA: its tax is zero.
+    /// </summary>
+    public static PackageAggregate Untaxed() => PackageAggregate.Create(BasicId, new PackageDefinition(
+        "Virtual Básico", "Sala virtual", "Sala virtual de reuniones", Icon.Create("videocamera-record", "#2563eb"), true, false, true, [], PackageKind.Fixed, "COP",
+        Cop(199_000_000), Cop(0), TaxTreatment.Excluded, 0, "Art. 476 E.T.", "Sala virtual, paquete Virtual Básico",
+        [
+            new PackageAttribute("assemblies_virtual_enable", "true", AttributeCombination.Or),
+        ],
+        []), Guid.NewGuid());
+
     public static PackageAggregate Custom(long minimumMinor = 0) => PackageAggregate.Create(CustomId, new PackageDefinition(
         "Sala virtual a la medida", "Sala a la medida", "Sala virtual armada por la copropiedad", Icon.Create("videocamera-record", "#ff522d"), true, false, true, [], PackageKind.Configurable, "COP",
         Cop(0), Cop(minimumMinor), TaxTreatment.Taxed, 1900, null, "Sala virtual, paquete a la medida",
@@ -71,6 +82,26 @@ internal static class PackageFixtures
         var order = OrderAggregate.Create(Guid.NewGuid(), Guid.NewGuid(), license, Buyer(), TestOrders.BuildTenant(), TestOrders.BuyerId, lines);
 
         order.SetPaymentStatus(PaymentStatus.Succeeded, TestOrders.BuyerId, start);
+        order.GetAndClearEvents();
+
+        return order;
+    }
+
+    /// <summary>
+    /// La compra de Virtual Básico ($ 1.990.000 + IVA del 19 %, o sin IVA) para una copropiedad que ya existe, a la espera del
+    /// pago: la orden lleva la copia de la licencia con precio cero.
+    /// </summary>
+    public static OrderAggregate PackageOrder(BillingType billingType, bool untaxed = false)
+    {
+        var line = PackagePricing.Quote(untaxed ? Untaxed() : Basic(), null).ToLine(Guid.NewGuid(), null);
+        var reference = AnnualLicense();
+        var zero = Cop(0);
+        var license = LicenseSnapshot.Create(
+            reference.Id, reference.Name, zero, zero, zero, billingType, reference.BillingModel, reference.Description, reference.ShortDescription,
+            reference.Icon, reference.TermsOfService, reference.IsPopular, reference.ShowInLandingPage, reference.Attributes, reference.Modules);
+        var charge = SubscriptionCharge.Compute(line.Total, zero, zero);
+        var order = OrderAggregate.CreatePackagePurchase(Guid.NewGuid(), Guid.NewGuid(), license, Buyer(), TestOrders.BuildTenant(), line, new List<CreditedPeriod>(), charge, TestOrders.BuyerId);
+
         order.GetAndClearEvents();
 
         return order;
