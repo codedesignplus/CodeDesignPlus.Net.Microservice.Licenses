@@ -55,7 +55,7 @@ public class GetAAllLicenseQueryHandlerTest
     {
         repositoryMock = new Mock<ILicenseRepository>();
         mapperMock = new Mock<IMapper>();
-        handler = new GetAllLicenseQueryHandler(repositoryMock.Object, mapperMock.Object);
+        handler = new GetAllLicenseQueryHandler(repositoryMock.Object, Mock.Of<IOrderRepository>(), mapperMock.Object);
     }
 
     [Fact]

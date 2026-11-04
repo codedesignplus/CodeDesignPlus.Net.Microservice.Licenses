@@ -57,7 +57,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Quer
             repositoryMock = new Mock<ILicenseRepository>();
             mapperMock = new Mock<IMapper>();
             cacheManagerMock = new Mock<ICacheManager>();
-            handler = new GetLicenseByIdQueryHandler(repositoryMock.Object, mapperMock.Object, cacheManagerMock.Object);
+            handler = new GetLicenseByIdQueryHandler(repositoryMock.Object, Mock.Of<IOrderRepository>(), mapperMock.Object, cacheManagerMock.Object);
         }
 
         [Fact]

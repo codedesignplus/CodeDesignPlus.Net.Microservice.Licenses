@@ -103,4 +103,16 @@ public class LicenseOfferDto
     /// Cuándo se la ofreció.
     /// </summary>
     public Instant OfferedAt { get; set; }
+
+    /// <summary>
+    /// Whether the tenant already took the license: it has a paid and active order with it. Its offer cannot be withdrawn
+    /// (error 273). Filled only in the platform view of the Super Admin (pendings/464).
+    /// </summary>
+    public bool Taken { get; set; }
+
+    /// <summary>
+    /// Whether the tenant has a change to this license waiting for its payment. Its offer cannot be withdrawn until the
+    /// payment is approved or rejected (error 274). Filled only in the platform view of the Super Admin (pendings/464).
+    /// </summary>
+    public bool PaymentInProgress { get; set; }
 }

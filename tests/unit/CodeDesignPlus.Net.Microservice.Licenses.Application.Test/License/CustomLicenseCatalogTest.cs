@@ -108,7 +108,7 @@ public class CustomLicenseCatalogTest
         licenses.Setup(x => x.MatchingAsync<LicenseAggregate>(It.IsAny<C.Criteria>(), It.IsAny<CancellationToken>())).ReturnsAsync(empty);
 
         // Act
-        await new GetAllLicenseQueryHandler(licenses.Object, Mock.Of<IMapper>()).Handle(new GetAllLicenseQuery(new C.Criteria(), forSaleOnly), CancellationToken.None);
+        await new GetAllLicenseQueryHandler(licenses.Object, orders.Object, Mock.Of<IMapper>()).Handle(new GetAllLicenseQuery(new C.Criteria(), forSaleOnly), CancellationToken.None);
 
         // Assert
         licenses.Verify(x => x.MatchingShownInLandingPageAsync(It.IsAny<C.Criteria>(), It.IsAny<CancellationToken>()), Times.Exactly(publicReads));
@@ -127,7 +127,7 @@ public class CustomLicenseCatalogTest
         cache.Setup(x => x.GetAsync<LicenseDto>(Elite.ToString())).ReturnsAsync(new LicenseDto { Id = Elite, ShowInLandingPage = false });
 
         // Act
-        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => new GetLicenseByIdQueryHandler(licenses.Object, Mock.Of<IMapper>(), cache.Object).Handle(new GetLicenseByIdQuery(Elite, ForSaleOnly: true), CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => new GetLicenseByIdQueryHandler(licenses.Object, orders.Object, Mock.Of<IMapper>(), cache.Object).Handle(new GetLicenseByIdQuery(Elite, ForSaleOnly: true), CancellationToken.None));
 
         // Assert
         Assert.Equal(Errors.LicenseNotFound.GetCode(), exception.Code);

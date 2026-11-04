@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
@@ -89,13 +90,62 @@ public static class LicenseOffers
     {
         foreach (var offer in offers)
         {
-            var paid = await orders.FindPaidByTenantAsync(offer.TenantId, cancellationToken);
+            var status = await StatusOfAsync(licenseId, offer.TenantId, orders, cancellationToken);
 
-            ApplicationGuard.IsTrue(paid.Any(x => x.License.Id == licenseId), Errors.OfferAlreadyTaken.With(offer.TenantName));
+            ApplicationGuard.IsTrue(status.Taken, Errors.OfferAlreadyTaken.With(offer.TenantName));
 
-            var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(offer.TenantId, cancellationToken);
-
-            ApplicationGuard.IsTrue(awaiting.Any(x => x.Type == OrderType.Change && x.License.Id == licenseId), Errors.OfferHasAPaymentInProgress.With(offer.TenantName));
+            ApplicationGuard.IsTrue(status.PaymentInProgress, Errors.OfferHasAPaymentInProgress.With(offer.TenantName));
         }
     }
+
+    /// <summary>
+    /// Fills, in each offer of a license read by the Super Admin, whether the tenant already took it and whether it is paying
+    /// for it, so the screen does not offer to withdraw what would then be rejected (rule 42, pendings/464).
+    /// </summary>
+    /// <remarks>
+    /// It is computed on every read and never cached: it depends on the orders, not on the license.
+    /// </remarks>
+    /// <param name="license">The license read by the Super Admin.</param>
+    /// <param name="orders">The orders, to read what each tenant took and what it is paying.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that completes when every offer was filled.</returns>
+    public static async Task FillOfferStatusAsync(LicenseDto license, IOrderRepository orders, CancellationToken cancellationToken)
+    {
+        foreach (var offer in license.OfferedTo ?? [])
+        {
+            var status = await StatusOfAsync(license.Id, offer.TenantId, orders, cancellationToken);
+
+            offer.Taken = status.Taken;
+            offer.PaymentInProgress = status.PaymentInProgress;
+        }
+    }
+
+    /// <summary>
+    /// Whether a tenant took this license or is paying for a change to it. It is the only place that decides it: the
+    /// withdrawal errors (273 and 274) and the flags the Super Admin reads come from here.
+    /// </summary>
+    /// <param name="licenseId">The license.</param>
+    /// <param name="tenantId">The tenant it is offered to.</param>
+    /// <param name="orders">The orders, to read what the tenant took and what it is paying.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The status of the offer.</returns>
+    public static async Task<OfferStatus> StatusOfAsync(Guid licenseId, Guid tenantId, IOrderRepository orders, CancellationToken cancellationToken)
+    {
+        // Took it: a paid and active order with this license, the current one or an already paid one that starts later.
+        var paid = await orders.FindPaidByTenantAsync(tenantId, cancellationToken);
+
+        // Paying it: a change to this license still waiting for its payment.
+        var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(tenantId, cancellationToken);
+
+        return new OfferStatus(
+            paid.Any(x => x.License.Id == licenseId),
+            awaiting.Any(x => x.Type == OrderType.Change && x.License.Id == licenseId));
+    }
 }
+
+/// <summary>
+/// The status of an offer of a tailored license to a tenant (pendings/464).
+/// </summary>
+/// <param name="Taken">The tenant took the license: it has a paid and active order with it.</param>
+/// <param name="PaymentInProgress">The tenant has a change to this license waiting for its payment.</param>
+public sealed record OfferStatus(bool Taken, bool PaymentInProgress);
