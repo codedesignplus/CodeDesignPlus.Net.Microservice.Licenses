@@ -4,11 +4,14 @@ using System.Threading.Tasks;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.gRpc.Clients.Services.Notification;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order;
 using CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Consumers;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.DomainEvents;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
+using CodeDesignPlus.Net.Core.Abstractions;
+using CodeDesignPlus.Net.PubSub.Abstractions;
 using Xunit;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Test.Consumers;
@@ -16,14 +19,20 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Test.Consumers;
 /// <summary>
 /// El aviso de una orden pagada que no se aplicó (Kappali pendings/737, paso 6): va a la campana del rol de la plataforma,
 /// sin tenant, con el tenant, el tipo, lo pagado y el motivo leídos de la orden, y no se repite si el evento llega dos veces.
+/// Con buzón de operaciones configurado, además sale un correo marcado como importante a ese buzón.
 /// </summary>
 public class NotifyOrderNotAppliedHandlerTest
 {
     private static readonly Guid PlatformRole = Guid.Parse("20000000-0000-0000-0000-000000000010");
 
     private readonly Mock<IOrderRepository> orders = new();
+    private const string Mailbox = "operations@example.com";
+
     private readonly Mock<IInboxGrpc> inbox = new();
+    private readonly Mock<IPubSub> pubSub = new();
+    private readonly Mock<ICurrencyGrpc> currencies = new();
     private readonly List<NotificationRequest> notifications = [];
+    private readonly List<SendEmailDomainEvent> emails = [];
     private readonly OrderAggregate order = TestOrders.PaidFrom(Instant.FromUtc(2026, 11, 3, 15, 0), TestOrders.OrderId);
 
     public NotifyOrderNotAppliedHandlerTest()
@@ -31,12 +40,17 @@ public class NotifyOrderNotAppliedHandlerTest
         inbox.Setup(x => x.NotifyAsync(It.IsAny<NotificationRequest>(), It.IsAny<CancellationToken>()))
             .Callback<NotificationRequest, CancellationToken>((request, _) => notifications.Add(request))
             .Returns(Task.CompletedTask);
+        pubSub.Setup(x => x.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<IDomainEvent, CancellationToken>((@event, _) => emails.Add((SendEmailDomainEvent)@event))
+            .Returns(Task.CompletedTask);
+        currencies.Setup(x => x.GetCurrencyAsync(It.IsAny<Guid?>(), "COP", It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TestOrders.Cop);
         orders.Setup(x => x.FindAsync<OrderAggregate>(TestOrders.OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
     }
 
-    private NotifyOrderNotAppliedHandler Handler(Guid? role = null) => new(
-        orders.Object, inbox.Object,
-        Microsoft.Extensions.Options.Options.Create(new PlatformNoticeOptions { PlatformAdministratorRole = role ?? PlatformRole }),
+    private NotifyOrderNotAppliedHandler Handler(Guid? role = null, string mailbox = Mailbox) => new(
+        orders.Object, inbox.Object, pubSub.Object, currencies.Object,
+        Microsoft.Extensions.Options.Options.Create(new PlatformNoticeOptions { PlatformAdministratorRole = role ?? PlatformRole, OperationsMailbox = mailbox }),
         new Mock<ILogger<NotifyOrderNotAppliedHandler>>().Object);
 
     private static OrderProvisioningFailedDomainEvent Failed(Guid? orderId = null) => new(orderId ?? TestOrders.OrderId, "LicenseApplication", "105: The license name is not valid.", TestOrders.BuyerId, eventId: Guid.NewGuid(), occurredAt: Instant.FromUtc(2026, 11, 3, 15, 5));
@@ -153,5 +167,90 @@ public class NotifyOrderNotAppliedHandlerTest
     {
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => Handler(Guid.Empty).HandleAsync(Failed(), CancellationToken.None));
+    }
+
+    /// <summary>
+    /// Con el buzón de operaciones configurado sale un correo a ese buzón, solo a él, con la plantilla genérica de avisos y
+    /// el asunto marcado como importante.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_WithMailbox_EmailsTheMailboxMarkedAsImportant()
+    {
+        // Act
+        await Handler().HandleAsync(Failed(), CancellationToken.None);
+
+        // Assert
+        var email = Assert.Single(emails);
+        Assert.Equal(
+            (OrderNotAppliedText.EmailTemplate, Mailbox, "IMPORTANTE: orden pagada sin aplicar — Conjunto Prueba", Guid.Empty),
+            (email.TemplateName, Assert.Single(email.To), email.Variables["subject"], email.Tenant));
+    }
+
+    /// <summary>
+    /// El contenido del correo dice la organización, el tipo, la orden, lo pagado formateado como en los demás correos, el
+    /// paso y el motivo.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_WithMailbox_EmailSaysTheOrderTheAmountAndTheReason()
+    {
+        // Act
+        await Handler().HandleAsync(Failed(), CancellationToken.None);
+
+        // Assert
+        var content = Assert.Single(emails).Variables["content"];
+        Assert.True(
+            content.Contains("Conjunto Prueba", StringComparison.Ordinal)
+            && content.Contains("Compra", StringComparison.Ordinal)
+            && content.Contains(TestOrders.OrderId.ToString(), StringComparison.Ordinal)
+            && content.Contains("$ 142.800,00", StringComparison.Ordinal)
+            && content.Contains("LicenseApplication", StringComparison.Ordinal)
+            && content.Contains("105: The license name is not valid.", StringComparison.Ordinal),
+            content);
+    }
+
+    /// <summary>
+    /// Sin buzón de operaciones no sale ningún correo, no falla y la campana suena igual.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_WithoutMailbox_SendsNoEmailAndStillNotifies()
+    {
+        // Act
+        await Handler(mailbox: "  ").HandleAsync(Failed(), CancellationToken.None);
+
+        // Assert
+        Assert.Equal((0, 1), (emails.Count, notifications.Count));
+    }
+
+    /// <summary>
+    /// El mismo evento que llega dos veces da el mismo id de correo.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_TheSameEventTwice_SendsTheSameEmailId()
+    {
+        // Arrange
+        var @event = Failed();
+
+        // Act
+        await Handler().HandleAsync(@event, CancellationToken.None);
+        await Handler().HandleAsync(@event, CancellationToken.None);
+
+        // Assert
+        Assert.Equal((emails[0].AggregateId, emails[0].EventId), (emails[1].AggregateId, emails[1].EventId));
+    }
+
+    /// <summary>
+    /// Si la orden no aparece, el correo sale igual con lo que trae el evento.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_OrderNotFound_StillEmails()
+    {
+        // Arrange
+        var missing = Guid.NewGuid();
+
+        // Act
+        await Handler().HandleAsync(Failed(missing), CancellationToken.None);
+
+        // Assert
+        Assert.Equal($"IMPORTANTE: orden pagada sin aplicar — {missing}", Assert.Single(emails).Variables["subject"]);
     }
 }
