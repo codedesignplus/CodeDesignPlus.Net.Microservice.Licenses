@@ -59,6 +59,8 @@ app.UseCors(builder => builder
     .AllowAnyOrigin()
     .AllowAnyMethod()
     .AllowAnyHeader()
+    // Sin esto el navegador no le deja leer al frontend en qué estado está la licencia (pendings/737).
+    .WithExposedHeaders(LicenseHeaders.Status, LicenseHeaders.GraceEnds)
 );
 
 app.UseTraceContext();
