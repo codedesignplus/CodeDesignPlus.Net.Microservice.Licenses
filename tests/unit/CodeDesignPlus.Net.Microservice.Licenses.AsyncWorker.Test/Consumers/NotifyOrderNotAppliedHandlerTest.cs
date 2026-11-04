@@ -23,7 +23,6 @@ public class NotifyOrderNotAppliedHandlerTest
 
     private readonly Mock<IOrderRepository> orders = new();
     private readonly Mock<IInboxGrpc> inbox = new();
-    private readonly Mock<ICurrencyGrpc> currencies = new();
     private readonly List<NotificationRequest> notifications = [];
     private readonly OrderAggregate order = TestOrders.PaidFrom(Instant.FromUtc(2026, 11, 3, 15, 0), TestOrders.OrderId);
 
@@ -32,13 +31,11 @@ public class NotifyOrderNotAppliedHandlerTest
         inbox.Setup(x => x.NotifyAsync(It.IsAny<NotificationRequest>(), It.IsAny<CancellationToken>()))
             .Callback<NotificationRequest, CancellationToken>((request, _) => notifications.Add(request))
             .Returns(Task.CompletedTask);
-        currencies.Setup(x => x.GetCurrencyAsync(It.IsAny<Guid?>(), "COP", It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(TestOrders.Cop);
         orders.Setup(x => x.FindAsync<OrderAggregate>(TestOrders.OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
     }
 
     private NotifyOrderNotAppliedHandler Handler(Guid? role = null) => new(
-        orders.Object, inbox.Object, currencies.Object,
+        orders.Object, inbox.Object,
         Microsoft.Extensions.Options.Options.Create(new PlatformNoticeOptions { PlatformAdministratorRole = role ?? PlatformRole }),
         new Mock<ILogger<NotifyOrderNotAppliedHandler>>().Object);
 
@@ -61,18 +58,38 @@ public class NotifyOrderNotAppliedHandlerTest
     }
 
     /// <summary>
-    /// El texto dice el tenant, el tipo de orden, lo que se pagó con el formato de su moneda y el motivo.
+    /// El texto dice el tenant, el tipo de orden y el motivo, sin el monto: el importe lo formatea el frontend desde el
+    /// payload y ya lo pinta en su propia línea.
     /// </summary>
     [Fact]
-    public async Task HandleAsync_Failed_SaysTheTenantTheTypeTheAmountAndTheReason()
+    public async Task HandleAsync_Failed_SaysTheTenantTheTypeAndTheReasonWithoutTheAmount()
     {
         // Act
         await Handler().HandleAsync(Failed(), CancellationToken.None);
 
         // Assert
         Assert.Equal(
-            "La orden de compra de Conjunto Prueba se pagó por $ 142.800,00, pero no se aplicó (paso LicenseApplication): 105: The license name is not valid. Revisa la orden.",
+            "La orden de compra de Conjunto Prueba se pagó, pero no se aplicó (paso LicenseApplication): 105: The license name is not valid. Revisa la orden.",
             notifications[0].Body);
+    }
+
+    /// <summary>
+    /// El texto no lleva el monto en ninguna forma: ni la cifra en unidad menor ni la formateada ni el símbolo.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_Failed_BodyDoesNotCarryTheAmount()
+    {
+        // Act
+        await Handler().HandleAsync(Failed(), CancellationToken.None);
+
+        // Assert
+        var body = notifications[0].Body;
+        Assert.False(
+            body.Contains("142.800", StringComparison.Ordinal)
+            || body.Contains("142800", StringComparison.Ordinal)
+            || body.Contains("14280000", StringComparison.Ordinal)
+            || body.Contains('$', StringComparison.Ordinal),
+            body);
     }
 
     /// <summary>
@@ -89,6 +106,7 @@ public class NotifyOrderNotAppliedHandlerTest
         Assert.True(
             payload.Contains($"\"tenantId\":\"{TestOrders.TenantId}\"", StringComparison.Ordinal)
             && payload.Contains("\"amountPaid\":14280000", StringComparison.Ordinal)
+            && payload.Contains("\"currency\":\"COP\"", StringComparison.Ordinal)
             && payload.Contains("\"orderType\":0", StringComparison.Ordinal)
             && payload.Contains("\"stepName\":\"LicenseApplication\"", StringComparison.Ordinal),
             payload);

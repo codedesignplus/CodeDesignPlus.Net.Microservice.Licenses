@@ -14,8 +14,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Consumers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Lo consume este micro porque es el dueño de la orden: el aviso lleva el tenant, el tipo de orden, lo que se pagó y el
-/// motivo leyéndola. Va a la campana del rol de la plataforma, sin tenant, porque quien lo atiende trabaja fuera de los
+/// Lo consume este micro porque es el dueño de la orden: el aviso lleva el tenant, el tipo de orden, lo que se pagó (en el
+/// payload, sin formatear) y el motivo leyéndola. Va a la campana del rol de la plataforma, sin tenant, porque quien lo atiende trabaja fuera de los
 /// tenants. No hay correo: no existe un contrato para listar quién tiene un rol, y el rol vive en el directorio de
 /// identidades, no en este micro.
 /// </para>
@@ -28,7 +28,6 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker.Consumers;
 public class NotifyOrderNotAppliedHandler(
     IOrderRepository orders,
     IInboxGrpc inbox,
-    ICurrencyGrpc currencies,
     IOptions<PlatformNoticeOptions> options,
     ILogger<NotifyOrderNotAppliedHandler> logger
 ) : IEventHandler<OrderProvisioningFailedDomainEvent>
@@ -59,9 +58,9 @@ public class NotifyOrderNotAppliedHandler(
         else
         {
             var paid = order.AmountToCharge;
-            var currency = await currencies.GetCurrencyAsync(code: paid.Currency, cancellationToken: token);
 
-            body = OrderNotAppliedText.Message(order.TenantDetail.Name, order.Type, ReceiptText.Amount(paid, currency), data.StepName, data.Error);
+            // El monto va solo en el payload: lo formatea el frontend con la moneda y el locale del usuario.
+            body = OrderNotAppliedText.Message(order.TenantDetail.Name, order.Type, data.StepName, data.Error);
             payload = new
             {
                 orderId = data.AggregateId,

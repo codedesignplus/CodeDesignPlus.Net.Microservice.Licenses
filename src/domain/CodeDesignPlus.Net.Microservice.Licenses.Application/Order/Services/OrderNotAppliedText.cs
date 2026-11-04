@@ -39,12 +39,15 @@ public static class OrderNotAppliedText
     /// </summary>
     /// <param name="tenantName">El nombre del tenant de la orden.</param>
     /// <param name="type">El tipo de la orden.</param>
-    /// <param name="amountPaid">Lo que se pagó, ya legible.</param>
     /// <param name="stepName">El paso que falló.</param>
     /// <param name="reason">Por qué falló.</param>
     /// <returns>El texto.</returns>
-    public static string Message(string tenantName, OrderType type, string amountPaid, string stepName, string reason) =>
-        $"La orden de {TypeName(type)} de {tenantName} se pagó por {amountPaid}, pero no se aplicó (paso {stepName}): {reason.TrimEnd('.', ' ')}. Revisa la orden.";
+    /// <remarks>
+    /// No lleva el monto: el importe lo formatea el frontend con su moneda y el locale del usuario desde el payload
+    /// (<c>amountPaid</c> en unidad menor y <c>currency</c>), y ya lo pinta en su propia línea.
+    /// </remarks>
+    public static string Message(string tenantName, OrderType type, string stepName, string reason) =>
+        $"La orden de {TypeName(type)} de {tenantName} se pagó, pero no se aplicó (paso {stepName}): {reason.TrimEnd('.', ' ')}. Revisa la orden.";
 
     /// <summary>
     /// El texto del aviso cuando la orden no se encuentra: dice lo que trae el evento.
