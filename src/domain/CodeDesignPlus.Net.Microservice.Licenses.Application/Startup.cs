@@ -27,6 +27,11 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application
                 .Bind(configuration.GetSection(SubscriptionOptions.Section))
                 .ValidateOnStart();
 
+            // A quién van los avisos de plataforma (pendings/737, paso 6). Solo lo usa el worker: su consumidor falla si
+            // falta el rol, en vez de exigir la sección a la API y al gRPC.
+            services.AddOptions<PlatformNoticeOptions>()
+                .Bind(configuration.GetSection(PlatformNoticeOptions.Section));
+
             services.AddScoped<Order.Services.ISubscriptionCheckout, Order.Services.SubscriptionCheckout>();
             services.AddScoped<Order.Services.ISubscriptionSettlement, Order.Services.SubscriptionSettlement>();
         }
