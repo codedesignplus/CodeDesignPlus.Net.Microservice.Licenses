@@ -32,6 +32,8 @@
     "269": "Tu licencia no está al día: renuévala antes de agregar o ampliar un paquete.",
     "270": "El mismo paquete aparece más de una vez en la solicitud.",
     "271": "Ese paquete no está a la venta.",
-    "272": "Los paquetes se renuevan junto con una licencia anual; con licencia mensual cada paquete dura doce meses y se vuelve a comprar."
+    "272": "Los paquetes se renuevan junto con una licencia anual; con licencia mensual cada paquete dura doce meses y se vuelve a comprar.",
+    "273": "No puedes retirar la oferta a {0}: ya tomó esta licencia.",
+    "274": "No puedes retirar la oferta a {0}: tiene un pago en curso para cambiarse a esta licencia. Espera a que el pago se apruebe o se rechace."
   }
 }

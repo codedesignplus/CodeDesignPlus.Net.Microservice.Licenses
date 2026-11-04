@@ -32,6 +32,8 @@
     "269": "Sua licença não está em dia: renove-a antes de adicionar ou ampliar um pacote.",
     "270": "O mesmo pacote aparece mais de uma vez na solicitação.",
     "271": "Esse pacote não está à venda.",
-    "272": "Os pacotes são renovados junto com uma licença anual; com licença mensal cada pacote dura doze meses e é comprado de novo."
+    "272": "Os pacotes são renovados junto com uma licença anual; com licença mensal cada pacote dura doze meses e é comprado de novo.",
+    "273": "Não é possível retirar a oferta a {0}: ele já adotou esta licença.",
+    "274": "Não é possível retirar a oferta a {0}: ele tem um pagamento em andamento para mudar para esta licença. Espere até que o pagamento seja aprovado ou recusado."
   }
 }

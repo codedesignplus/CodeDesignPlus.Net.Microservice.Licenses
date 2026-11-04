@@ -50,4 +50,6 @@ public class Errors: IErrorCodes
     public static readonly Error PackageIsRepeated = new("270");
     public static readonly Error PackageIsNotForSale = new("271");
     public static readonly Error PackagesRenewOnlyWithAnnualLicense = new("272");
+    public static readonly Error OfferAlreadyTaken = new("273");
+    public static readonly Error OfferHasAPaymentInProgress = new("274");
 }

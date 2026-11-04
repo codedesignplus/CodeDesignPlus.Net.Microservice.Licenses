@@ -96,6 +96,41 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     public bool IsOfferedTo(Guid tenantId) => IsForSale || (IsActive && !IsDeleted && (OfferedTo ?? []).Any(x => x.TenantId == tenantId));
 
     /// <summary>
+    /// Las ofertas vivas: las copropiedades que hoy pueden elegir esta licencia porque se la ofrecieron a ellas (pendings/464).
+    /// Ninguna si la licencia está inactiva o borrada, o si es pública (ya se le ofrece a todas).
+    /// </summary>
+    public IReadOnlyList<LicenseOffer> LiveOffers => IsActive && !IsDeleted && !ShowInLandingPage ? [.. OfferedTo ?? []] : [];
+
+    /// <summary>
+    /// Las ofertas que se retirarían al dejar la licencia con este estado y esta lista de copropiedades (pendings/464).
+    /// </summary>
+    /// <remarks>
+    /// Es lo que <see cref="Update"/> anuncia con <see cref="LicenseOfferWithdrawnDomainEvent"/>, y lo que la aplicación
+    /// revisa antes de editar: no se retira la oferta a quien ya tomó la licencia o tiene un pago en curso para tomarla.
+    /// Pasar la licencia a pública no retira nada, porque la copropiedad la sigue pudiendo elegir.
+    /// </remarks>
+    /// <param name="isActive">Si la licencia queda activa.</param>
+    /// <param name="showInLandingPage">Si la licencia queda pública.</param>
+    /// <param name="offeredTo">Las copropiedades a las que queda ofrecida.</param>
+    /// <returns>Las ofertas que se retiran.</returns>
+    public IReadOnlyList<LicenseOffer> OffersWithdrawnBy(bool isActive, bool showInLandingPage, IEnumerable<Guid> offeredTo)
+    {
+        if (!isActive)
+        {
+            return LiveOffers;
+        }
+
+        if (showInLandingPage)
+        {
+            return [];
+        }
+
+        var kept = offeredTo.ToHashSet();
+
+        return [.. LiveOffers.Where(x => !kept.Contains(x.TenantId))];
+    }
+
+    /// <summary>
     /// Creates a new valid instance of the License aggregate and registers the creation domain event.
     /// </summary>
     /// <param name="id">The unique identifier to assign.</param>
@@ -158,6 +193,7 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         aggregate.AddEvent(LicenseCreatedDomainEvent.Create(id, name, shortDescription, description, modules, prices, icon, TermsOfService, attributes, isActive, isPopular, showInLandingPage));
 
         aggregate.ApplyOffers(offeredTo, createdBy, now);
+        aggregate.AnnounceOfferChanges([], [], createdBy);
 
         return aggregate;
     }
@@ -185,6 +221,8 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         EnsureOffers(showInLandingPage, offeredTo);
 
         var now = SystemClock.Instance.GetCurrentInstant();
+        var liveBefore = LiveOffers;
+        var withdrawn = OffersWithdrawnBy(isActive, showInLandingPage, offeredTo.Select(x => x.TenantId));
 
         this.Name = name;
         this.Description = description;
@@ -205,6 +243,30 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
         AddEvent(LicenseUpdatedDomainEvent.Create(Id, Name, ShortDescription, Description, Modules, Prices, Icon, TermsOfService, Attributes, IsActive, IsPopular, ShowInLandingPage));
 
         ApplyOffers(offeredTo, updatedBy, now);
+        AnnounceOfferChanges(liveBefore, withdrawn, updatedBy);
+    }
+
+    /// <summary>
+    /// Anuncia las ofertas que quedan vivas y no lo estaban (una copropiedad nueva o una licencia que se reactiva) y las
+    /// que se retiran.
+    /// </summary>
+    /// <remarks>
+    /// Solo se anuncia lo que la copropiedad puede ver: una oferta en una licencia inactiva no le aparece al cambiar de
+    /// licencia, así que avisarla llevaría a un diálogo vacío (pendings/464).
+    /// </remarks>
+    private void AnnounceOfferChanges(IReadOnlyList<LicenseOffer> liveBefore, IReadOnlyList<LicenseOffer> withdrawn, Guid changedBy)
+    {
+        var before = liveBefore.Select(x => x.TenantId).ToHashSet();
+
+        foreach (var offer in LiveOffers.Where(x => !before.Contains(x.TenantId)))
+        {
+            AddEvent(LicenseOfferedDomainEvent.Create(Id, Name, offer.TenantId, offer.TenantName, offer.OfferedBy));
+        }
+
+        foreach (var offer in withdrawn)
+        {
+            AddEvent(LicenseOfferWithdrawnDomainEvent.Create(Id, Name, offer.TenantId, offer.TenantName, changedBy));
+        }
     }
 
     /// <summary>
@@ -227,8 +289,6 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
             }
 
             offers.Add(new LicenseOffer(tenant.TenantId, name, offeredBy, now));
-
-            AddEvent(LicenseOfferedDomainEvent.Create(Id, Name, tenant.TenantId, name, offeredBy));
         }
 
         OfferedTo = offers;
@@ -267,10 +327,20 @@ public class LicenseAggregate(Guid id) : AggregateRootBase(id)
     /// <summary>
     /// Performs a logical deletion of the license and registers the deletion domain event.
     /// </summary>
+    /// <remarks>
+    /// Las ofertas vivas se retiran con <see cref="LicenseOfferWithdrawnDomainEvent"/> (pendings/464).
+    /// </remarks>
     /// <param name="deletedBy">The identifier of the user or system performing the deletion.</param>
     public void Delete(Guid deletedBy)
     {
         DomainGuard.GuidIsEmpty(deletedBy, Errors.CreatedByLicenseIsRequired);
+
+        var withdrawn = LiveOffers;
+
+        foreach (var offer in withdrawn)
+        {
+            AddEvent(LicenseOfferWithdrawnDomainEvent.Create(Id, Name, offer.TenantId, offer.TenantName, deletedBy));
+        }
 
         this.IsDeleted = true;
         this.IsActive = false;

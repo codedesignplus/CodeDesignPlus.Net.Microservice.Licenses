@@ -32,6 +32,8 @@
     "269": "Ta licence n'est pas à jour : renouvelle-la avant d'ajouter ou d'étendre un forfait.",
     "270": "Le même forfait apparaît plus d'une fois dans la demande.",
     "271": "Ce forfait n'est pas en vente.",
-    "272": "Les forfaits se renouvellent avec une licence annuelle ; avec une licence mensuelle, chaque forfait dure douze mois et se rachète."
+    "272": "Les forfaits se renouvellent avec une licence annuelle ; avec une licence mensuelle, chaque forfait dure douze mois et se rachète.",
+    "273": "Tu ne peux pas retirer l'offre à {0} : elle a déjà pris cette licence.",
+    "274": "Tu ne peux pas retirer l'offre à {0} : elle a un paiement en cours pour passer à cette licence. Attends que le paiement soit approuvé ou refusé."
   }
 }

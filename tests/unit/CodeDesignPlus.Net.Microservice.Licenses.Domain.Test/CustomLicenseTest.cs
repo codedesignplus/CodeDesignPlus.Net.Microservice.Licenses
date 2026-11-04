@@ -154,6 +154,104 @@ public class CustomLicenseTest
     }
 
     /// <summary>
+    /// Quitar la copropiedad de la lista anuncia el retiro de su oferta, y a nadie más.
+    /// </summary>
+    [Fact]
+    public void Update_WithoutTheTenant_AnnouncesTheWithdrawal()
+    {
+        // Arrange
+        var license = Create(showInLandingPage: false, [new OfferedTenant(LasAcacias, "Las Acacias"), new OfferedTenant(LosCerezos, "Los Cerezos")]);
+        license.GetAndClearEvents();
+
+        // Act
+        Update(license, [new OfferedTenant(LosCerezos, "Los Cerezos")], Seller);
+
+        // Assert
+        var withdrawn = Assert.Single(license.GetAndClearEvents().OfType<LicenseOfferWithdrawnDomainEvent>());
+        Assert.Equal((LasAcacias, "Las Acacias", Seller), (withdrawn.Tenant, withdrawn.TenantName, withdrawn.WithdrawnBy));
+    }
+
+    /// <summary>
+    /// Desactivar la licencia retira la oferta a todas las copropiedades a las que se ofrecía.
+    /// </summary>
+    [Fact]
+    public void Update_Deactivating_AnnouncesTheWithdrawalToEveryTenant()
+    {
+        // Arrange
+        var license = Create(showInLandingPage: false, [new OfferedTenant(LasAcacias, "Las Acacias"), new OfferedTenant(LosCerezos, "Los Cerezos")]);
+        license.GetAndClearEvents();
+
+        // Act
+        license.Update(license.Name, license.ShortDescription, license.Description, license.Modules, license.Prices, license.Icon, license.TermsOfService, license.Attributes, isActive: false, license.IsPopular, license.ShowInLandingPage, license.InvoiceConcept!, [new OfferedTenant(LasAcacias, "Las Acacias"), new OfferedTenant(LosCerezos, "Los Cerezos")], Seller);
+
+        // Assert
+        Assert.Equal(2, license.GetAndClearEvents().OfType<LicenseOfferWithdrawnDomainEvent>().Count());
+    }
+
+    /// <summary>
+    /// Pasarla a pública no retira nada: la copropiedad la sigue pudiendo elegir.
+    /// </summary>
+    [Fact]
+    public void OffersWithdrawnBy_MakingItPublic_IsEmpty()
+    {
+        // Arrange
+        var license = Create(showInLandingPage: false, [new OfferedTenant(LasAcacias, "Las Acacias")]);
+
+        // Act
+        var withdrawn = license.OffersWithdrawnBy(isActive: true, showInLandingPage: true, []);
+
+        // Assert
+        Assert.Empty(withdrawn);
+    }
+
+    /// <summary>
+    /// Una licencia privada que se crea inactiva no anuncia ofertas: la copropiedad no la vería al cambiar de licencia.
+    /// </summary>
+    [Fact]
+    public void Create_AnInactivePrivateLicense_AnnouncesNoOffer()
+    {
+        // Act
+        var license = Create(showInLandingPage: false, [new OfferedTenant(LasAcacias, "Las Acacias")], isActive: false);
+
+        // Assert
+        Assert.Empty(license.GetAndClearEvents().OfType<LicenseOfferedDomainEvent>());
+    }
+
+    /// <summary>
+    /// Reactivar la licencia vuelve a anunciar la oferta a las copropiedades de la lista.
+    /// </summary>
+    [Fact]
+    public void Update_Reactivating_AnnouncesTheOfferAgain()
+    {
+        // Arrange
+        var license = Create(showInLandingPage: false, [new OfferedTenant(LasAcacias, "Las Acacias")], isActive: false);
+        license.GetAndClearEvents();
+
+        // Act
+        license.Update(license.Name, license.ShortDescription, license.Description, license.Modules, license.Prices, license.Icon, license.TermsOfService, license.Attributes, isActive: true, license.IsPopular, license.ShowInLandingPage, license.InvoiceConcept!, [new OfferedTenant(LasAcacias, "Las Acacias")], Seller);
+
+        // Assert
+        Assert.Equal(LasAcacias, Assert.Single(license.GetAndClearEvents().OfType<LicenseOfferedDomainEvent>()).Tenant);
+    }
+
+    /// <summary>
+    /// Borrar la licencia retira sus ofertas vivas.
+    /// </summary>
+    [Fact]
+    public void Delete_APrivateLicense_AnnouncesTheWithdrawal()
+    {
+        // Arrange
+        var license = Create(showInLandingPage: false, [new OfferedTenant(LasAcacias, "Las Acacias")]);
+        license.GetAndClearEvents();
+
+        // Act
+        license.Delete(Seller);
+
+        // Assert
+        Assert.Equal(LasAcacias, Assert.Single(license.GetAndClearEvents().OfType<LicenseOfferWithdrawnDomainEvent>()).Tenant);
+    }
+
+    /// <summary>
     /// El concepto de la factura es obligatorio (pendings/662).
     /// </summary>
     [Fact]

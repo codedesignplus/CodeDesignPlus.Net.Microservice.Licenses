@@ -28,6 +28,11 @@ public class UpdateLicenseCommandHandler(ILicenseRepository repository, IOrderRe
 
         var prices = await GetPricesAsync(request.Prices, cancellationToken);
 
+        // No se retira la oferta a quien ya tomó la licencia o la está pagando (pendings/464, decisión del usuario 2026-11-04).
+        var withdrawn = license.OffersWithdrawnBy(request.IsActive, request.ShowInLandingPage, (request.OfferedTo ?? []).Select(x => x.TenantId));
+
+        await LicenseOffers.EnsureCanWithdrawAsync(license.Id, withdrawn, orders, cancellationToken);
+
         license.Update(request.Name, request.ShortDescription, request.Description, modules, prices, request.Icon, request.TermsOfService, request.Attributes, request.IsActive, request.IsPopular, request.ShowInLandingPage, request.InvoiceConcept, request.OfferedTo ?? [], user.IdUser);
 
         await LicenseOffers.EnsureEachIsAnUpgradeAsync(license, orders, cancellationToken);

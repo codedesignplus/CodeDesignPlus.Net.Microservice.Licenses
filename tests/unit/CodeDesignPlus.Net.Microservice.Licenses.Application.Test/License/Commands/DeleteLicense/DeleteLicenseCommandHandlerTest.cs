@@ -27,7 +27,7 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.License.Comm
             userContextMock = new Mock<IUserContext>();
             pubSubMock = new Mock<IPubSub>();
             cacheManagerMock = new Mock<ICacheManager>();
-            handler = new DeleteLicenseCommandHandler(repositoryMock.Object, userContextMock.Object, pubSubMock.Object, cacheManagerMock.Object);
+            handler = new DeleteLicenseCommandHandler(repositoryMock.Object, Mock.Of<IOrderRepository>(), userContextMock.Object, pubSubMock.Object, cacheManagerMock.Object);
         }
 
         [Fact]

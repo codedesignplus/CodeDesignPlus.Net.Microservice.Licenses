@@ -1,5 +1,7 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
+using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.License.Services;
@@ -57,5 +59,43 @@ public static class LicenseOffers
 
         // Se nombran todas las que fallan, no solo la primera: el Super Admin corrige la oferta de una vez.
         ApplicationGuard.IsTrue(notAnUpgrade.Count > 0, Errors.LicenseIsNotAnUpgradeForAnOfferedTenant.With(string.Join(", ", notAnUpgrade)));
+    }
+
+    /// <summary>
+    /// Falla si alguna de estas ofertas ya no se puede retirar: la copropiedad tomó la licencia o tiene un pago en curso
+    /// para tomarla (decisión del usuario, 2026-11-04).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Tomarla es tener una orden pagada y vigente con esta licencia, sea la de hoy o una ya pagada que empieza después. Si la
+    /// copropiedad se cambió luego a otra, esa orden quedó inactiva y retirar la oferta ya no le quita nada.
+    /// </para>
+    /// <para>
+    /// Con un cambio a esta licencia esperando su pago, retirar la oferta dejaría un cobro en curso por algo que ya no se
+    /// ofrece; cancelar esa orden desde aquí correría contra el webhook de la pasarela, que puede aprobarla a la vez. Por eso
+    /// se bloquea hasta que el pago se resuelva: aprobado, la copropiedad ya la tomó; rechazado o vencido, se puede retirar.
+    /// </para>
+    /// <para>
+    /// El error nombra la primera copropiedad que no se puede, como lo pidió el usuario («No puedes retirar la oferta a
+    /// {copropiedad}: ya tomó esta licencia.»).
+    /// </para>
+    /// </remarks>
+    /// <param name="licenseId">La licencia.</param>
+    /// <param name="offers">Las ofertas que se van a retirar.</param>
+    /// <param name="orders">Las órdenes, para leer qué tomó y qué está pagando cada copropiedad.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns>Una tarea que termina cuando se revisaron todas.</returns>
+    public static async Task EnsureCanWithdrawAsync(Guid licenseId, IEnumerable<LicenseOffer> offers, IOrderRepository orders, CancellationToken cancellationToken)
+    {
+        foreach (var offer in offers)
+        {
+            var paid = await orders.FindPaidByTenantAsync(offer.TenantId, cancellationToken);
+
+            ApplicationGuard.IsTrue(paid.Any(x => x.License.Id == licenseId), Errors.OfferAlreadyTaken.With(offer.TenantName));
+
+            var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(offer.TenantId, cancellationToken);
+
+            ApplicationGuard.IsTrue(awaiting.Any(x => x.Type == OrderType.Change && x.License.Id == licenseId), Errors.OfferHasAPaymentInProgress.With(offer.TenantName));
+        }
     }
 }

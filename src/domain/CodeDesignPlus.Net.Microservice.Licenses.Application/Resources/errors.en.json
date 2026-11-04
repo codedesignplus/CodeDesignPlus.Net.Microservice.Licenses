@@ -32,6 +32,8 @@
     "269": "Your license is not paid up: renew it before adding or extending a package.",
     "270": "The same package appears more than once in the request.",
     "271": "That package is not for sale.",
-    "272": "Packages renew together with an annual license; with a monthly license each package lasts twelve months and is bought again."
+    "272": "Packages renew together with an annual license; with a monthly license each package lasts twelve months and is bought again.",
+    "273": "You cannot withdraw the offer to {0}: it already took this license.",
+    "274": "You cannot withdraw the offer to {0}: it has a payment in progress to change to this license. Wait until the payment is approved or declined."
   }
 }
