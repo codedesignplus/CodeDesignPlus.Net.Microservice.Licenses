@@ -1,5 +1,6 @@
 using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetAnyOrderReceiptUrl;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderReceiptUrl;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 
@@ -63,6 +64,36 @@ public class OrderController(IMediator mediator, IMapper mapper, IUserContext us
         var result = await mediator.Send(new GetAnyOrderByIdQuery(id), cancellationToken);
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Get a freshly signed URL for the purchase receipt of any Order, whatever its tenant (admin view, like <c>GET Order/all/{id}</c>).
+    /// </summary>
+    /// <remarks>
+    /// Es el recibo del detalle de la orden del Super Admin (pendings/674): <c>GET Order/{id}/receipt-url</c> solo firma el de
+    /// las órdenes de la copropiedad de la sesión o las que creó el usuario. Quién puede usar esta lo decide el RBAC. La firma
+    /// va con la copropiedad de la orden, no con la de quien llama.
+    /// </remarks>
+    /// <param name="id">The unique identifier of the Order.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the request.</param>
+    /// <response code="200">Returns the signed URL of the receipt.</response>
+    /// <response code="204">If the Order has no receipt yet.</response>
+    /// <response code="400">If the Order does not exist.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="403">If the user does not have permission to read every Order.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpGet("all/{id}/receipt-url")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ProblemDetails))]
+    public async Task<IActionResult> GetAnyOrderReceiptUrl(Guid id, CancellationToken cancellationToken)
+    {
+        var url = await mediator.Send(new GetAnyOrderReceiptUrlQuery(id), cancellationToken);
+
+        return string.IsNullOrEmpty(url) ? NoContent() : Ok(url);
     }
 
     /// <summary>

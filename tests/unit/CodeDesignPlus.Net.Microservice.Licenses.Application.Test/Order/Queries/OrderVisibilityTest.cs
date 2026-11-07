@@ -2,10 +2,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using CodeDesignPlus.Net.File.Storage.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetAnyOrderById;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetAnyOrderReceiptUrl;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderById;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderReceiptUrl;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Setup;
+using CodeDesignPlus.Net.File.Storage.Abstractions.Providers;
 using Xunit;
+using StoredFile = CodeDesignPlus.Net.File.Storage.Abstractions.Models.File;
+using StoredFileDetail = CodeDesignPlus.Net.File.Storage.Abstractions.Models.FileDetail;
+using StorageResponse = CodeDesignPlus.Net.File.Storage.Abstractions.Models.Response;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order.Queries;
 
@@ -118,5 +123,56 @@ public class OrderVisibilityTest
 
         // Assert
         Assert.Equal(Errors.OrderNotFound.GetCode(), exception.Code);
+    }
+
+    /// <summary>
+    /// The Super Admin downloads the receipt of an order of any tenant (pendings/674), signed in the order's tenant.
+    /// </summary>
+    [Fact]
+    public async Task GetAnyOrderReceiptUrl_OrderOfAnotherTenant_SignsItWithTheOrderTenant()
+    {
+        // Arrange
+        SessionOf(OtherTenant, OtherUser);
+        var receiptId = Guid.NewGuid();
+        order.AttachReceipt(receiptId, "PurchaseReceipt.pdf", "licenses-pdf", TestOrders.BuyerId);
+        var storage = new Mock<IFileStorage>();
+        storage.Setup(x => x.GetSignedUrlAsync("PurchaseReceipt.pdf", $"licenses-pdf/{receiptId}", It.IsAny<TimeSpan>(), TestOrders.TenantId, It.IsAny<CancellationToken>()))
+               .ReturnsAsync(Signed("https://blob.test/licenses-pdf/receipt.pdf?sig=674"));
+
+        // Act
+        var url = await new GetAnyOrderReceiptUrlQueryHandler(orders.Object, storage.Object).Handle(new GetAnyOrderReceiptUrlQuery(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal("https://blob.test/licenses-pdf/receipt.pdf?sig=674", url);
+    }
+
+    [Fact]
+    public async Task GetAnyOrderReceiptUrl_OrderWithoutReceipt_ReturnsNullWithoutSigning()
+    {
+        // Arrange
+        var storage = new Mock<IFileStorage>();
+
+        // Act
+        var url = await new GetAnyOrderReceiptUrlQueryHandler(orders.Object, storage.Object).Handle(new GetAnyOrderReceiptUrlQuery(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal((null, 0), (url, storage.Invocations.Count));
+    }
+
+    [Fact]
+    public async Task GetAnyOrderReceiptUrl_OrderThatDoesNotExist_AnswersOrderNotFound()
+    {
+        // Act
+        var exception = await Assert.ThrowsAsync<CodeDesignPlusException>(() => new GetAnyOrderReceiptUrlQueryHandler(orders.Object, Mock.Of<IFileStorage>()).Handle(new GetAnyOrderReceiptUrlQuery(Guid.NewGuid()), CancellationToken.None));
+
+        // Assert
+        Assert.Equal(Errors.OrderNotFound.GetCode(), exception.Code);
+    }
+
+    private static StorageResponse Signed(string url)
+    {
+        var file = new StoredFile("PurchaseReceipt.pdf") { Detail = new StoredFileDetail(new Uri(url), DateTime.UtcNow.AddMinutes(15), "licenses-pdf", "PurchaseReceipt.pdf", TypeProviders.AzureBlobProvider) };
+
+        return new StorageResponse(file, TypeProviders.AzureBlobProvider) { Success = true };
     }
 }

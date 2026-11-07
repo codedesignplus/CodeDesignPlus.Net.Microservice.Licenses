@@ -1,4 +1,5 @@
 using CodeDesignPlus.Net.File.Storage.Abstractions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.GetOrderReceiptUrl;
 
@@ -13,9 +14,6 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Queries.Get
 public class GetOrderReceiptUrlQueryHandler(IOrderRepository repository, IFileStorage fileStorage, IUserContext user)
     : IRequestHandler<GetOrderReceiptUrlQuery, string?>
 {
-    /// <summary>La firma vive lo justo para abrir el PDF; no se guarda ni se cachea.</summary>
-    private static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(15);
-
     /// <summary>
     /// Emite una firma nueva para el recibo de la orden.
     /// </summary>
@@ -31,13 +29,6 @@ public class GetOrderReceiptUrlQueryHandler(IOrderRepository repository, IFileSt
         // Como GET Order/{id}: el recibo de otra copropiedad responde lo mismo que una orden que no existe (pendings/735).
         ApplicationGuard.IsFalse(order?.IsVisibleTo(user.Tenant, user.IdUser) == true, Errors.OrderNotFound);
 
-        if (order!.Receipt is null)
-            return null;
-
-        // El recibo vive en {target}/{id}/{nombre}, la carpeta que le da ms-filestorage (regla 56).
-        var response = await fileStorage.GetSignedUrlAsync(
-            order.Receipt.Name, $"{order.Receipt.Target}/{order.Receipt.Id}", Lifetime, order.TenantDetail.Id, cancellationToken);
-
-        return response?.Success == true ? response.File.Detail.SignedUrl.ToString() : null;
+        return await ReceiptUrl.SignAsync(fileStorage, order!, cancellationToken);
     }
 }
