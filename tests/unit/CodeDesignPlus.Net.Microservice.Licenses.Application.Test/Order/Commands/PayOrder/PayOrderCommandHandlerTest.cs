@@ -140,6 +140,46 @@ public class PayOrderCommandHandlerTest
         Assert.Equal((true, ReturnUrl, false, "900123456"), (sent!.PlatformAccount, sent.ReturnUrl, sent.HasProvider, sent.Buyer.Document));
     }
 
+    /// <summary>
+    /// The payment says, in Spanish, what is bought and for which property: the Super Admin reads it in Cobros de plataforma
+    /// (pendings/674). It said «Payment for license Esencial to tenant Conjunto Prueba.».
+    /// </summary>
+    [Fact]
+    public async Task Handle_NewOrder_DescribesThePurchaseInSpanish()
+    {
+        // Arrange
+        var license = LicenseAggregate.Create(
+            Guid.NewGuid(), "Esencial", "Short", "Description", [],
+            [Price.Create(BillingType.Monthly, Money.FromDecimal(100, "COP", 2), BillingModel.FlatRate, 0, TaxTreatment.Taxed, 1900, null)],
+            Icon.Create("solar:fire-bold", "#EC4899"), "Terms", [], isActive: true, isPopular: false, showInLandingPage: true, "Invoice concept", [], Guid.NewGuid());
+
+        var buyer = new BuyerDto
+        {
+            Name = "Copropiedad Malpelo",
+            Phone = "+573001234567",
+            Email = "compras@malpelo.com",
+            TypeDocument = CodeDesignPlus.Net.ValueObjects.User.TypeDocument.Create("NIT", "Número de Identificación Tributaria"),
+            Document = "900123456",
+        };
+
+        var request = new PayOrderCommand(Guid.NewGuid(), buyer, new LicenseDto { Id = license.Id, BillingType = BillingType.Monthly }, TestOrders.BuildTenant(), "2026-11-02");
+        GrpcPayment.InitiatePaymentRequest? sent = null;
+
+        userMock.SetupGet(u => u.IdUser).Returns(Guid.NewGuid());
+        repositoryMock.Setup(r => r.FindAsync<LicenseAggregate>(license.Id, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        ordersMock.Setup(o => o.CreateIfAbsentAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        paymentGrpcMock
+            .Setup(p => p.InitiatePaymentAsync(It.IsAny<GrpcPayment.InitiatePaymentRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<GrpcPayment.InitiatePaymentRequest, CancellationToken>((payment, _) => sent = payment)
+            .ReturnsAsync(new GrpcPayment.InitiatePaymentResponse { PaymentId = Guid.NewGuid().ToString(), Success = true, NextAction = GrpcPayment.NextActionType.Redirect, RedirectUrl = "https://checkout.wompi.test/l/674" });
+
+        // Act
+        await handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.Equal("Compra de la licencia Esencial para Conjunto Prueba", sent!.Description);
+    }
+
     private OrderAggregate StoredOrder(Guid createdBy, InitiatedPayment? payment)
     {
         var order = (OrderAggregate)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(OrderAggregate));

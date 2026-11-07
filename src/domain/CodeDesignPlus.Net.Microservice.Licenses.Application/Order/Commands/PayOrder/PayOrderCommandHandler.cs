@@ -148,9 +148,7 @@ public class PayOrderCommandHandler(
             Value = order.Total.Amount
         };
 
-        payRequest.Description = (order.Packages ?? []).Count == 0
-            ? $"Payment for license {license.Name} to tenant {order.TenantDetail.Name}."
-            : $"Payment for license {license.Name} and {order.Packages!.Count} package(s) to tenant {order.TenantDetail.Name}.";
+        payRequest.Description = Services.PaymentDescription.For(order);
 
         return await paymentGrpc.InitiatePaymentAsync(payRequest, cancellationToken);
     }

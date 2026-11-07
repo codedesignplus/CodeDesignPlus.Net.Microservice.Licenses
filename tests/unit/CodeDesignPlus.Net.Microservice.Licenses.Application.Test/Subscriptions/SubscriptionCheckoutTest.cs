@@ -92,6 +92,26 @@ public class SubscriptionCheckoutTest
     }
 
     /// <summary>
+    /// The payment of a change says, in Spanish, the license it changes to and the property (pendings/674). It said «Change to
+    /// license Élite for tenant Conjunto Prueba.».
+    /// </summary>
+    [Fact]
+    public async Task StartAsync_AChange_DescribesItInSpanish()
+    {
+        // Arrange
+        GrpcPayment.InitiatePaymentRequest? sent = null;
+        payments.Setup(x => x.InitiatePaymentAsync(It.IsAny<GrpcPayment.InitiatePaymentRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<GrpcPayment.InitiatePaymentRequest, CancellationToken>((request, _) => sent = request)
+            .ReturnsAsync(new GrpcPayment.InitiatePaymentResponse { PaymentId = Guid.NewGuid().ToString(), Success = true, NextAction = GrpcPayment.NextActionType.Redirect });
+
+        // Act
+        await checkout.StartAsync(ChangeValidationFixesTest.EliteChange(), [], CancellationToken.None);
+
+        // Assert
+        Assert.Equal("Cambio a la licencia Élite para Conjunto Prueba", sent!.Description);
+    }
+
+    /// <summary>
     /// Si el saldo a favor paga todo, no hay pasarela: la orden se confirma por el mismo camino que un pago aprobado.
     /// </summary>
     [Fact]
