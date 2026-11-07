@@ -11,6 +11,6 @@ public class TenantProvisioningFailedHandler(IMediator mediator, ILogger<TenantP
     public async Task HandleAsync(TenantProvisioningFailedForOrderDomainEvent data, CancellationToken cancellationToken)
     {
         logger.LogWarning("Tenant provisioning failed for Order {OrderId}: {Reason}", data.OrderId, data.Reason);
-        await mediator.Send(new FailProvisioningStepCommand(data.OrderId, "TenantProvisioning", data.Reason), cancellationToken);
+        await mediator.Send(new FailProvisioningStepCommand(data.OrderId, Domain.ValueObjects.ProvisioningStep.TenantProvisioning, data.Reason), cancellationToken);
     }
 }

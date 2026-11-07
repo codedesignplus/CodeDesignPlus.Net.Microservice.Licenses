@@ -11,6 +11,6 @@ public class UserProvisionedHandler(IMediator mediator, ILogger<UserProvisionedH
     public async Task HandleAsync(UserProvisionedForOrderDomainEvent data, CancellationToken cancellationToken)
     {
         logger.LogInformation("User {UserId} provisioned for Order {OrderId}", data.AggregateId, data.OrderId);
-        await mediator.Send(new CompleteProvisioningStepCommand(data.OrderId, "UserProvisioning"), cancellationToken);
+        await mediator.Send(new CompleteProvisioningStepCommand(data.OrderId, Domain.ValueObjects.ProvisioningStep.UserProvisioning), cancellationToken);
     }
 }

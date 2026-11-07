@@ -10,7 +10,7 @@ public class CompleteProvisioningStepCommandHandler(
     ILiveChannelGrpc liveChannel
 ) : IRequestHandler<CompleteProvisioningStepCommand>
 {
-    private static readonly string[] RequiredSteps = ["TenantProvisioning", "UserProvisioning"];
+    private static readonly IReadOnlyList<string> RequiredSteps = Domain.ValueObjects.ProvisioningStep.RequiredForPurchase;
 
     public async Task Handle(CompleteProvisioningStepCommand request, CancellationToken cancellationToken)
     {

@@ -468,8 +468,8 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
             {
                 ProvisioningStatus = ProvisioningStatus.InProgress;
 
-                ProvisioningHistory.Add(new ProvisioningStep("TenantProvisioning", ProvisioningStepStatus.Pending, now));
-                ProvisioningHistory.Add(new ProvisioningStep("UserProvisioning", ProvisioningStepStatus.Pending, now));
+                ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.TenantProvisioning, ProvisioningStepStatus.Pending, now));
+                ProvisioningHistory.Add(new ProvisioningStep(ProvisioningStep.UserProvisioning, ProvisioningStepStatus.Pending, now));
             }
             else
             {
@@ -654,7 +654,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
     private void EvaluateCompletion()
     {
-        var required = new[] { "TenantProvisioning", "UserProvisioning" };
+        var required = ProvisioningStep.RequiredForPurchase;
         var completed = ProvisioningHistory
             .Where(s => s.Status == ProvisioningStepStatus.Completed)
             .Select(s => s.StepName)

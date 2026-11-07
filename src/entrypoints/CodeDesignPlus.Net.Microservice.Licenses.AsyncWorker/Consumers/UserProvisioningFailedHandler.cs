@@ -11,6 +11,6 @@ public class UserProvisioningFailedHandler(IMediator mediator, ILogger<UserProvi
     public async Task HandleAsync(UserProvisioningFailedForOrderDomainEvent data, CancellationToken cancellationToken)
     {
         logger.LogWarning("User provisioning failed for Order {OrderId}: {Reason}", data.OrderId, data.Reason);
-        await mediator.Send(new FailProvisioningStepCommand(data.OrderId, "UserProvisioning", data.Reason), cancellationToken);
+        await mediator.Send(new FailProvisioningStepCommand(data.OrderId, Domain.ValueObjects.ProvisioningStep.UserProvisioning, data.Reason), cancellationToken);
     }
 }

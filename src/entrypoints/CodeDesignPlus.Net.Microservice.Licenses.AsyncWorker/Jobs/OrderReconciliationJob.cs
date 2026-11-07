@@ -107,7 +107,7 @@ public class OrderReconciliationJob(
                     .Select(s => s.StepName)
                     .ToHashSet();
 
-                var required = new[] { "TenantProvisioning", "UserProvisioning" };
+                var required = Domain.ValueObjects.ProvisioningStep.RequiredForPurchase;
 
                 if (required.All(completedSteps.Contains))
                 {
@@ -138,7 +138,7 @@ public class OrderReconciliationJob(
                         order.Id, OrderAggregate.MaxProvisioningAttempts, missing);
 
                     order.FailProvisioningStep(
-                        "Provisioning",
+                        Domain.ValueObjects.ProvisioningStep.Provisioning,
                         $"El aprovisionamiento no pudo completarse tras {OrderAggregate.MaxProvisioningAttempts} intentos. Pasos pendientes: {missing}.",
                         order.Buyer.BuyerId);
 

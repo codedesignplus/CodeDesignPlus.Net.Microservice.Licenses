@@ -11,6 +11,6 @@ public class TenantProvisionedHandler(IMediator mediator, ILogger<TenantProvisio
     public async Task HandleAsync(TenantProvisionedForOrderDomainEvent data, CancellationToken cancellationToken)
     {
         logger.LogInformation("Tenant {TenantId} provisioned for Order {OrderId}", data.AggregateId, data.OrderId);
-        await mediator.Send(new CompleteProvisioningStepCommand(data.OrderId, "TenantProvisioning"), cancellationToken);
+        await mediator.Send(new CompleteProvisioningStepCommand(data.OrderId, Domain.ValueObjects.ProvisioningStep.TenantProvisioning), cancellationToken);
     }
 }
