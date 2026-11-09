@@ -18,6 +18,6 @@
     <EmbeddedResource Include="Seeds\*.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CodeDesignPlus.Net.Exceptions" Version="1.0.0-beta.13990" />
+    <PackageReference Include="CodeDesignPlus.Net.Exceptions" Version="1.0.0-beta.13999" />
   </ItemGroup>
 </Project>
