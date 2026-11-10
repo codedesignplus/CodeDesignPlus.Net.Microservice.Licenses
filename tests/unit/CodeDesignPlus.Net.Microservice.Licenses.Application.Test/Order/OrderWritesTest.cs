@@ -78,6 +78,26 @@ public class OrderWritesTest
             TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// The approval writes on the order with what the payer paid: the invoice translates it to the tax authority's payment
+    /// means (pendings/661).
+    /// </summary>
+    [Fact]
+    public async Task Handle_PaymentApprovedWithACard_WritesTheInstrumentAndTheCardType()
+    {
+        var order = TestOrders.Build();
+        OrderAggregate? applied = null;
+        repository.Setup(x => x.FindAsync<OrderAggregate>(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        repository.Setup(x => x.ApplyPaymentStatusAsync(It.IsAny<OrderAggregate>(), PaymentStatus.Initiated, It.IsAny<CancellationToken>()))
+            .Callback<OrderAggregate, PaymentStatus, CancellationToken>((written, _, _) => applied = written)
+            .ReturnsAsync(true);
+        ReceiptCanBeGenerated();
+
+        await PaymentHandler().Handle(new UpdateStateOrderCommand(order.Id, PaymentStatus.Succeeded, PaymentMethodType: "CARD", CardType: "CREDIT"), CancellationToken.None);
+
+        Assert.Equal(("CARD", "CREDIT"), (applied!.PaymentMethodType, applied.CardType));
+    }
+
     [Fact]
     public async Task Handle_PaymentApproved_WritesOnlyThePaymentAndTheReceipt()
     {

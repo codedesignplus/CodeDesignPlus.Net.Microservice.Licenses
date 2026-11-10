@@ -12,6 +12,8 @@ public class PaymentResponseAssociatedDomainEvent(
     Guid? tenant,
     int failureReason = 0,
     string? providerMessage = null,
+    string? paymentMethodType = null,
+    string? cardType = null,
     Guid? eventId = null,
     Instant? occurredAt = null,
     Dictionary<string, object>? metadata = null
@@ -33,4 +35,15 @@ public class PaymentResponseAssociatedDomainEvent(
     /// Lo que dijo el banco o la pasarela del resultado, tal como lo dijo; nulo si no dijo nada.
     /// </summary>
     public string? ProviderMessage { get; } = providerMessage;
+
+    /// <summary>
+    /// Con qué pagó el comprador, como lo nombra la pasarela (<c>CARD</c>, <c>PSE</c>…); nulo si ms-payments no lo publicó
+    /// (pendings/661).
+    /// </summary>
+    public string? PaymentMethodType { get; } = paymentMethodType;
+
+    /// <summary>
+    /// Si la tarjeta fue de crédito o de débito, como lo dijo la pasarela; nulo si no lo dijo (pendings/661).
+    /// </summary>
+    public string? CardType { get; } = cardType;
 }

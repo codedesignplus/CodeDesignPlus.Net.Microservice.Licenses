@@ -32,6 +32,13 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application
             services.AddOptions<PlatformNoticeOptions>()
                 .Bind(configuration.GetSection(PlatformNoticeOptions.Section));
 
+            // Cómo se factura lo que se paga a la plataforma (pendings/661). Apagada si falta la sección: solo el worker la
+            // activa, y la valida al arrancar.
+            services.AddOptions<PlatformInvoicingOptions>()
+                .Bind(configuration.GetSection(PlatformInvoicingOptions.Section))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
             services.AddScoped<Order.Services.ISubscriptionCheckout, Order.Services.SubscriptionCheckout>();
             services.AddScoped<Order.Services.ISubscriptionSettlement, Order.Services.SubscriptionSettlement>();
         }

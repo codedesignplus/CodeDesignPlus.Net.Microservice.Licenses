@@ -134,6 +134,8 @@
     "259": "The package needs its description and its short description.",
     "260": "The package line of the order is invalid: it needs its package, its attributes and its amounts in the currency of the order.",
     "261": "A package order carries exactly one package line.",
-    "262": "The same package appears twice in the order."
+    "262": "The same package appears twice in the order.",
+    "263": "The electronic document of the order needs its id.",
+    "264": "Only a paid order is invoiced."
   }
 }

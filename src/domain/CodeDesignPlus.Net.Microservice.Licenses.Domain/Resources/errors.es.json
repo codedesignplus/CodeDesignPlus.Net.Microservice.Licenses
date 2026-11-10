@@ -134,6 +134,8 @@
     "259": "El paquete necesita su descripción y su descripción corta.",
     "260": "La línea del paquete en la orden no es válida: necesita su paquete, sus atributos y sus importes en la moneda de la orden.",
     "261": "Una orden de paquete lleva exactamente una línea de paquete.",
-    "262": "El mismo paquete aparece dos veces en la orden."
+    "262": "El mismo paquete aparece dos veces en la orden.",
+    "263": "El documento electrónico de la orden necesita su identificador.",
+    "264": "Solo se factura una orden pagada."
   }
 }

@@ -93,9 +93,23 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
             Builders<OrderAggregate>.Filter.Eq(x => x.PaymentStatus, previousStatus)
         );
 
+        var update = PaymentStatusUpdate(order);
+
+        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <summary>
+    /// What the result of the payment writes on the order: only its own fields, never the whole document.
+    /// </summary>
+    /// <param name="order">The order with the payment applied.</param>
+    /// <returns>The update.</returns>
+    public static UpdateDefinition<OrderAggregate> PaymentStatusUpdate(OrderAggregate order)
+    {
         // El historial se escribe entero porque aqui nace: los pasos pendientes se crean al aplicar el pago y
         // nadie mas escribe en el hasta que se publica el evento, que va despues de esta llamada.
-        var update = Builders<OrderAggregate>.Update
+        return Builders<OrderAggregate>.Update
             .Set(x => x.PaymentStatus, order.PaymentStatus)
             .Set(x => x.IsSuccess, order.IsSuccess)
             .Set(x => x.ProvisioningStatus, order.ProvisioningStatus)
@@ -105,11 +119,78 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
             .Set(x => x.Packages, order.Packages)
             .Set(x => x.FailureReason, order.FailureReason)
             .Set(x => x.Error, order.Error)
+            .Set(x => x.PaymentMethodType, order.PaymentMethodType)
+            .Set(x => x.CardType, order.CardType)
             .Set(x => x.UpdatedAt, order.UpdatedAt);
+    }
 
-        var result = await collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+    /// <inheritdoc/>
+    public async Task<bool> RequestElectronicDocumentsAsync(OrderAggregate order, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        var update = Builders<OrderAggregate>.Update
+            .Set(x => x.Invoice, order.Invoice)
+            .Set(x => x.CreditNotes, order.CreditNotes);
+
+        var result = await GetCollection<OrderAggregate>().UpdateOneAsync(RequestElectronicDocumentsFilter(order.Id), update, cancellationToken: cancellationToken);
 
         return result.ModifiedCount == 1;
+    }
+
+    /// <summary>
+    /// Which order takes the requested documents: the one with that id that has no invoice yet. A redelivery cannot turn a
+    /// validated invoice back into a requested one (pendings/661).
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <returns>The filter.</returns>
+    public static FilterDefinition<OrderAggregate> RequestElectronicDocumentsFilter(Guid orderId) => Builders<OrderAggregate>.Filter.And(
+        Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId),
+        Builders<OrderAggregate>.Filter.Eq(x => x.Invoice, null));
+
+    /// <inheritdoc/>
+    public async Task<bool> RecordElectronicDocumentAsync(Guid orderId, OrderElectronicDocument document, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var (filter, update) = RecordElectronicDocumentWrite(orderId, document);
+        var result = await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        // Lo que el filtro encontró, no lo que cambió: la reentrega de un rechazo vuelve a avisar con el mismo id.
+        return result.MatchedCount == 1;
+    }
+
+    /// <summary>
+    /// How the answer of ms-electronicinvoicing is written on the order (pendings/661): the invoice, or the credit note in
+    /// its place of the array, only while that document is of the order and is not validated. A late rejection does not
+    /// undo a validation, and the other notes of the order may be changing at the same time.
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="document">The document as it stands now.</param>
+    /// <returns>The filter and the update.</returns>
+    public static (FilterDefinition<OrderAggregate> Filter, UpdateDefinition<OrderAggregate> Update) RecordElectronicDocumentWrite(Guid orderId, OrderElectronicDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var builder = Builders<OrderAggregate>.Filter;
+
+        if (document.CorrectedOrderId is null)
+        {
+            var invoiceFilter = builder.And(
+                builder.Eq(x => x.Id, orderId),
+                builder.Eq(x => x.Invoice!.DocumentId, document.DocumentId),
+                builder.Ne(x => x.Invoice!.State, ElectronicDocumentState.Validated));
+
+            return (invoiceFilter, Builders<OrderAggregate>.Update.Set(x => x.Invoice, document));
+        }
+
+        var noteFilter = builder.And(
+            builder.Eq(x => x.Id, orderId),
+            builder.ElemMatch(x => x.CreditNotes, Builders<OrderElectronicDocument>.Filter.And(
+                Builders<OrderElectronicDocument>.Filter.Eq(x => x.DocumentId, document.DocumentId),
+                Builders<OrderElectronicDocument>.Filter.Ne(x => x.State, ElectronicDocumentState.Validated))));
+
+        return (noteFilter, Builders<OrderAggregate>.Update.Set($"{nameof(OrderAggregate.CreditNotes)}.$", document));
     }
 
     /// <inheritdoc/>

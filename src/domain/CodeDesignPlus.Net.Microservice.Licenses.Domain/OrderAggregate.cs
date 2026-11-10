@@ -166,6 +166,35 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public List<PackageLine>? Packages { get; private set; }
 
     /// <summary>
+    /// Con qué pagó el comprador en la pasarela, como ella lo nombra (<c>CARD</c>, <c>PSE</c>, <c>NEQUI</c>…); nulo mientras
+    /// no se apruebe el pago o si la pasarela no lo dijo. La factura lo traduce al medio de pago de la DIAN (pendings/661).
+    /// </summary>
+    public string? PaymentMethodType { get; private set; }
+
+    /// <summary>
+    /// Si la tarjeta fue de crédito o de débito, como lo dijo la pasarela (<c>CREDIT</c>, <c>DEBIT</c>); nulo si no lo dijo o
+    /// si no fue tarjeta. Nunca se adivina (pendings/661).
+    /// </summary>
+    public string? CardType { get; private set; }
+
+    /// <summary>
+    /// La factura electrónica de lo que pagó la orden, emitida por ExcellenceForge en ms-electronicinvoicing; nula mientras
+    /// no se haya pedido (pendings/661).
+    /// </summary>
+    public OrderElectronicDocument? Invoice { get; private set; }
+
+    /// <summary>
+    /// En un cambio de licencia o una ampliación de paquete, las notas crédito sobre las facturas de las órdenes cuyo periodo
+    /// no prestado se acredita, una por orden (pendings/661, 738, 739). Nula si la orden no acredita nada o aún no se pidieron.
+    /// </summary>
+    public List<OrderElectronicDocument>? CreditNotes { get; private set; }
+
+    /// <summary>
+    /// Cuándo se aprobó el pago: el paso del pago completado en el historial. Nulo si no se ha pagado.
+    /// </summary>
+    public Instant? PaidAt => ProvisioningHistory.LastOrDefault(x => x.StepName == ProvisioningStep.Payment && x.Status == ProvisioningStepStatus.Completed)?.Timestamp;
+
+    /// <summary>
     /// La base de la orden: la de la licencia más la de sus paquetes.
     /// </summary>
     public Money SubTotal => (Packages ?? []).Aggregate(License.SubTotal, (sum, x) => sum + x.SubTotal);
@@ -438,7 +467,9 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// En una orden de paquete con licencia anual, el fin del periodo de la licencia en curso: ahí vence el paquete
     /// (pendings/739). Se ignora en las demás.
     /// </param>
-    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId, Instant? periodStart = null, PaymentFailureReason? failureReason = null, string? providerMessage = null, Instant? licensePeriodEnd = null)
+    /// <param name="paymentMethodType">Con qué pagó el comprador, como lo nombra la pasarela; se guarda solo si se aprobó.</param>
+    /// <param name="cardType">Si la tarjeta fue de crédito o de débito, como lo dijo la pasarela; se guarda solo si se aprobó.</param>
+    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId, Instant? periodStart = null, PaymentFailureReason? failureReason = null, string? providerMessage = null, Instant? licensePeriodEnd = null, string? paymentMethodType = null, string? cardType = null)
     {
         // Idempotent: if already at this status, skip (message redelivery)
         if (PaymentStatus == paymentStatus)
@@ -449,6 +480,8 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         if (paymentStatus == PaymentStatus.Succeeded)
         {
             IsSuccess = true;
+            PaymentMethodType = string.IsNullOrWhiteSpace(paymentMethodType) ? null : paymentMethodType.Trim();
+            CardType = string.IsNullOrWhiteSpace(cardType) ? null : cardType.Trim();
 
             var now = SystemClock.Instance.GetCurrentInstant();
 
@@ -585,6 +618,28 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// </summary>
     /// <returns>Los paquetes con su periodo; vacío si la orden no tiene.</returns>
     public List<PackageTenant> ToPackageTenants() => [.. (Packages ?? []).Select(PackageTenant.Of)];
+
+    /// <summary>
+    /// Deja pedidas la factura de la orden y, en un cambio o una ampliación, sus notas crédito (pendings/661). Se escribe
+    /// antes de llamar a ms-electronicinvoicing, para que su respuesta encuentre la orden.
+    /// </summary>
+    /// <param name="invoice">La factura, pedida.</param>
+    /// <param name="creditNotes">Las notas crédito, pedidas o para revisión; vacía si la orden no acredita nada.</param>
+    public void RequestElectronicDocuments(OrderElectronicDocument invoice, List<OrderElectronicDocument> creditNotes)
+    {
+        DomainGuard.IsNull(invoice, Errors.ElectronicDocumentIdIsRequired);
+        DomainGuard.IsTrue(PaymentStatus != PaymentStatus.Succeeded, Errors.OnlyAPaidOrderIsInvoiced);
+
+        Invoice = invoice;
+        CreditNotes = creditNotes is { Count: > 0 } ? [.. creditNotes] : null;
+    }
+
+    /// <summary>
+    /// El documento electrónico de esta orden con ese id: la factura o una de sus notas crédito.
+    /// </summary>
+    /// <param name="documentId">El id del documento en ms-electronicinvoicing.</param>
+    /// <returns>El documento, o nulo si no es de esta orden.</returns>
+    public OrderElectronicDocument? ElectronicDocumentOf(Guid documentId) => Invoice?.DocumentId == documentId ? Invoice : CreditNotes?.Find(x => x.DocumentId == documentId);
 
     public void CompleteProvisioningStep(string stepName, Guid updatedBy)
     {

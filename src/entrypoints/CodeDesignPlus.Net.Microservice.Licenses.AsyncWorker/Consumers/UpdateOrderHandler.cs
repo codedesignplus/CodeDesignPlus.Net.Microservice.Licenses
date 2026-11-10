@@ -28,6 +28,6 @@ public class UpdateOrderHandler(ILogger<UpdateOrderHandler> logger, IMediator me
             return;
         }
 
-        await mediator.Send(new UpdateStateOrderCommand(data.ReferenceId, (PaymentStatus)data.Status, (PaymentFailureReason)data.FailureReason, data.ProviderMessage), cancellationToken);
+        await mediator.Send(new UpdateStateOrderCommand(data.ReferenceId, (PaymentStatus)data.Status, (PaymentFailureReason)data.FailureReason, data.ProviderMessage, data.PaymentMethodType, data.CardType), cancellationToken);
     }
 }

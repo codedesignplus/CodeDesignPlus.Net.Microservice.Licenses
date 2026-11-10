@@ -134,6 +134,8 @@
     "259": "O pacote precisa da sua descrição e da sua descrição curta.",
     "260": "A linha do pacote no pedido não é válida: precisa do seu pacote, dos seus atributos e dos seus valores na moeda do pedido.",
     "261": "Um pedido de pacote leva exatamente uma linha de pacote.",
-    "262": "O mesmo pacote aparece duas vezes no pedido."
+    "262": "O mesmo pacote aparece duas vezes no pedido.",
+    "263": "O documento eletrônico do pedido precisa do seu identificador.",
+    "264": "Somente um pedido pago é faturado."
   }
 }

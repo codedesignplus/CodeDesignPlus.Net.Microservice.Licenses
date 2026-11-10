@@ -51,6 +51,20 @@ public interface IOrderRepository : IRepositoryBase
     Task<bool> ApplyPaymentStatusAsync(OrderAggregate order, PaymentStatus previousStatus, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Guarda la factura pedida de la orden y sus notas crédito, solo si la orden todavía no tiene factura (pendings/661).
+    /// </summary>
+    /// <returns><c>true</c> si esta llamada las guardó; <c>false</c> si otra entrega ya lo había hecho.</returns>
+    Task<bool> RequestElectronicDocumentsAsync(OrderAggregate order, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Guarda lo que ms-electronicinvoicing dijo de un documento de la orden (la factura o una de sus notas), solo si ese
+    /// documento sigue siendo de la orden y no está ya validado: un rechazo tardío no deshace una validación (pendings/661).
+    /// </summary>
+    /// <returns><c>true</c> si el documento es de la orden y no estaba validado; una reentrega del mismo rechazo también
+    /// devuelve <c>true</c>, para que el aviso que no alcanzó a salir se mande con el mismo id.</returns>
+    Task<bool> RecordElectronicDocumentAsync(Guid orderId, OrderElectronicDocument document, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Asocia el recibo a la orden sin tocar el resto del documento.
     /// </summary>
     Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Guid updatedBy, CancellationToken cancellationToken);

@@ -149,4 +149,6 @@ public class Errors : IErrorCodes
     public static readonly Error PackageLineIsInvalid = new("260");
     public static readonly Error PackageOrderRequiresOneLine = new("261");
     public static readonly Error PackageIsRepeatedInOrder = new("262");
+    public static readonly Error ElectronicDocumentIdIsRequired = new("263");
+    public static readonly Error OnlyAPaidOrderIsInvoiced = new("264");
 }

@@ -41,7 +41,7 @@ public class UpdateStateOrderCommandHandler(
             return;
         }
 
-        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage, await LicensePeriodEndAsync(order, request.PaymentStatus, cancellationToken));
+        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage, await LicensePeriodEndAsync(order, request.PaymentStatus, cancellationToken), request.PaymentMethodType, request.CardType);
 
         // Escritura condicional: si el webhook y la conciliacion aplican el mismo pago a la vez, solo uno gana, y
         // solo ese publica el aprovisionamiento. Nunca UpdateAsync: el documento entero pisaria los pasos que
