@@ -25,6 +25,12 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 /// <c>payable = gross - discount + tax - prepayments</c>, the formula ms-electronicinvoicing checks.
 /// </para>
 /// <para>
+/// The platform sells in cash (<see cref="PlatformInvoicingOptions.PaymentFormCode"/>), so no document carries a due date:
+/// a cash sale is due on its issue date, which ms-electronicinvoicing puts when the provider receives it, after its retries
+/// and maybe after midnight. Dating it here on the payment issued SETP991148967 on the 10th due on the 9th. A sale on
+/// credit would have to send its due date: ms-electronicinvoicing refuses one without it.
+/// </para>
+/// <para>
 /// Everything is computed from the order, so asking again builds the same content and ms-electronicinvoicing answers with
 /// the same document instead of issuing a second one.
 /// </para>
@@ -196,8 +202,8 @@ public static class PlatformInvoice
         var content = new EI.DocumentContent
         {
             Buyer = BuyerOf(order.TenantDetail, options),
-            PaymentMeans = new EI.PaymentMeans { FormCode = options.PaymentFormCode, MethodCode = PaymentMeansCodeOf(order, options) },
-            DueDate = DateOf(paidOn)
+            // Without a due date: a cash sale is due on the day it is issued, and only ms-electronicinvoicing knows that day.
+            PaymentMeans = new EI.PaymentMeans { FormCode = options.PaymentFormCode, MethodCode = PaymentMeansCodeOf(order, options) }
         };
 
         foreach (var line in billing.Lines)
@@ -243,14 +249,12 @@ public static class PlatformInvoice
         ArgumentNullException.ThrowIfNull(correctedInvoice);
 
         var zone = ZoneOf(order.TenantDetail);
-        var paidOn = (order.PaidAt ?? order.UpdatedAt ?? order.CreatedAt).InZone(zone).Date;
         var periods = CreditedPeriodsOf(order, corrected.Id);
 
         var content = new EI.DocumentContent
         {
             Buyer = BuyerOf(order.TenantDetail, options),
             PaymentMeans = new EI.PaymentMeans { FormCode = options.PaymentFormCode, MethodCode = PaymentMeansCodeOf(corrected, options) },
-            DueDate = DateOf(paidOn),
             BillingReference = new EI.BillingReference { DocumentId = correctedInvoice.DocumentId.ToString() },
             CorrectionConceptCode = options.CreditNoteCorrectionConceptCode
         };

@@ -104,6 +104,33 @@ public class PlatformInvoiceTest
     /// The id and the reference come from the order: a retry asks for the same document, and the events find the order.
     /// </summary>
     [Fact]
+    public void Invoice_PaidInCash_CarriesNoDueDate()
+    {
+        // Arrange: paid at 10:00 in Bogota; the provider may issue it the next day.
+        var order = PaidPurchase();
+
+        // Act
+        var request = PlatformInvoice.Invoice(order, new Dictionary<Guid, OrderAggregate>(), Options(), null);
+
+        // Assert
+        Assert.Equal(("1", string.Empty), (request.Content.PaymentMeans.FormCode, request.Content.DueDate));
+    }
+
+    [Fact]
+    public void CreditNote_PaidInCash_CarriesNoDueDate()
+    {
+        // Arrange
+        var previous = PaidPurchase();
+        var change = PaidChange(previous);
+
+        // Act
+        var request = PlatformInvoice.CreditNote(change, previous, ValidatedInvoiceOf(previous), Options());
+
+        // Assert
+        Assert.Equal(string.Empty, request.Content.DueDate);
+    }
+
+    [Fact]
     public void Invoice_SameOrderTwice_HasTheSameIdAndReference()
     {
         // Arrange
