@@ -15,6 +15,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 /// <param name="Amount">La base que se acredita: la base por los días no prestados, redondeada a favor del cliente.</param>
 public sealed record CreditedPeriod(Guid OrderId, Instant From, Instant To, int UnusedDays, int PeriodDays, Money Base, Money Amount)
 {
+    // Llevan [JsonProperty] porque viajan en los eventos del cambio y del paquete, y el bus los lee con Newtonsoft, que sin él
+    // no llena un setter privado: la nota crédito salía sin IVA (pendings/661).
     // Los miembros que siguen no van al constructor (regla 31): las órdenes de cambio guardadas antes acreditaban solo la
     // base y no los traen; leen nulo y cero, y su total es la base que se cobró entonces.
 
@@ -22,17 +24,20 @@ public sealed record CreditedPeriod(Guid OrderId, Instant From, Instant To, int 
     /// El IVA que se acredita: el de la factura de esa orden, en proporción a la base acreditada y con su tarifa. Nulo en
     /// los cambios guardados antes de acreditarlo.
     /// </summary>
+    [Newtonsoft.Json.JsonProperty]
     public Money? Tax { get; private set; }
 
     /// <summary>
     /// La tarifa del impuesto de la factura acreditada, en puntos básicos (1900 = 19 %); cero si no fue gravada.
     /// </summary>
+    [Newtonsoft.Json.JsonProperty]
     public int TaxBasisPoints { get; private set; }
 
     /// <summary>
     /// La línea de paquete que se acredita; nula si es la licencia (pendings/739). Nula también en los cambios guardados
     /// antes de existir los paquetes, que solo acreditaban la licencia.
     /// </summary>
+    [Newtonsoft.Json.JsonProperty]
     public Guid? LineId { get; private set; }
 
     /// <summary>

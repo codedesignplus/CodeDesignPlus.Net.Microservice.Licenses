@@ -44,7 +44,11 @@ public sealed record LicenseTenant
     /// </summary>
     public IReadOnlyDictionary<string, string> Metadata { get; init; }
 
+    // Dos atributos a propósito: el bus del SDK lee los eventos con Newtonsoft, que no ve el de System.Text.Json, y sin el
+    // suyo no encuentra este constructor privado: el evento de una orden pagada iba al descartado (pendings/661). El de
+    // System.Text.Json se queda para quien lo lea con ese serializador.
     [JsonConstructor]
+    [Newtonsoft.Json.JsonConstructor]
     private LicenseTenant(Guid id, string name, Instant startDate, Instant endDate, List<LicenseModule> modules, Dictionary<string, string> metadata)
     {
         var normalizedName = name?.Trim() ?? string.Empty;

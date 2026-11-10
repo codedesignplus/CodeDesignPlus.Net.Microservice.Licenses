@@ -69,7 +69,7 @@ public class PlatformInvoiceTest
     /// A paid change to «Élite» that credits 29 of the 30 days of <paramref name="corrected"/>, with its VAT, plus some
     /// balance in favour.
     /// </summary>
-    internal static OrderAggregate PaidChange(OrderAggregate corrected, long balance = 0)
+    internal static OrderAggregate PaidChange(OrderAggregate corrected, long balance = 0, bool publish = false)
     {
         var license = TaxedLicense("Élite");
         var credited = new List<CreditedPeriod> { CreditedPeriod.Create(corrected.Id, PaidAt, PaidAt.Plus(Duration.FromDays(29)), 29, 30, Money.FromLong(12_000_000L, "COP"), Money.FromLong(11_600_000L, "COP"), Money.FromLong(2_204_000L, "COP"), 1900) };
@@ -77,7 +77,11 @@ public class PlatformInvoiceTest
         var order = OrderAggregate.CreateChange(Guid.NewGuid(), Guid.NewGuid(), license, SubscriptionFixtures.Buyer(), TenantWithNit(), corrected.License.Id, credited, charge, TestOrders.BuyerId);
 
         order.SetPaymentStatus(PaymentStatus.Succeeded, TestOrders.BuyerId, paymentMethodType: "PSE");
-        order.GetAndClearEvents();
+
+        if (!publish)
+        {
+            order.GetAndClearEvents();
+        }
 
         return order;
     }

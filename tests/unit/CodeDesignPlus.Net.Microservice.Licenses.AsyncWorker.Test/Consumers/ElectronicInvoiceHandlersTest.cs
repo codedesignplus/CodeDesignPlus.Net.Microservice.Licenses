@@ -150,6 +150,39 @@ public class ElectronicInvoiceHandlersTest
     }
 
     /// <summary>
+    /// The twins of the events of ms-electronicinvoicing go through the bus and read back whole, with the serializer the bus
+    /// uses (Newtonsoft through <c>CodeDesignPlus.Net.Serializers</c>).
+    /// </summary>
+    [Fact]
+    public void ElectronicDocumentValidated_ThroughTheBus_ReadsBackWhole()
+    {
+        // Arrange
+        var pdf = StoredFile.Create(Guid.NewGuid(), "electronic-invoicing", "SETP990000001", ".pdf", "application/pdf", 1024);
+        var @event = new ElectronicDocumentValidatedDomainEvent(Guid.NewGuid(), Guid.NewGuid(), "license-order:x", "SETP", 990000001L, "cufe-1", new LocalDate(2026, 11, 10), Instant.FromUtc(2026, 11, 10, 15, 0), null, pdf);
+        var written = JsonSerializer.Serialize(@event);
+
+        // Act
+        var rewritten = JsonSerializer.Serialize(JsonSerializer.Deserialize<ElectronicDocumentValidatedDomainEvent>(written));
+
+        // Assert
+        Assert.Equal(written, rewritten);
+    }
+
+    [Fact]
+    public void ElectronicDocumentRejected_ThroughTheBus_ReadsBackWhole()
+    {
+        // Arrange
+        var @event = new ElectronicDocumentRejectedDomainEvent(Guid.NewGuid(), Guid.NewGuid(), "license-order:x", "SETP", 990000002L, new ElectronicDocumentRejection(ElectronicDocumentRejection.TaxAuthority, ["FAK24"], Instant.FromUtc(2026, 11, 10, 15, 0)));
+        var written = JsonSerializer.Serialize(@event);
+
+        // Act
+        var rewritten = JsonSerializer.Serialize(JsonSerializer.Deserialize<ElectronicDocumentRejectedDomainEvent>(written));
+
+        // Assert
+        Assert.Equal(written, rewritten);
+    }
+
+    /// <summary>
     /// The appsettings of the worker carry the codes the accountant decided, and they validate.
     /// </summary>
     [Fact]
