@@ -65,9 +65,38 @@ public class ElectronicDocumentValidatedHandler(IMediator mediator) : IEventHand
 {
     /// <inheritdoc/>
     public Task HandleAsync(ElectronicDocumentValidatedDomainEvent data, CancellationToken token) =>
-        mediator.Send(new RecordElectronicDocumentValidatedCommand(data.AggregateId, data.Reference, data.Prefix, data.Consecutive, data.Cufe, data.IssueDate, data.ValidatedAt, AttachmentOf(data.Xml), AttachmentOf(data.Pdf)), token);
+        mediator.Send(new RecordElectronicDocumentValidatedCommand(data.AggregateId, data.Reference, data.Prefix, data.Consecutive, data.Cufe, data.IssueDate, data.ValidatedAt, Attachments.Of(data.Xml), Attachments.Of(data.Pdf), Attachments.Of(data.AttachedDocument)), token);
+}
 
-    private static FileAttachment? AttachmentOf(StoredFile? file) => file is null || file.Id == Guid.Empty || string.IsNullOrWhiteSpace(file.Name) || string.IsNullOrWhiteSpace(file.Target)
+/// <summary>
+/// ms-electronicinvoicing kept the files of a document after validating it: if it is of an order, the order keeps them and
+/// the email of the purchase that waited for them goes (pendings/661, step 4).
+/// </summary>
+/// <param name="mediator">The mediator.</param>
+[QueueName<OrderAggregate>("ElectronicDocumentFilesKeptHandler")]
+public class ElectronicDocumentFilesKeptHandler(IMediator mediator) : IEventHandler<ElectronicDocumentFilesKeptDomainEvent>
+{
+    /// <inheritdoc/>
+    public Task HandleAsync(ElectronicDocumentFilesKeptDomainEvent data, CancellationToken token)
+    {
+        var xml = Attachments.Of(data.Xml);
+
+        // Without the XML there is nothing to keep: ms-electronicinvoicing only announces it with the XML.
+        return xml is null ? Task.CompletedTask : mediator.Send(new RecordElectronicDocumentFilesCommand(data.AggregateId, data.Reference, xml, Attachments.Of(data.AttachedDocument), Attachments.Of(data.Pdf), data.OccurredAt), token);
+    }
+}
+
+/// <summary>
+/// The files of ms-electronicinvoicing as the order keeps them.
+/// </summary>
+internal static class Attachments
+{
+    /// <summary>
+    /// The reference of a stored file, or null when it is not complete.
+    /// </summary>
+    /// <param name="file">The file as the event brings it.</param>
+    /// <returns>The reference.</returns>
+    public static FileAttachment? Of(StoredFile? file) => file is null || file.Id == Guid.Empty || string.IsNullOrWhiteSpace(file.Name) || string.IsNullOrWhiteSpace(file.Target)
         ? null
         : new FileAttachment(file.Id, file.Name, file.Target);
 }

@@ -190,6 +190,25 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     public List<OrderElectronicDocument>? CreditNotes { get; private set; }
 
     /// <summary>
+    /// Hasta cuándo espera el correo de la compra a la factura electrónica (pendings/661, paso 4). Nulo si no espera: la
+    /// orden no se factura y el correo salió al aprobarse el pago, o se pagó antes de existir esta espera. Si la factura
+    /// no se valida a tiempo, el correo sale solo con el comprobante y la factura llega después en otro correo.
+    /// </summary>
+    public Instant? ReceiptEmailWaitsUntil { get; private set; }
+
+    /// <summary>
+    /// Cuándo salió el correo de la compra con el comprobante (con la factura o sin ella). Se marca antes de publicarlo,
+    /// con una escritura condicional, para que nunca salgan dos.
+    /// </summary>
+    public Instant? ReceiptEmailSentAt { get; private set; }
+
+    /// <summary>
+    /// Cuándo salió la factura electrónica al comprador: en el mismo correo del comprobante o en uno aparte. Se marca antes
+    /// de publicarlo, con una escritura condicional, para que nunca salgan dos.
+    /// </summary>
+    public Instant? InvoiceEmailSentAt { get; private set; }
+
+    /// <summary>
     /// Cuándo se aprobó el pago: el paso del pago completado en el historial. Nulo si no se ha pagado.
     /// </summary>
     public Instant? PaidAt => ProvisioningHistory.LastOrDefault(x => x.StepName == ProvisioningStep.Payment && x.Status == ProvisioningStepStatus.Completed)?.Timestamp;
@@ -696,6 +715,33 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
         UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         UpdatedBy = updatedBy;
     }
+
+    /// <summary>
+    /// El correo de la compra espera a la factura electrónica hasta ese instante (pendings/661, paso 4).
+    /// </summary>
+    /// <param name="until">Hasta cuándo espera.</param>
+    public void WaitForInvoiceBeforeEmail(Instant until) => ReceiptEmailWaitsUntil = until;
+
+    /// <summary>
+    /// Anota que salió el correo del comprobante y, si la llevaba, la factura.
+    /// </summary>
+    /// <param name="sentAt">Cuándo.</param>
+    /// <param name="withInvoice">Si el correo llevaba la factura electrónica.</param>
+    public void MarkReceiptEmailSent(Instant sentAt, bool withInvoice)
+    {
+        ReceiptEmailSentAt = sentAt;
+
+        if (withInvoice)
+        {
+            InvoiceEmailSentAt = sentAt;
+        }
+    }
+
+    /// <summary>
+    /// Anota que salió el correo aparte con la factura electrónica.
+    /// </summary>
+    /// <param name="sentAt">Cuándo.</param>
+    public void MarkInvoiceEmailSent(Instant sentAt) => InvoiceEmailSentAt = sentAt;
 
     public void SetProvisioningCompleted()
     {

@@ -71,6 +71,55 @@ public class ElectronicDocumentValidatedDomainEvent(
     /// The graphic representation in ms-filestorage, when it could be stored.
     /// </summary>
     public StoredFile? Pdf { get; } = pdf;
+
+    /// <summary>
+    /// The attached document the tax authority answered with, when it could be stored; absent in the events of a version
+    /// of ms-electronicinvoicing that did not publish it.
+    /// </summary>
+    public StoredFile? AttachedDocument { get; init; }
+}
+
+/// <summary>
+/// ms-electronicinvoicing: the files of a document validated without them were kept afterwards (pendings/661, step 4). Only
+/// what this service reads.
+/// </summary>
+[EventKey("ElectronicDocumentAggregate", 1, "ElectronicDocumentFilesKeptDomainEvent", "ms-electronicinvoicing")]
+public class ElectronicDocumentFilesKeptDomainEvent(
+    Guid aggregateId,
+    Guid tenant,
+    string reference,
+    StoredFile xml,
+    StoredFile? attachedDocument,
+    StoredFile? pdf,
+    Guid? eventId = null,
+    Instant? occurredAt = null,
+    Dictionary<string, object>? metadata = null
+) : DomainEvent(aggregateId, eventId, occurredAt, metadata)
+{
+    /// <summary>
+    /// The tenant of the issuer; for the platform's documents, its reserved id.
+    /// </summary>
+    public Guid Tenant { get; } = tenant;
+
+    /// <summary>
+    /// The reference the document was asked with.
+    /// </summary>
+    public string Reference { get; } = reference;
+
+    /// <summary>
+    /// The signed XML in ms-filestorage.
+    /// </summary>
+    public StoredFile Xml { get; } = xml;
+
+    /// <summary>
+    /// The attached document in ms-filestorage, when it could be kept.
+    /// </summary>
+    public StoredFile? AttachedDocument { get; } = attachedDocument;
+
+    /// <summary>
+    /// The graphic representation in ms-filestorage, when it could be kept.
+    /// </summary>
+    public StoredFile? Pdf { get; } = pdf;
 }
 
 /// <summary>

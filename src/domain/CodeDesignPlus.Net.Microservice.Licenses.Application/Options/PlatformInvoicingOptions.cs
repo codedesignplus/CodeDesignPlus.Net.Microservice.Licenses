@@ -110,6 +110,18 @@ public class PlatformInvoicingOptions : IValidatableObject
     /// </summary>
     public string CreditNoteCorrectionConceptCode { get; set; } = string.Empty;
 
+    /// <summary>
+    /// How long the email of a paid order waits for its electronic invoice (pendings/661, step 4). After it, the email goes
+    /// with the receipt alone and the invoice follows in its own email when it is validated.
+    /// </summary>
+    public TimeSpan EmailWaitForInvoice { get; set; } = TimeSpan.FromMinutes(30);
+
+    /// <summary>
+    /// The container of ms-filestorage where the platform's files live (its <c>FileScope:PlatformContainer</c>): the
+    /// documents of the platform's issuer are read from there to attach them to the email.
+    /// </summary>
+    public Guid FilesContainer { get; set; }
+
     /// <inheritdoc/>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -141,6 +153,16 @@ public class PlatformInvoicingOptions : IValidatableObject
         if (BuyerTaxResponsibilities is not { Count: > 0 })
         {
             yield return new ValidationResult($"'{Section}:{nameof(BuyerTaxResponsibilities)}' needs at least one responsibility.", [nameof(BuyerTaxResponsibilities)]);
+        }
+
+        if (EmailWaitForInvoice <= TimeSpan.Zero)
+        {
+            yield return new ValidationResult($"'{Section}:{nameof(EmailWaitForInvoice)}' must be greater than zero.", [nameof(EmailWaitForInvoice)]);
+        }
+
+        if (FilesContainer == Guid.Empty)
+        {
+            yield return new ValidationResult($"'{Section}:{nameof(FilesContainer)}' is required: the files of the invoices are read from it.", [nameof(FilesContainer)]);
         }
 
         if (IdentificationTypeCodes is not { Count: > 0 })

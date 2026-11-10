@@ -65,9 +65,45 @@ public interface IOrderRepository : IRepositoryBase
     Task<bool> RecordElectronicDocumentAsync(Guid orderId, OrderElectronicDocument document, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Asocia el recibo a la orden sin tocar el resto del documento.
+    /// Asocia el recibo a la orden sin tocar el resto del documento y, si el correo de la compra espera a la factura
+    /// electrónica, hasta cuándo (pendings/661, paso 4).
     /// </summary>
-    Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Guid updatedBy, CancellationToken cancellationToken);
+    Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Instant? emailWaitsUntil, Guid updatedBy, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reserva el envío del correo del comprobante: solo si aún no salió y, si lleva la factura, si la factura tampoco.
+    /// Escritura condicional: de dos que lo intentan a la vez (el consumidor de la factura y el job), envía uno.
+    /// </summary>
+    /// <returns><c>true</c> si este proceso lo envía.</returns>
+    Task<bool> ClaimReceiptEmailAsync(Guid orderId, bool withInvoice, Instant sentAt, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Reserva el envío del correo aparte con la factura: solo si el del comprobante ya salió y la factura no.
+    /// </summary>
+    /// <returns><c>true</c> si este proceso lo envía.</returns>
+    Task<bool> ClaimInvoiceEmailAsync(Guid orderId, Instant sentAt, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Devuelve la reserva de un correo que no se pudo publicar, para que el siguiente intento lo envíe. Solo la que hizo
+    /// este proceso (la del mismo instante).
+    /// </summary>
+    Task ReleaseReceiptEmailAsync(Guid orderId, bool withInvoice, Instant sentAt, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Devuelve la reserva del correo aparte con la factura que no se pudo publicar.
+    /// </summary>
+    Task ReleaseInvoiceEmailAsync(Guid orderId, Instant sentAt, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Las órdenes cuyo correo esperaba a la factura y ya no espera más: venció la espera y no ha salido.
+    /// </summary>
+    Task<List<OrderAggregate>> FindReceiptEmailsOverdueAsync(Instant now, int limit, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Guarda en un documento ya validado los archivos que ms-electronicinvoicing consiguió después de validarlo.
+    /// </summary>
+    /// <returns><c>true</c> si el documento era de la orden y estaba validado.</returns>
+    Task<bool> RecordElectronicDocumentFilesAsync(Guid orderId, OrderElectronicDocument document, CancellationToken cancellationToken);
 
     /// <summary>
     /// Pasa la orden de <c>InProgress</c> a <c>Completed</c>.

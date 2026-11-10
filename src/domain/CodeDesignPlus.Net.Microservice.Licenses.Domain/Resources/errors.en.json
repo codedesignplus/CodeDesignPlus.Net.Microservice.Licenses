@@ -136,6 +136,7 @@
     "261": "A package order carries exactly one package line.",
     "262": "The same package appears twice in the order.",
     "263": "The electronic document of the order needs its id.",
-    "264": "Only a paid order is invoiced."
+    "264": "Only a paid order is invoiced.",
+    "275": "Only a validated electronic document keeps its files."
   }
 }

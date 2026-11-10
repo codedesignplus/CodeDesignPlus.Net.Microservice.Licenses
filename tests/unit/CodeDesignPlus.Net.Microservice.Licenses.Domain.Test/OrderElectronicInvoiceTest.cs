@@ -154,4 +154,85 @@ public class OrderElectronicInvoiceTest
         // Assert
         Assert.Equal((ElectronicDocumentState.Validated, "cufe-1", (LocalDate?)new LocalDate(2026, 11, 10), "SETP990000001.pdf"), (read.Invoice!.State, read.Invoice.Cufe, read.Invoice.IssueDate, read.Invoice.Pdf!.Name));
     }
+
+    /// <summary>
+    /// The buyer receives the invoice only once it is validated with its XML, its attached document and its PDF.
+    /// </summary>
+    [Fact]
+    public void CanBeDelivered_ValidatedWithoutTheAttachedDocument_IsFalse()
+    {
+        // Arrange
+        var file = new FileAttachment(Guid.NewGuid(), "SETP990000001.xml", "platform-electronic-documents");
+
+        // Act
+        var invoice = Invoice(Guid.NewGuid()).Validate("SETP", 990000001, "cufe-1", null, Now, file, file);
+
+        // Assert
+        Assert.Equal((false, true), (invoice.CanBeDelivered, (invoice with { AttachedDocument = file }).CanBeDelivered));
+    }
+
+    /// <summary>
+    /// The files that arrive after the validation are kept on the validated document; a document not validated refuses them.
+    /// </summary>
+    [Fact]
+    public void KeepFiles_DocumentNotValidated_IsRefused()
+    {
+        // Arrange
+        var file = new FileAttachment(Guid.NewGuid(), "SETP990000001.xml", "platform-electronic-documents");
+
+        // Act
+        var exception = Assert.Throws<CodeDesignPlusException>(() => Invoice(Guid.NewGuid()).KeepFiles(file, file, file, Now));
+
+        // Assert
+        Assert.Equal(Errors.OnlyAValidatedDocumentKeepsFiles.GetCode(), exception.Code);
+    }
+
+    [Fact]
+    public void KeepFiles_ValidatedDocument_KeepsTheXmlTheAttachedDocumentAndThePdf()
+    {
+        // Arrange
+        var xml = new FileAttachment(Guid.NewGuid(), "SETP990000001.xml", "platform-electronic-documents");
+        var attached = new FileAttachment(Guid.NewGuid(), "SETP990000001-attached.xml", "platform-electronic-documents");
+        var pdf = new FileAttachment(Guid.NewGuid(), "SETP990000001.pdf", "platform-electronic-documents");
+
+        // Act
+        var kept = Invoice(Guid.NewGuid()).Validate("SETP", 990000001, "cufe-1", null, Now, null, null).KeepFiles(xml, attached, pdf, Now);
+
+        // Assert
+        Assert.True(kept.CanBeDelivered);
+    }
+
+    /// <summary>
+    /// The attached document and the marks of the email are stored and read back; an order stored before them reads them as
+    /// absent, so it never waits nor sends its email again (rule 31).
+    /// </summary>
+    [Fact]
+    public void Deserialize_OrderWithItsAttachedDocumentAndItsEmailMarks_ReadsThemBack()
+    {
+        // Arrange
+        var order = OrdenDePrueba.Nueva();
+        var attached = new FileAttachment(Guid.NewGuid(), "SETP990000001-attached.xml", "platform-electronic-documents");
+
+        order.SetPaymentStatus(PaymentStatus.Succeeded, OrdenDePrueba.BuyerId);
+        order.RequestElectronicDocuments(Invoice(order.Id).Validate("SETP", 990000001, "cufe-1", null, Now, null, null, attached), []);
+        order.WaitForInvoiceBeforeEmail(Now + Duration.FromMinutes(30));
+        order.MarkReceiptEmailSent(Now, withInvoice: true);
+
+        var document = order.ToBsonDocument();
+        var old = order.ToBsonDocument();
+
+        foreach (var member in new[] { "ReceiptEmailWaitsUntil", "ReceiptEmailSentAt", "InvoiceEmailSentAt" })
+        {
+            old.Remove(member);
+        }
+
+        // Act
+        var read = BsonSerializer.Deserialize<OrderAggregate>(document);
+        var before = BsonSerializer.Deserialize<OrderAggregate>(old);
+
+        // Assert
+        Assert.Equal(
+            (attached.Id, (Instant?)(Now + Duration.FromMinutes(30)), (Instant?)Now, (Instant?)Now, (Instant?)null, (Instant?)null),
+            (read.Invoice!.AttachedDocument!.Id, read.ReceiptEmailWaitsUntil, read.ReceiptEmailSentAt, read.InvoiceEmailSentAt, before.ReceiptEmailWaitsUntil, before.ReceiptEmailSentAt));
+    }
 }

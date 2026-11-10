@@ -3,6 +3,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Setup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application
@@ -41,6 +42,10 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application
 
             services.AddScoped<Order.Services.ISubscriptionCheckout, Order.Services.SubscriptionCheckout>();
             services.AddScoped<Order.Services.ISubscriptionSettlement, Order.Services.SubscriptionSettlement>();
+
+            // El correo de la compra espera a la factura electrónica (pendings/661, paso 4).
+            services.TryAddSingleton<IClock>(SystemClock.Instance);
+            services.AddScoped<Order.Services.IPurchaseEmails, Order.Services.PurchaseEmails>();
         }
     }
 }

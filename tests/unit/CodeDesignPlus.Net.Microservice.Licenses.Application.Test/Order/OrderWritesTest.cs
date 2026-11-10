@@ -32,6 +32,7 @@ public class OrderWritesTest
     private UpdateStateOrderCommandHandler PaymentHandler() => new(
         repository.Object, pubsub.Object, liveChannel.Object, emailGrpc.Object, fileStorage.Object, currencyGrpc.Object,
         new Mock<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.ISubscriptionSettlement>().Object,
+        CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order.Services.PurchaseEmailsFixture.NotInvoiced(repository, pubsub, currencyGrpc, fileStorage),
         new Mock<ILogger<UpdateStateOrderCommandHandler>>().Object);
 
     private void ReceiptCanBeGenerated()
@@ -75,7 +76,7 @@ public class OrderWritesTest
         Assert.Equal([1, 2, 3], stored.Content.ToByteArray());
         repository.Verify(x => x.AttachReceiptAsync(order.Id,
             It.Is<FileAttachment>(r => r.Id == Guid.Parse(stored.Id) && r.Target == "licenses-pdf" && r.Name == $"ComprobanteCompra-{order.Id}.pdf"),
-            TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
+            null, TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -109,7 +110,7 @@ public class OrderWritesTest
         await PaymentHandler().Handle(new UpdateStateOrderCommand(order.Id, PaymentStatus.Succeeded), CancellationToken.None);
 
         repository.Verify(x => x.ApplyPaymentStatusAsync(order, PaymentStatus.Initiated, It.IsAny<CancellationToken>()), Times.Once);
-        repository.Verify(x => x.AttachReceiptAsync(order.Id, It.IsAny<FileAttachment>(), TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
+        repository.Verify(x => x.AttachReceiptAsync(order.Id, It.IsAny<FileAttachment>(), null, TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(x => x.UpdateAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -242,5 +243,57 @@ public class OrderWritesTest
         // Assert
         string[] licenseOnly = ["subtotal", "tax", "tax_label", "invoice_concept", "modules_list", "billing_type", "next_billing_date"];
         Assert.Equal(("PackageReceipt", "SubscriptionPackagePurchased", false), (pdf!.TemplateType, email!.TemplateName, licenseOnly.Any(x => pdf.Values.ContainsKey(x) || email.Variables.ContainsKey(x))));
+    }
+
+    /// <summary>
+    /// An order that is invoiced does not send its email when the payment is approved: the receipt is kept with the wait,
+    /// and the email goes with the invoice (pendings/661, step 4).
+    /// </summary>
+    [Fact]
+    public async Task Handle_InvoicedOrderPaid_KeepsTheReceiptWithTheWaitAndSendsNoEmailYet()
+    {
+        // Arrange
+        var order = TestOrders.Build();
+        var until = Instant.FromUtc(2026, 11, 10, 15, 30);
+        var emails = new Mock<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.IPurchaseEmails>();
+
+        repository.Setup(x => x.FindAsync<OrderAggregate>(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        repository.Setup(x => x.ApplyPaymentStatusAsync(order, PaymentStatus.Initiated, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        emails.Setup(x => x.WaitsUntil(order)).Returns(until);
+        ReceiptCanBeGenerated();
+
+        var handler = new UpdateStateOrderCommandHandler(repository.Object, pubsub.Object, liveChannel.Object, emailGrpc.Object, fileStorage.Object, currencyGrpc.Object, Mock.Of<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.ISubscriptionSettlement>(), emails.Object, Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
+
+        // Act
+        await handler.Handle(new UpdateStateOrderCommand(order.Id, PaymentStatus.Succeeded), CancellationToken.None);
+
+        // Assert
+        repository.Verify(x => x.AttachReceiptAsync(order.Id, It.IsAny<FileAttachment>(), until, TestOrders.BuyerId, It.IsAny<CancellationToken>()), Times.Once);
+        emails.Verify(x => x.SendReceiptAsync(It.IsAny<OrderAggregate>(), It.IsAny<CancellationToken>()), Times.Never);
+        emails.Verify(x => x.SendDueAsync(order.Id, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// An order that is not invoiced sends its email when the payment is approved, as before.
+    /// </summary>
+    [Fact]
+    public async Task Handle_OrderNotInvoicedPaid_SendsItsEmailNow()
+    {
+        // Arrange
+        var order = TestOrders.Build();
+        var emails = new Mock<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.IPurchaseEmails>();
+
+        repository.Setup(x => x.FindAsync<OrderAggregate>(order.Id, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        repository.Setup(x => x.ApplyPaymentStatusAsync(order, PaymentStatus.Initiated, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        ReceiptCanBeGenerated();
+
+        var handler = new UpdateStateOrderCommandHandler(repository.Object, pubsub.Object, liveChannel.Object, emailGrpc.Object, fileStorage.Object, currencyGrpc.Object, Mock.Of<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.ISubscriptionSettlement>(), emails.Object, Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
+
+        // Act
+        await handler.Handle(new UpdateStateOrderCommand(order.Id, PaymentStatus.Succeeded), CancellationToken.None);
+
+        // Assert
+        emails.Verify(x => x.SendReceiptAsync(order, It.IsAny<CancellationToken>()), Times.Once);
+        emails.Verify(x => x.SendDueAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -136,6 +136,7 @@
     "261": "Um pedido de pacote leva exatamente uma linha de pacote.",
     "262": "O mesmo pacote aparece duas vezes no pedido.",
     "263": "O documento eletrônico do pedido precisa do seu identificador.",
-    "264": "Somente um pedido pago é faturado."
+    "264": "Somente um pedido pago é faturado.",
+    "275": "Somente um documento eletrônico validado guarda seus arquivos."
   }
 }

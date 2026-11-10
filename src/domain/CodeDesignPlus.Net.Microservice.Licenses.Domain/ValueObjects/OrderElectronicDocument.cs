@@ -27,6 +27,18 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 public sealed record OrderElectronicDocument(Guid DocumentId, string Reference, Guid? CorrectedOrderId, ElectronicDocumentState State, string? Prefix, long? Consecutive, string? Cufe, LocalDate? IssueDate, Instant? ValidatedAt, FileAttachment? Xml, FileAttachment? Pdf, List<string> Reasons, Instant UpdatedAt)
 {
     /// <summary>
+    /// The attached document the tax authority answered with (the signed XML with its validation) in ms-filestorage, once
+    /// validated and kept: with <see cref="Pdf"/> it is what the buyer receives. Not in the constructor (rule 31): the
+    /// documents written before it do not carry it.
+    /// </summary>
+    public FileAttachment? AttachedDocument { get; init; }
+
+    /// <summary>
+    /// Whether the buyer can receive it: validated, with the XML, the attached document and the graphic representation.
+    /// </summary>
+    public bool CanBeDelivered => State == ElectronicDocumentState.Validated && Xml is not null && AttachedDocument is not null && Pdf is not null;
+
+    /// <summary>
     /// A document just asked of ms-electronicinvoicing.
     /// </summary>
     /// <param name="documentId">The id derived from the order.</param>
@@ -67,9 +79,25 @@ public sealed record OrderElectronicDocument(Guid DocumentId, string Reference, 
     /// <param name="validatedAt">When it was validated.</param>
     /// <param name="xml">The signed XML, when it could be stored.</param>
     /// <param name="pdf">The graphic representation, when it could be stored.</param>
+    /// <param name="attachedDocument">The attached document, when it could be stored.</param>
     /// <returns>The document, validated.</returns>
-    public OrderElectronicDocument Validate(string prefix, long consecutive, string cufe, LocalDate? issueDate, Instant validatedAt, FileAttachment? xml, FileAttachment? pdf) =>
-        this with { State = ElectronicDocumentState.Validated, Prefix = prefix, Consecutive = consecutive, Cufe = cufe, IssueDate = issueDate, ValidatedAt = validatedAt, Xml = xml, Pdf = pdf, Reasons = [], UpdatedAt = validatedAt };
+    public OrderElectronicDocument Validate(string prefix, long consecutive, string cufe, LocalDate? issueDate, Instant validatedAt, FileAttachment? xml, FileAttachment? pdf, FileAttachment? attachedDocument = null) =>
+        this with { State = ElectronicDocumentState.Validated, Prefix = prefix, Consecutive = consecutive, Cufe = cufe, IssueDate = issueDate, ValidatedAt = validatedAt, Xml = xml, Pdf = pdf, AttachedDocument = attachedDocument, Reasons = [], UpdatedAt = validatedAt };
+
+    /// <summary>
+    /// The files of a document validated without them, kept afterwards by ms-electronicinvoicing.
+    /// </summary>
+    /// <param name="xml">The signed XML.</param>
+    /// <param name="attachedDocument">The attached document, when it could be stored.</param>
+    /// <param name="pdf">The graphic representation, when it could be stored.</param>
+    /// <param name="keptAt">When they were kept.</param>
+    /// <returns>The document with its files.</returns>
+    public OrderElectronicDocument KeepFiles(FileAttachment xml, FileAttachment? attachedDocument, FileAttachment? pdf, Instant keptAt)
+    {
+        DomainGuard.IsTrue(State != ElectronicDocumentState.Validated, Errors.OnlyAValidatedDocumentKeepsFiles);
+
+        return this with { Xml = xml, AttachedDocument = attachedDocument ?? AttachedDocument, Pdf = pdf ?? Pdf, UpdatedAt = keptAt };
+    }
 
     /// <summary>
     /// The document rejected by the provider or the tax authority.

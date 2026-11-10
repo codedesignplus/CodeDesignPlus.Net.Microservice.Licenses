@@ -136,6 +136,7 @@
     "261": "Una orden de paquete lleva exactamente una línea de paquete.",
     "262": "El mismo paquete aparece dos veces en la orden.",
     "263": "El documento electrónico de la orden necesita su identificador.",
-    "264": "Solo se factura una orden pagada."
+    "264": "Solo se factura una orden pagada.",
+    "275": "Solo un documento electrónico validado guarda sus archivos."
   }
 }

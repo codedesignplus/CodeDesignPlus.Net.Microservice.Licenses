@@ -90,7 +90,7 @@ public class ChangeValidationFixesTest
 
     private UpdateStateOrderCommandHandler PaymentHandler() => new(
         orders.Object, pubsub.Object, Mock.Of<ILiveChannelGrpc>(), emailGrpc.Object, fileStorage.Object, currencyGrpc.Object,
-        Mock.Of<ISubscriptionSettlement>(), Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
+        Mock.Of<ISubscriptionSettlement>(), CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order.Services.PurchaseEmailsFixture.NotInvoiced(orders, pubsub, currencyGrpc, fileStorage), Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
 
     private void ReceiptCanBeGenerated()
     {

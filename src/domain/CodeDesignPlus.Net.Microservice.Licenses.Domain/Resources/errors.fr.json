@@ -136,6 +136,7 @@
     "261": "Une commande de forfait porte exactement une ligne de forfait.",
     "262": "Le même forfait apparaît deux fois dans la commande.",
     "263": "Le document électronique de la commande a besoin de son identifiant.",
-    "264": "Seule une commande payée est facturée."
+    "264": "Seule une commande payée est facturée.",
+    "275": "Seul un document électronique validé conserve ses fichiers."
   }
 }

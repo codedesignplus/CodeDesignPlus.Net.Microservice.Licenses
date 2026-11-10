@@ -61,4 +61,56 @@ public static class ElectronicInvoiceText
     /// <param name="reason">Why it was not sent.</param>
     /// <returns>The text.</returns>
     public static string Review(string tenantName, string reason) => $"La orden de {tenantName} acredita días no prestados, pero la nota crédito no se emitió. {reason}";
+
+    /// <summary>
+    /// The template of ms-emails of the email that carries only the invoice, when it arrives after the receipt
+    /// (pendings/661, step 4).
+    /// </summary>
+    public const string InvoiceTemplate = "SubscriptionInvoiceIssued";
+
+    /// <summary>
+    /// The variable of the templates of the purchase that says the invoice is attached; empty when it is not.
+    /// </summary>
+    public const string NoteVariable = "electronic_invoice_note";
+
+    /// <summary>
+    /// What the email says when the invoice goes attached.
+    /// </summary>
+    /// <param name="number">The number of the invoice, its prefix followed by its consecutive.</param>
+    /// <returns>The sentence.</returns>
+    public static string AttachedNote(string number) =>
+        $"También va adjunta la factura electrónica de venta {number}: su XML y un archivo ZIP con el documento validado por la DIAN y su representación gráfica en PDF.";
+
+    /// <summary>
+    /// The name of the XML of the invoice attached to the email.
+    /// </summary>
+    /// <param name="number">The number of the invoice.</param>
+    /// <returns>The name.</returns>
+    /// <remarks>
+    /// The tax authority's names for the files delivered to the buyer (<c>z</c> and <c>ad</c> followed by the NIT, the code
+    /// of the provider, the year and a hexadecimal consecutive of the issuer) need data the providers do not give; the
+    /// number of the invoice names them unambiguously.
+    /// </remarks>
+    public static string XmlFileName(string number) => $"{number}.xml";
+
+    /// <summary>
+    /// The name of the ZIP with the attached document and the graphic representation.
+    /// </summary>
+    /// <param name="number">The number of the invoice.</param>
+    /// <returns>The name.</returns>
+    public static string ZipFileName(string number) => $"{number}.zip";
+
+    /// <summary>
+    /// The name of the attached document inside the ZIP: <c>ad</c>, as the tax authority prefixes it, and the number.
+    /// </summary>
+    /// <param name="number">The number of the invoice.</param>
+    /// <returns>The name.</returns>
+    public static string AttachedDocumentEntry(string number) => $"ad{number}.xml";
+
+    /// <summary>
+    /// The name of the graphic representation inside the ZIP.
+    /// </summary>
+    /// <param name="number">The number of the invoice.</param>
+    /// <returns>The name.</returns>
+    public static string PdfEntry(string number) => $"{number}.pdf";
 }

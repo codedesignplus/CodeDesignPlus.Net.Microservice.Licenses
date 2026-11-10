@@ -29,7 +29,7 @@ public class LicenseApplicationFailureTest
 
     private UpdateStateOrderCommandHandler PaymentHandler() => new(
         orders.Object, pubsub.Object, Mock.Of<ILiveChannelGrpc>(), emailGrpc.Object, Mock.Of<IFileStorageGrpc>(), Mock.Of<ICurrencyGrpc>(),
-        settlement.Object, Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
+        settlement.Object, Mock.Of<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.IPurchaseEmails>(), Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
 
     private static OrderAggregate ChangeTo(string licenseName)
     {

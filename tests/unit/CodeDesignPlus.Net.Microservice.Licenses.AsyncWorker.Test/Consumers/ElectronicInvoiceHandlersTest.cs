@@ -230,4 +230,64 @@ public class ElectronicInvoiceHandlersTest
 
         return options;
     }
+
+    /// <summary>
+    /// The twin of the validation reads the attached document that ms-electronicinvoicing now publishes (pendings/661, step 4).
+    /// </summary>
+    [Fact]
+    public async Task ElectronicDocumentValidatedHandler_JsonWithTheAttachedDocument_PassesItToTheOrder()
+    {
+        // Arrange
+        var attachedId = Guid.NewGuid();
+        var json = JsonSerializer.Serialize(new
+        {
+            AggregateId = Guid.NewGuid(),
+            Reference = "license-order:x",
+            Prefix = "SETP",
+            Consecutive = 990000001L,
+            Cufe = "cufe-1",
+            ValidatedAt = Instant.FromUtc(2026, 11, 10, 15, 0),
+            AttachedDocument = StoredFile.Create(attachedId, "platform-electronic-documents", "SETP990000001-attached.xml", ".xml", "application/xml", 1024)
+        });
+
+        var @event = JsonSerializer.Deserialize<ElectronicDocumentValidatedDomainEvent>(json);
+
+        // Act
+        await new ElectronicDocumentValidatedHandler(mediator.Object).HandleAsync(@event, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(attachedId, Assert.IsType<RecordElectronicDocumentValidatedCommand>(Assert.Single(sent)).AttachedDocument!.Id);
+    }
+
+    /// <summary>
+    /// The twin of the files kept after the validation reads them as ms-electronicinvoicing writes them.
+    /// </summary>
+    [Fact]
+    public async Task ElectronicDocumentFilesKeptHandler_JsonOfElectronicInvoicing_KeepsTheFiles()
+    {
+        // Arrange
+        var documentId = Guid.NewGuid();
+        var xmlId = Guid.NewGuid();
+        var json = JsonSerializer.Serialize(new
+        {
+            AggregateId = documentId,
+            Tenant = Guid.Parse("00000000-e1ec-0000-0000-000000000001"),
+            Reference = "license-order:x",
+            Prefix = "SETP",
+            Consecutive = 990000001L,
+            Xml = StoredFile.Create(xmlId, "platform-electronic-documents", "SETP990000001.xml", ".xml", "application/xml", 1024),
+            AttachedDocument = StoredFile.Create(Guid.NewGuid(), "platform-electronic-documents", "SETP990000001-attached.xml", ".xml", "application/xml", 1024),
+            Pdf = StoredFile.Create(Guid.NewGuid(), "platform-electronic-documents", "SETP990000001.pdf", ".pdf", "application/pdf", 1024)
+        });
+
+        var @event = JsonSerializer.Deserialize<ElectronicDocumentFilesKeptDomainEvent>(json);
+
+        // Act
+        await new ElectronicDocumentFilesKeptHandler(mediator.Object).HandleAsync(@event, CancellationToken.None);
+
+        // Assert
+        var command = Assert.IsType<RecordElectronicDocumentFilesCommand>(Assert.Single(sent));
+
+        Assert.Equal((documentId, "license-order:x", xmlId, true, true), (command.DocumentId, command.Reference, command.Xml.Id, command.AttachedDocument is not null, command.Pdf is not null));
+    }
 }

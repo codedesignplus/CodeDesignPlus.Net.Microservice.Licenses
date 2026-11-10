@@ -25,7 +25,7 @@ public class SubscriptionPaymentTest
 
     private UpdateStateOrderCommandHandler PaymentHandler() => new(
         orders.Object, Mock.Of<IPubSub>(), Mock.Of<ILiveChannelGrpc>(), Mock.Of<IEmailGrpc>(), Mock.Of<IFileStorageGrpc>(), Mock.Of<ICurrencyGrpc>(),
-        settlement.Object, Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
+        settlement.Object, Mock.Of<CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services.IPurchaseEmails>(), Mock.Of<ILogger<UpdateStateOrderCommandHandler>>());
 
     /// <summary>
     /// Una renovación pagada antes de vencer empieza donde termina lo pagado, no el día del pago: la fecha de fin avanza un

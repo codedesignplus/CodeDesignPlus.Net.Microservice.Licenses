@@ -43,12 +43,14 @@ internal static class OrderDocuments
 }
 
 /// <summary>
-/// Keeps on the order the number, CUFE and files of its validated document.
+/// Keeps on the order the number, CUFE and files of its validated document and, when it is the invoice, sends the email of
+/// the purchase that waited for it (pendings/661, step 4).
 /// </summary>
 /// <param name="orders">The repository of orders.</param>
+/// <param name="purchaseEmails">The email of the purchase.</param>
 /// <param name="options">How the platform invoices.</param>
 /// <param name="logger">The logger.</param>
-public class RecordElectronicDocumentValidatedCommandHandler(IOrderRepository orders, IOptions<PlatformInvoicingOptions> options, ILogger<RecordElectronicDocumentValidatedCommandHandler> logger) : IRequestHandler<RecordElectronicDocumentValidatedCommand>
+public class RecordElectronicDocumentValidatedCommandHandler(IOrderRepository orders, IPurchaseEmails purchaseEmails, IOptions<PlatformInvoicingOptions> options, ILogger<RecordElectronicDocumentValidatedCommandHandler> logger) : IRequestHandler<RecordElectronicDocumentValidatedCommand>
 {
     /// <inheritdoc/>
     public async Task Handle(RecordElectronicDocumentValidatedCommand request, CancellationToken cancellationToken)
@@ -62,11 +64,59 @@ public class RecordElectronicDocumentValidatedCommandHandler(IOrderRepository or
             return;
         }
 
-        var validated = match.Document.Validate(request.Prefix, request.Consecutive, request.Cufe, request.IssueDate, request.ValidatedAt, request.Xml, request.Pdf);
+        var validated = match.Document.Validate(request.Prefix, request.Consecutive, request.Cufe, request.IssueDate, request.ValidatedAt, request.Xml, request.Pdf, request.AttachedDocument);
 
         if (await orders.RecordElectronicDocumentAsync(match.Order.Id, validated, cancellationToken))
         {
             logger.LogInformation("Electronic document {Number} ({DocumentId}) of order {OrderId} was validated.", validated.Number, validated.DocumentId, match.Order.Id);
+        }
+
+        // Also on a redelivery: if the email failed the first time, the message is retried for it.
+        if (validated.CorrectedOrderId is null)
+        {
+            await purchaseEmails.SendDueAsync(match.Order.Id, cancellationToken);
+        }
+    }
+}
+
+/// <summary>
+/// Keeps on the order the files ms-electronicinvoicing kept after validating its document and, when it is the invoice,
+/// sends the email that waited for them (pendings/661, step 4).
+/// </summary>
+/// <param name="orders">The repository of orders.</param>
+/// <param name="purchaseEmails">The email of the purchase.</param>
+/// <param name="options">How the platform invoices.</param>
+/// <param name="logger">The logger.</param>
+public class RecordElectronicDocumentFilesCommandHandler(IOrderRepository orders, IPurchaseEmails purchaseEmails, IOptions<PlatformInvoicingOptions> options, ILogger<RecordElectronicDocumentFilesCommandHandler> logger) : IRequestHandler<RecordElectronicDocumentFilesCommand>
+{
+    /// <inheritdoc/>
+    public async Task Handle(RecordElectronicDocumentFilesCommand request, CancellationToken cancellationToken)
+    {
+        ApplicationGuard.IsNull(request, Errors.InvalidRequest);
+
+        var found = await OrderDocuments.FindAsync(orders, options.Value, request.DocumentId, request.Reference, logger, cancellationToken);
+
+        if (found is not { } match)
+        {
+            return;
+        }
+
+        if (match.Document.State != Domain.Enums.ElectronicDocumentState.Validated)
+        {
+            // The files are announced after the validation, and the bus may deliver them first: retry the message.
+            throw new InvalidOperationException($"The electronic document {request.DocumentId} of order {match.Order.Id} is not validated yet: its files wait for it.");
+        }
+
+        var kept = match.Document.KeepFiles(request.Xml, request.AttachedDocument, request.Pdf, request.KeptAt);
+
+        if (await orders.RecordElectronicDocumentFilesAsync(match.Order.Id, kept, cancellationToken))
+        {
+            logger.LogInformation("The files of electronic document {Number} ({DocumentId}) of order {OrderId} were kept.", kept.Number, kept.DocumentId, match.Order.Id);
+        }
+
+        if (kept.CorrectedOrderId is null)
+        {
+            await purchaseEmails.SendDueAsync(match.Order.Id, cancellationToken);
         }
     }
 }
@@ -80,7 +130,11 @@ public class RecordElectronicDocumentValidatedCommandHandler(IOrderRepository or
 /// <param name="options">How the platform invoices.</param>
 /// <param name="notices">To whom the platform notices go.</param>
 /// <param name="logger">The logger.</param>
-public class RecordElectronicDocumentRejectedCommandHandler(IOrderRepository orders, IInboxGrpc inbox, IOptions<PlatformInvoicingOptions> options, IOptions<PlatformNoticeOptions> notices, ILogger<RecordElectronicDocumentRejectedCommandHandler> logger) : IRequestHandler<RecordElectronicDocumentRejectedCommand>
+/// <remarks>
+/// A rejected invoice does not hold the email of the purchase: it goes with the receipt alone, and the invoice follows in its
+/// own email if it is corrected and validated (pendings/661, step 4).
+/// </remarks>
+public class RecordElectronicDocumentRejectedCommandHandler(IOrderRepository orders, IInboxGrpc inbox, IPurchaseEmails purchaseEmails, IOptions<PlatformInvoicingOptions> options, IOptions<PlatformNoticeOptions> notices, ILogger<RecordElectronicDocumentRejectedCommandHandler> logger) : IRequestHandler<RecordElectronicDocumentRejectedCommand>
 {
     /// <inheritdoc/>
     public async Task Handle(RecordElectronicDocumentRejectedCommand request, CancellationToken cancellationToken)
@@ -100,6 +154,11 @@ public class RecordElectronicDocumentRejectedCommandHandler(IOrderRepository ord
         if (!await orders.RecordElectronicDocumentAsync(match.Order.Id, rejected, cancellationToken))
         {
             return;
+        }
+
+        if (rejected.CorrectedOrderId is null)
+        {
+            await purchaseEmails.SendDueAsync(match.Order.Id, cancellationToken);
         }
 
         logger.LogWarning("Electronic document {DocumentId} of order {OrderId} was rejected: {Reasons}", rejected.DocumentId, match.Order.Id, string.Join("; ", rejected.Reasons));

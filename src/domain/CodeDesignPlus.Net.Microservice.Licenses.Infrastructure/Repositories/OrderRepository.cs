@@ -194,16 +194,173 @@ public class OrderRepository(IServiceProvider serviceProvider, IOptions<MongoOpt
     }
 
     /// <inheritdoc/>
-    public async Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Guid updatedBy, CancellationToken cancellationToken)
+    public async Task AttachReceiptAsync(Guid orderId, FileAttachment receipt, Instant? emailWaitsUntil, Guid updatedBy, CancellationToken cancellationToken)
     {
         var collection = GetCollection<OrderAggregate>();
 
         var update = Builders<OrderAggregate>.Update
             .Set(x => x.Receipt, receipt)
+            .Set(x => x.ReceiptEmailWaitsUntil, emailWaitsUntil)
             .Set(x => x.UpdatedAt, SystemClock.Instance.GetCurrentInstant())
             .Set(x => x.UpdatedBy, updatedBy);
 
         await collection.UpdateOneAsync(Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId), update, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ClaimReceiptEmailAsync(Guid orderId, bool withInvoice, Instant sentAt, CancellationToken cancellationToken)
+    {
+        var (filter, update) = ClaimReceiptEmailWrite(orderId, withInvoice, sentAt);
+        var result = await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ClaimInvoiceEmailAsync(Guid orderId, Instant sentAt, CancellationToken cancellationToken)
+    {
+        var (filter, update) = ClaimInvoiceEmailWrite(orderId, sentAt);
+        var result = await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.ModifiedCount == 1;
+    }
+
+    /// <inheritdoc/>
+    public async Task ReleaseReceiptEmailAsync(Guid orderId, bool withInvoice, Instant sentAt, CancellationToken cancellationToken)
+    {
+        var (filter, update) = ReleaseReceiptEmailWrite(orderId, withInvoice, sentAt);
+
+        await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task ReleaseInvoiceEmailAsync(Guid orderId, Instant sentAt, CancellationToken cancellationToken)
+    {
+        var filter = Builders<OrderAggregate>.Filter.And(Builders<OrderAggregate>.Filter.Eq(x => x.Id, orderId), Builders<OrderAggregate>.Filter.Eq(x => x.InvoiceEmailSentAt, sentAt));
+        var update = Builders<OrderAggregate>.Update.Set(x => x.InvoiceEmailSentAt, null);
+
+        await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<OrderAggregate>> FindReceiptEmailsOverdueAsync(Instant now, int limit, CancellationToken cancellationToken)
+    {
+        var sort = Builders<OrderAggregate>.Sort.Ascending(x => x.ReceiptEmailWaitsUntil);
+
+        return await GetCollection<OrderAggregate>().Find(ReceiptEmailsOverdueFilter(now)).Sort(sort).Limit(limit).ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> RecordElectronicDocumentFilesAsync(Guid orderId, OrderElectronicDocument document, CancellationToken cancellationToken)
+    {
+        var (filter, update) = RecordElectronicDocumentFilesWrite(orderId, document);
+        var result = await GetCollection<OrderAggregate>().UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+
+        return result.MatchedCount == 1;
+    }
+
+    /// <summary>
+    /// How the email of the receipt is reserved (pendings/661, step 4): only while it has not been sent and, when it carries
+    /// the invoice, while the invoice has not been sent either. What the filter matched is what sends it.
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="withInvoice">Whether the email carries the invoice.</param>
+    /// <param name="sentAt">When it is sent.</param>
+    /// <returns>The filter and the update.</returns>
+    public static (FilterDefinition<OrderAggregate> Filter, UpdateDefinition<OrderAggregate> Update) ClaimReceiptEmailWrite(Guid orderId, bool withInvoice, Instant sentAt)
+    {
+        var builder = Builders<OrderAggregate>.Filter;
+        var filter = builder.And(builder.Eq(x => x.Id, orderId), builder.Eq(x => x.ReceiptEmailSentAt, null));
+        var update = Builders<OrderAggregate>.Update.Set(x => x.ReceiptEmailSentAt, sentAt);
+
+        if (withInvoice)
+        {
+            filter = builder.And(filter, builder.Eq(x => x.InvoiceEmailSentAt, null));
+            update = update.Set(x => x.InvoiceEmailSentAt, sentAt);
+        }
+
+        return (filter, update);
+    }
+
+    /// <summary>
+    /// How the separate email of the invoice is reserved: only after the email of the receipt and while the invoice has not
+    /// been sent.
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="sentAt">When it is sent.</param>
+    /// <returns>The filter and the update.</returns>
+    public static (FilterDefinition<OrderAggregate> Filter, UpdateDefinition<OrderAggregate> Update) ClaimInvoiceEmailWrite(Guid orderId, Instant sentAt)
+    {
+        var builder = Builders<OrderAggregate>.Filter;
+        var filter = builder.And(builder.Eq(x => x.Id, orderId), builder.Ne(x => x.ReceiptEmailSentAt, null), builder.Eq(x => x.InvoiceEmailSentAt, null));
+
+        return (filter, Builders<OrderAggregate>.Update.Set(x => x.InvoiceEmailSentAt, sentAt));
+    }
+
+    /// <summary>
+    /// How a reservation that could not be published is given back: only the one this process made, by its instant.
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="withInvoice">Whether the email carried the invoice.</param>
+    /// <param name="sentAt">The instant of the reservation.</param>
+    /// <returns>The filter and the update.</returns>
+    public static (FilterDefinition<OrderAggregate> Filter, UpdateDefinition<OrderAggregate> Update) ReleaseReceiptEmailWrite(Guid orderId, bool withInvoice, Instant sentAt)
+    {
+        var builder = Builders<OrderAggregate>.Filter;
+        var filter = builder.And(builder.Eq(x => x.Id, orderId), builder.Eq(x => x.ReceiptEmailSentAt, sentAt));
+        var update = Builders<OrderAggregate>.Update.Set(x => x.ReceiptEmailSentAt, null);
+
+        if (withInvoice)
+        {
+            filter = builder.And(filter, builder.Eq(x => x.InvoiceEmailSentAt, sentAt));
+            update = update.Set(x => x.InvoiceEmailSentAt, null);
+        }
+
+        return (filter, update);
+    }
+
+    /// <summary>
+    /// The orders whose email waited for the invoice past its time and has not been sent.
+    /// </summary>
+    /// <param name="now">The current instant.</param>
+    /// <returns>The filter.</returns>
+    public static FilterDefinition<OrderAggregate> ReceiptEmailsOverdueFilter(Instant now)
+    {
+        var builder = Builders<OrderAggregate>.Filter;
+
+        return builder.And(builder.Ne(x => x.ReceiptEmailWaitsUntil, null), builder.Lte(x => x.ReceiptEmailWaitsUntil, now), builder.Eq(x => x.ReceiptEmailSentAt, null));
+    }
+
+    /// <summary>
+    /// How the files kept after the validation are written: the invoice, or the credit note in its place of the array, only
+    /// while that document is of the order and is validated.
+    /// </summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="document">The document with its files.</param>
+    /// <returns>The filter and the update.</returns>
+    public static (FilterDefinition<OrderAggregate> Filter, UpdateDefinition<OrderAggregate> Update) RecordElectronicDocumentFilesWrite(Guid orderId, OrderElectronicDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var builder = Builders<OrderAggregate>.Filter;
+
+        if (document.CorrectedOrderId is null)
+        {
+            var invoiceFilter = builder.And(
+                builder.Eq(x => x.Id, orderId),
+                builder.Eq(x => x.Invoice!.DocumentId, document.DocumentId),
+                builder.Eq(x => x.Invoice!.State, ElectronicDocumentState.Validated));
+
+            return (invoiceFilter, Builders<OrderAggregate>.Update.Set(x => x.Invoice, document));
+        }
+
+        var noteFilter = builder.And(
+            builder.Eq(x => x.Id, orderId),
+            builder.ElemMatch(x => x.CreditNotes, Builders<OrderElectronicDocument>.Filter.And(
+                Builders<OrderElectronicDocument>.Filter.Eq(x => x.DocumentId, document.DocumentId),
+                Builders<OrderElectronicDocument>.Filter.Eq(x => x.State, ElectronicDocumentState.Validated))));
+
+        return (noteFilter, Builders<OrderAggregate>.Update.Set($"{nameof(OrderAggregate.CreditNotes)}.$", document));
     }
 
     /// <inheritdoc/>

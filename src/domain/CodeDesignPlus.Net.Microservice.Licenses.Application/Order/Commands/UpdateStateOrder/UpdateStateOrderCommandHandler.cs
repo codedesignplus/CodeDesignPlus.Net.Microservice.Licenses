@@ -16,6 +16,7 @@ public class UpdateStateOrderCommandHandler(
     IFileStorageGrpc fileStorage,
     ICurrencyGrpc currencyGrpc,
     ISubscriptionSettlement settlement,
+    IPurchaseEmails purchaseEmails,
     ILogger<UpdateStateOrderCommandHandler> logger
 ) : IRequestHandler<UpdateStateOrderCommand>
 {
@@ -125,41 +126,32 @@ public class UpdateStateOrderCommandHandler(
                         Content = pdfResult.PdfContent,
                     }, cancellationToken);
 
-                    var fileId = Guid.Parse(stored.Id);
-                    var fileName = stored.FileName;
-                    var target = stored.Target;
-
-                    var attachment = new FileAttachment(fileId, fileName, target);
-
                     // La referencia se guarda en la orden, no la URL firmada: la firma caduca a los 7 dias.
                     // Antes solo viajaba adjunta al correo y aqui se calculaba una `receiptUrl` que nadie leia,
                     // asi que la pantalla de compra no tenia de donde sacar el recibo.
-                    order.AttachReceipt(fileId, fileName, target, order.Buyer.BuyerId);
-                    // Solo el recibo: a estas alturas los pasos de aprovisionamiento ya se estan marcando.
-                    await orderRepository.AttachReceiptAsync(order.Id, order.Receipt!, order.Buyer.BuyerId, cancellationToken);
+                    order.AttachReceipt(Guid.Parse(stored.Id), stored.FileName, stored.Target, order.Buyer.BuyerId);
 
-                    var (template, emailVariables) = order.Type switch
+                    // Una orden que se factura no manda el correo ahora: espera a su factura electrónica para adjuntarla
+                    // (pendings/661, paso 4). Se escribe con el recibo, así el consumidor de la factura y el job lo leen.
+                    var waitsUntil = purchaseEmails.WaitsUntil(order);
+
+                    if (waitsUntil is { } until)
                     {
-                        OrderType.Renewal => ("SubscriptionRenewed", RenewalEmailVariables.Build(order, currency)),
-                        // Un cambio no es una compra: dice lo descontado y lo pagado, y el comprobante va adjunto (pendings/738).
-                        OrderType.Change => (ChangeEmailVariables.Template, ChangeEmailVariables.Build(order, currency)),
-                        // Un paquete: lo que se agregó, su vigencia, lo descontado y lo pagado (pendings/739).
-                        OrderType.Package => (ChangeEmailVariables.PackageTemplate, ChangeEmailVariables.BuildPackage(order, currency)),
-                        _ => ("PurchaseConfirmation", variables)
-                    };
+                        order.WaitForInvoiceBeforeEmail(until);
+                    }
 
-                    var sendEmailEvent = new SendEmailDomainEvent(
-                        Guid.NewGuid(),
-                        templateName: template,
-                        to: Recipients(order),
-                        cc: [],
-                        bcc: [],
-                        variables: emailVariables,
-                        attachments: [attachment],
-                        tenant: tenant
-                    );
+                    // Solo el recibo: a estas alturas los pasos de aprovisionamiento ya se estan marcando.
+                    await orderRepository.AttachReceiptAsync(order.Id, order.Receipt!, waitsUntil, order.Buyer.BuyerId, cancellationToken);
 
-                    await pubsub.PublishAsync(sendEmailEvent, cancellationToken);
+                    if (waitsUntil is null)
+                    {
+                        await purchaseEmails.SendReceiptAsync(order, cancellationToken);
+                    }
+                    else
+                    {
+                        // La factura pudo validarse mientras se generaba el recibo: si ya está, sale con ella.
+                        await purchaseEmails.SendDueAsync(order.Id, cancellationToken);
+                    }
                 }
             }
             catch (Exception ex)
@@ -244,11 +236,4 @@ public class UpdateStateOrderCommandHandler(
             logger.LogWarning(ex, "Failed to send SignalR notification for Order {OrderId}. Non-critical.", order.Id);
         }
     }
-
-    /// <summary>
-    /// A quién va el correo: a quien pagó y, en una renovación o un cambio, también al correo de la copropiedad.
-    /// </summary>
-    private static List<string> Recipients(OrderAggregate order) => order.Type == OrderType.Purchase
-        ? [order.Buyer.Email]
-        : [.. new[] { order.Buyer.Email, order.TenantDetail.Email }.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase)];
 }

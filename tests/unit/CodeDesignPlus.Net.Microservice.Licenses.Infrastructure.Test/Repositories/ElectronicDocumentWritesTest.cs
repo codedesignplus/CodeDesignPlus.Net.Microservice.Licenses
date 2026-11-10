@@ -111,4 +111,95 @@ public class ElectronicDocumentWritesTest
             (new BsonDocument("$ne", (int)ElectronicDocumentState.Validated), true),
             (match["State"].AsBsonDocument, Render(update)["$set"].AsBsonDocument.Contains("CreditNotes.$")));
     }
+
+    /// <summary>
+    /// The email of the receipt is reserved only while it has not been sent: of the consumer of the invoice and the job, one
+    /// sends it (pendings/661, step 4).
+    /// </summary>
+    [Fact]
+    public void ClaimReceiptEmailWrite_Alone_OnlyWhileTheReceiptWasNotSent()
+    {
+        // Act
+        var (filter, update) = OrderRepository.ClaimReceiptEmailWrite(OrderId, false, Now);
+        var rendered = Render(filter);
+        var set = Render(update)["$set"].AsBsonDocument;
+
+        // Assert
+        Assert.Equal((BsonNull.Value, false, true, false), (rendered["ReceiptEmailSentAt"], rendered.Contains("InvoiceEmailSentAt"), set.Contains("ReceiptEmailSentAt"), set.Contains("InvoiceEmailSentAt")));
+    }
+
+    /// <summary>
+    /// With the invoice, it is reserved only while neither went, and marks both.
+    /// </summary>
+    [Fact]
+    public void ClaimReceiptEmailWrite_WithTheInvoice_OnlyWhileNeitherWasSent()
+    {
+        // Act
+        var (filter, update) = OrderRepository.ClaimReceiptEmailWrite(OrderId, true, Now);
+        var rendered = Render(filter);
+        var set = Render(update)["$set"].AsBsonDocument;
+
+        // Assert
+        Assert.Equal((BsonNull.Value, BsonNull.Value, true, true), (rendered["ReceiptEmailSentAt"], rendered["InvoiceEmailSentAt"], set.Contains("ReceiptEmailSentAt"), set.Contains("InvoiceEmailSentAt")));
+    }
+
+    /// <summary>
+    /// The invoice alone goes only after the receipt and while the invoice has not been sent.
+    /// </summary>
+    [Fact]
+    public void ClaimInvoiceEmailWrite_OnlyAfterTheReceiptAndWhileTheInvoiceWasNotSent()
+    {
+        // Act
+        var (filter, _) = OrderRepository.ClaimInvoiceEmailWrite(OrderId, Now);
+        var rendered = Render(filter);
+
+        // Assert
+        Assert.Equal((new BsonDocument("$ne", BsonNull.Value), (BsonValue)BsonNull.Value), (rendered["ReceiptEmailSentAt"].AsBsonDocument, rendered["InvoiceEmailSentAt"]));
+    }
+
+    /// <summary>
+    /// A reservation is given back only by whoever made it: the one of the same instant.
+    /// </summary>
+    [Fact]
+    public void ReleaseReceiptEmailWrite_OnlyTheReservationOfThatInstant()
+    {
+        // Act
+        var (filter, update) = OrderRepository.ReleaseReceiptEmailWrite(OrderId, true, Now);
+        var rendered = Render(filter);
+        var set = Render(update)["$set"].AsBsonDocument;
+
+        // Assert
+        Assert.Equal((false, false, BsonNull.Value, BsonNull.Value), (rendered["ReceiptEmailSentAt"].IsBsonNull, rendered["InvoiceEmailSentAt"].IsBsonNull, set["ReceiptEmailSentAt"], set["InvoiceEmailSentAt"]));
+    }
+
+    /// <summary>
+    /// The job takes only the orders that wait, whose wait is over and whose email has not gone: never one paid before the
+    /// wait existed.
+    /// </summary>
+    [Fact]
+    public void ReceiptEmailsOverdueFilter_OnlyThoseThatWaitPastTheirTimeAndWereNotSent()
+    {
+        // Act
+        var rendered = Render(OrderRepository.ReceiptEmailsOverdueFilter(Now));
+        var text = rendered.ToString();
+
+        // Assert
+        Assert.Equal((true, true, true), (text.Contains("\"$ne\" : null", StringComparison.Ordinal), text.Contains("$lte", StringComparison.Ordinal), text.Contains("\"ReceiptEmailSentAt\" : null", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// The files kept after the validation are written only on that validated document.
+    /// </summary>
+    [Fact]
+    public void RecordElectronicDocumentFilesWrite_Invoice_OnlyWhileItIsValidated()
+    {
+        // Arrange
+        var invoice = OrderElectronicDocument.Requested(Guid.NewGuid(), "license-order:x", null, Now).Validate("SETP", 1, "cufe", null, Now, null, null);
+
+        // Act
+        var (filter, _) = OrderRepository.RecordElectronicDocumentFilesWrite(OrderId, invoice);
+
+        // Assert
+        Assert.Equal((BsonValue)(int)ElectronicDocumentState.Validated, Render(filter)["Invoice.State"]);
+    }
 }
