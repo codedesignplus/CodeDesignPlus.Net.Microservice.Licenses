@@ -197,7 +197,7 @@ public class ElectronicInvoiceHandlersTest
         // Assert
         Assert.Equal(
             (0, true, "1", "48", "49", "47", "47", "1", "ZZZ", "31", "R-99-PN", "1"),
-            (errors.Count, options.Enable, options.PaymentFormCode, options.CardPaymentMeansCodes["CREDIT"], options.CardPaymentMeansCodes["DEBIT"], options.PaymentMeansCodes["PSE"], options.PaymentMeansCodes["NEQUI"], options.UnknownPaymentMeansCode, options.FullyPrepaidPaymentMeansCode, options.IdentificationTypeCodes["NIT"], options.BuyerTaxResponsibilities.Single(), options.CreditNoteCorrectionConceptCode));
+            (errors.Count, options.Enable, options.PaymentFormCode, options.CardPaymentMeansCodes["CREDIT"], options.CardPaymentMeansCodes["DEBIT"], options.PaymentMeansCodes["PSE"], options.PaymentMeansCodes["NEQUI"], options.UnknownPaymentMeansCode, options.FullyPrepaidPaymentMeansCode, options.IdentificationTypeCodes["31"], options.BuyerTaxResponsibilities.Single(), options.CreditNoteCorrectionConceptCode));
     }
 
     [Fact]
