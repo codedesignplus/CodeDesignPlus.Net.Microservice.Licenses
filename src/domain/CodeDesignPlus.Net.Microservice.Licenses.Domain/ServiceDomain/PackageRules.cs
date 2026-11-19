@@ -78,6 +78,8 @@ public static class PackageRules
                     EnsureRange(component, key);
                     EnsureVolumeTiers(component, key);
                     DomainGuard.IsTrue(component.Multiplier is { } multiplier && (multiplier < 1 || component.Max > long.MaxValue / multiplier), Errors.PackageComponentMultiplierIsInvalid.With(key));
+                    // Lo consumible se amplía sumando unidades: solo tiene sentido en un atributo que se suma.
+                    DomainGuard.IsTrue(component.Consumable == true && component.Combination != AttributeCombination.Sum, Errors.PackageConsumableComponentIsInvalid.With(key));
 
                     break;
 
@@ -104,6 +106,7 @@ public static class PackageRules
         }
 
         EnsureUnique(components.SelectMany(x => string.IsNullOrWhiteSpace(x.EnableKey) ? new[] { x.Key.Trim() } : [x.Key.Trim(), x.EnableKey.Trim()]));
+        EnsureConsumables(components);
     }
 
     /// <summary>
@@ -149,6 +152,22 @@ public static class PackageRules
     private static void EnsureNoMultiplier(PackageComponent component, string key)
     {
         DomainGuard.IsTrue(component.Multiplier is not (null or 1), Errors.PackageComponentMultiplierIsInvalid.With(key));
+    }
+
+    /// <summary>
+    /// Solo una cantidad por tramos de volumen es consumible, y un paquete no mezcla consumibles con lo demás (pendings/744):
+    /// ampliar un consumible cobra solo lo añadido y no acredita tiempo, y ampliar lo demás cobra el año y acredita lo no
+    /// usado; una misma línea no puede hacer las dos cosas.
+    /// </summary>
+    private static void EnsureConsumables(List<PackageComponent> components)
+    {
+        var wrong = components.FirstOrDefault(x => x.Consumable == true && x.Kind != PackageComponentKind.Volume);
+
+        DomainGuard.IsTrue(wrong is not null, Errors.PackageConsumableComponentIsInvalid.With(wrong?.Key.Trim() ?? string.Empty));
+
+        var other = components.Any(x => x.Consumable == true) ? components.FirstOrDefault(x => x.Consumable != true) : null;
+
+        DomainGuard.IsTrue(other is not null, Errors.PackageMixesConsumableComponents.With(other?.Key.Trim() ?? string.Empty));
     }
 
     private static void EnsurePerUnitOf(PackageComponent component, string key, HashSet<string> quantities)

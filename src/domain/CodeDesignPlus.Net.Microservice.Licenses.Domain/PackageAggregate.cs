@@ -108,6 +108,12 @@ public class PackageAggregate(Guid id) : AggregateRootBase(id)
     public bool IsForSale => IsActive && !IsDeleted && ShowInLandingPage;
 
     /// <summary>
+    /// Si lo que entrega se gasta en vez de transcurrir: todos sus componentes son consumibles (pendings/744). Ampliarlo es
+    /// sumarle unidades (<see cref="PackagePricing.QuoteAddition"/>), no reemplazarlo con crédito por el tiempo no usado.
+    /// </summary>
+    public bool IsConsumable => Components.Count > 0 && Components.All(x => x.Consumable == true);
+
+    /// <summary>
     /// Si se le ofrece a esa copropiedad: el que está a la venta, o el privado que se le ofreció a ella.
     /// </summary>
     /// <param name="tenantId">La copropiedad.</param>
@@ -220,7 +226,7 @@ public class PackageAggregate(Guid id) : AggregateRootBase(id)
         TaxLegalBasis = string.IsNullOrWhiteSpace(definition.TaxLegalBasis) ? null : definition.TaxLegalBasis.Trim();
         InvoiceConcept = definition.InvoiceConcept.Trim();
         Attributes = [.. definition.Attributes.Select(x => x with { Key = x.Key.Trim(), Value = x.Value.Trim() })];
-        Components = [.. definition.Components.Select(x => x with { Key = x.Key.Trim(), PerUnitOf = Blank(x.PerUnitOf), EnableKey = Blank(x.EnableKey), Tiers = [.. (x.Tiers ?? []).OrderBy(t => t.Value)], Multiplier = x.Kind == PackageComponentKind.Volume ? x.Multiplier : null })];
+        Components = [.. definition.Components.Select(x => x with { Key = x.Key.Trim(), PerUnitOf = Blank(x.PerUnitOf), EnableKey = Blank(x.EnableKey), Tiers = [.. (x.Tiers ?? []).OrderBy(t => t.Value)], Multiplier = x.Kind == PackageComponentKind.Volume ? x.Multiplier : null, Consumable = x.Consumable == true ? true : null })];
 
         ApplyOffers(definition.OfferedTo, by, now);
     }

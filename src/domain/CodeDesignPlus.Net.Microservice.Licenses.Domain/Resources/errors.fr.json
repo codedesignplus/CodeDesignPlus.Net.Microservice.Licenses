@@ -139,6 +139,9 @@
     "264": "Seule une commande payée est facturée.",
     "275": "Seul un document électronique validé conserve ses fichiers.",
     "276": "Les tranches de volume de '{0}' ne sont pas valides : il en faut au moins une, chacune à partir d'une quantité différente et supérieure à zéro, la première à partir de la plus petite quantité que l'on peut choisir, aucune au-dessus du maximum, et le composant sans prix unitaire propre.",
-    "277": "Le multiplicateur de '{0}' n'est pas valide : c'est un entier supérieur à zéro et seule une quantité par tranches de volume en porte un."
+    "277": "Le multiplicateur de '{0}' n'est pas valide : c'est un entier supérieur à zéro et seule une quantité par tranches de volume en porte un.",
+    "278": "'{0}' ne peut pas être consommable : seule une quantité par tranches de volume dont l'attribut s'additionne peut l'être.",
+    "279": "Un forfait avec un composant consommable ne porte que des composants consommables : '{0}' ne l'est pas.",
+    "280": "Impossible d'ajouter à '{0}' : la nouvelle quantité doit être égale ou supérieure à celle que tu as déjà, et au moins une doit être supérieure."
   }
 }

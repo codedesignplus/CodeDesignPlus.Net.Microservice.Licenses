@@ -90,6 +90,76 @@ public static class PackagePricing
         return new PackageQuote(package, normalized, lines, package.BasePrice, minimumApplied, subTotal, tax, total, attributes);
     }
 
+    /// <summary>
+    /// Cotiza lo que se le suma a un paquete consumible que la copropiedad ya tiene (pendings/744).
+    /// </summary>
+    /// <remarks>
+    /// <list type="bullet">
+    /// <item>Lo elegido es el <b>total nuevo</b>, como en cualquier ampliación; lo que se cobra son solo las unidades
+    /// añadidas: lo que entrega el total menos lo que ya entrega la línea vigente.</item>
+    /// <item><b>El precio de lo añadido es el del tramo en que queda el total</b>, todo lo añadido a ese precio. Es la
+    /// lectura de «al precio del tramo en que quedó la copropiedad» (pendings/663); lo ya pagado no se recalcula ni se
+    /// devuelve. Si la regla cambia (p. ej. el tramo de lo añadido), cambia solo <c>UnitPriceOf(component, total)</c>.</item>
+    /// <item>Sin base, sin mínimo y sin crédito por tiempo: un cupo se gasta, no transcurre.</item>
+    /// <item>Lo que ya tiene sale de los atributos de su línea y no de lo que eligió: así un cambio del multiplicador en el
+    /// catálogo no le quita ni le regala unidades.</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="package">El paquete del catálogo.</param>
+    /// <param name="selections">El total nuevo por clave de componente; lo que falte toma su valor por defecto.</param>
+    /// <param name="held">Los atributos de la línea vigente de ese paquete.</param>
+    /// <returns>La cotización de lo añadido, con los atributos y lo elegido del total.</returns>
+    public static PackageQuote QuoteAddition(PackageAggregate package, IReadOnlyDictionary<string, string>? selections, IReadOnlyCollection<PackageAttribute> held)
+    {
+        DomainGuard.IsNull(package, Errors.PackageIdIsRequired);
+        DomainGuard.IsFalse(package.IsConsumable, Errors.PackageAdditionIsInvalid.With(package.Name));
+
+        var chosen = selections ?? new Dictionary<string, string>();
+        var unknown = chosen.Keys.FirstOrDefault(key => package.Components.All(x => x.Key != key));
+
+        DomainGuard.IsTrue(unknown is not null, Errors.PackageSelectionIsUnknown.With(unknown ?? string.Empty));
+
+        var lines = new List<PackageQuoteLine>();
+        var attributes = new List<PackageAttribute>();
+        var normalized = new Dictionary<string, string>();
+        var added = Money.Zero(package.Currency);
+
+        foreach (var component in package.Components)
+        {
+            var total = ValueOf(component, chosen);
+            var units = component.DeliveredUnits(total) - HeldUnits(component, held);
+
+            DomainGuard.IsTrue(units < 0, Errors.PackageAdditionIsInvalid.With(component.Key));
+
+            var unitPrice = UnitPriceOf(component, total);
+            var amount = unitPrice * units;
+
+            lines.Add(new PackageQuoteLine(component.Key, Text(component, total), units, unitPrice, amount));
+            attributes.Add(new PackageAttribute(component.Key, Granted(component, total), component.Combination));
+
+            if (component.EnableKey is not null)
+            {
+                attributes.Add(new PackageAttribute(component.EnableKey, Bool(total > 0), AttributeCombination.Or));
+            }
+
+            normalized[component.Key] = Text(component, total);
+            added += amount;
+        }
+
+        DomainGuard.IsTrue(lines.All(x => x.Units == 0), Errors.PackageAdditionIsInvalid.With(package.Name));
+
+        var (subTotal, tax, grandTotal) = package.WithTax(added);
+
+        return new PackageQuote(package, normalized, lines, Money.Zero(package.Currency), false, subTotal, tax, grandTotal, attributes) { IsAddition = true };
+    }
+
+    private static long HeldUnits(PackageComponent component, IReadOnlyCollection<PackageAttribute> held)
+    {
+        var attribute = (held ?? []).FirstOrDefault(x => x.Key == component.Key);
+
+        return attribute is not null && long.TryParse(attribute.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var units) ? units : 0;
+    }
+
     private static long ValueOf(PackageComponent component, IReadOnlyDictionary<string, string> chosen)
     {
         if (!chosen.TryGetValue(component.Key, out var text) || string.IsNullOrWhiteSpace(text))
@@ -163,6 +233,12 @@ public static class PackagePricing
 public sealed record PackageQuote(PackageAggregate Package, Dictionary<string, string> Selections, List<PackageQuoteLine> Lines, Money BasePrice, bool MinimumApplied, Money SubTotal, Money Tax, Money Total, List<PackageAttribute> Attributes)
 {
     /// <summary>
+    /// Si cotiza lo que se suma a un paquete consumible (pendings/744): los importes y las unidades de las líneas son solo
+    /// lo añadido; los atributos y lo elegido, el total.
+    /// </summary>
+    public bool IsAddition { get; init; }
+
+    /// <summary>
     /// La línea de la orden con esta cotización, aún sin periodo.
     /// </summary>
     /// <param name="lineId">El identificador de la línea.</param>
@@ -182,7 +258,10 @@ public sealed record PackageQuote(PackageAggregate Package, Dictionary<string, s
         Package.TaxBasisPoints,
         Package.TaxLegalBasis,
         Package.InvoiceConcept,
-        replacesLineId);
+        replacesLineId) with
+    {
+        AddsToReplaced = IsAddition && replacesLineId is not null ? true : null
+    };
 }
 
 /// <summary>
@@ -190,7 +269,7 @@ public sealed record PackageQuote(PackageAggregate Package, Dictionary<string, s
 /// </summary>
 /// <param name="Key">La clave del componente.</param>
 /// <param name="Value">El valor elegido, como texto.</param>
-/// <param name="Units">Las unidades por las que se multiplicó.</param>
+/// <param name="Units">Las unidades por las que se multiplicó; al sumar a un consumible, solo las añadidas.</param>
 /// <param name="UnitPrice">El precio de una unidad.</param>
 /// <param name="Amount">El aporte.</param>
 public sealed record PackageQuoteLine(string Key, string Value, long Units, Money UnitPrice, Money Amount);

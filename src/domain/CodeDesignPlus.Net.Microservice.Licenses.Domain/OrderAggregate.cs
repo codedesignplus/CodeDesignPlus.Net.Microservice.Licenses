@@ -456,6 +456,16 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     }
 
     /// <summary>
+    /// El fin de lo que se suma a un paquete consumible: el del paquete al que suma, mientras siga vigente.
+    /// </summary>
+    private Instant? AdditionEnd(Instant start, Instant? packagePeriodEnd)
+    {
+        var adds = (Packages ?? []).Any(x => x.AddsToReplaced == true);
+
+        return adds && packagePeriodEnd is not null && packagePeriodEnd.Value > start ? packagePeriodEnd : null;
+    }
+
+    /// <summary>
     /// Deja la orden sin efecto porque otra de la misma copropiedad la reemplazó antes de que se pagara.
     /// </summary>
     /// <param name="replacedBy">La orden que la reemplaza.</param>
@@ -488,7 +498,11 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
     /// </param>
     /// <param name="paymentMethodType">Con qué pagó el comprador, como lo nombra la pasarela; se guarda solo si se aprobó.</param>
     /// <param name="cardType">Si la tarjeta fue de crédito o de débito, como lo dijo la pasarela; se guarda solo si se aprobó.</param>
-    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId, Instant? periodStart = null, PaymentFailureReason? failureReason = null, string? providerMessage = null, Instant? licensePeriodEnd = null, string? paymentMethodType = null, string? cardType = null)
+    /// <param name="packagePeriodEnd">
+    /// En una orden que suma a un paquete consumible, el fin del paquete al que suma: lo añadido vence con él, no un año
+    /// después (pendings/744). Se ignora en las demás, y si ese paquete ya venció.
+    /// </param>
+    public void SetPaymentStatus(PaymentStatus paymentStatus, Guid buyerId, Instant? periodStart = null, PaymentFailureReason? failureReason = null, string? providerMessage = null, Instant? licensePeriodEnd = null, string? paymentMethodType = null, string? cardType = null, Instant? packagePeriodEnd = null)
     {
         // Idempotent: if already at this status, skip (message redelivery)
         if (PaymentStatus == paymentStatus)
@@ -506,7 +520,7 @@ public class OrderAggregate(Guid id) : AggregateRootBase(id)
 
             PeriodStart = periodStart ?? now;
             PeriodEnd = Type == OrderType.Package
-                ? PackageTerm.End(PeriodStart.Value, License.BillingType, licensePeriodEnd)
+                ? AdditionEnd(PeriodStart.Value, packagePeriodEnd) ?? PackageTerm.End(PeriodStart.Value, License.BillingType, licensePeriodEnd)
                 : BillingPeriod.End(PeriodStart.Value, License.BillingType);
 
             // Con licencia anual el paquete va con el periodo de la orden; con mensual, un año desde que empieza (pendings/739).

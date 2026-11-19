@@ -148,7 +148,7 @@ public sealed record PackageSeed(Guid Id, string Name, string ShortDescription, 
         TaxLegalBasis,
         InvoiceConcept,
         [.. (Attributes ?? []).Select(x => new PackageAttribute(x.Key, x.Value, x.Combine))],
-        [.. (Components ?? []).Select(x => new PackageComponent(x.Key, x.Kind, x.Combine, x.Min, x.Max, x.Step, x.Default, Money.FromLong(x.UnitPriceMinor, Currency), x.PerUnitOf, x.EnableKey, x.Required, [.. (x.Tiers ?? []).Select(t => new PackageTier(t.Value, Money.FromLong(t.PriceMinor, Currency)))]) { Multiplier = x.Multiplier })]);
+        [.. (Components ?? []).Select(x => new PackageComponent(x.Key, x.Kind, x.Combine, x.Min, x.Max, x.Step, x.Default, Money.FromLong(x.UnitPriceMinor, Currency), x.PerUnitOf, x.EnableKey, x.Required, [.. (x.Tiers ?? []).Select(t => new PackageTier(t.Value, Money.FromLong(t.PriceMinor, Currency)))]) { Multiplier = x.Multiplier, Consumable = x.Consumable })]);
 }
 
 /// <summary>
@@ -165,6 +165,11 @@ public sealed record PackageComponentSeed(string Key, PackageComponentKind Kind,
     /// El multiplicador de una cantidad por tramos de volumen (pendings/744); sin él vale 1.
     /// </summary>
     public long? Multiplier { get; init; }
+
+    /// <summary>
+    /// Si la cantidad por tramos de volumen es consumible (pendings/744); sin él vale no.
+    /// </summary>
+    public bool? Consumable { get; init; }
 }
 
 /// <summary>

@@ -139,6 +139,9 @@
     "264": "Somente um pedido pago é faturado.",
     "275": "Somente um documento eletrônico validado guarda seus arquivos.",
     "276": "As faixas de volume de '{0}' não são válidas: é preciso ao menos uma, cada uma a partir de uma quantidade diferente e maior que zero, a primeira a partir da menor quantidade que se pode escolher, nenhuma acima do máximo, e o componente sem preço unitário próprio.",
-    "277": "O multiplicador de '{0}' não é válido: é um inteiro maior que zero e só uma quantidade por faixas de volume o leva."
+    "277": "O multiplicador de '{0}' não é válido: é um inteiro maior que zero e só uma quantidade por faixas de volume o leva.",
+    "278": "'{0}' não pode ser consumível: só o é uma quantidade por faixas de volume cujo atributo se soma.",
+    "279": "Um pacote com um componente consumível só leva componentes consumíveis: '{0}' não o é.",
+    "280": "Não é possível somar a '{0}': a nova quantidade deve ser igual ou maior que a que você já tem, e ao menos uma deve ser maior."
   }
 }

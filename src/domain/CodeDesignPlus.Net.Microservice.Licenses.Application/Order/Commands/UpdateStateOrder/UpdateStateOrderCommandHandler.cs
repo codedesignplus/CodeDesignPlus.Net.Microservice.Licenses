@@ -42,7 +42,7 @@ public class UpdateStateOrderCommandHandler(
             return;
         }
 
-        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage, await LicensePeriodEndAsync(order, request.PaymentStatus, cancellationToken), request.PaymentMethodType, request.CardType);
+        order.SetPaymentStatus(request.PaymentStatus, order.Buyer.BuyerId, await PeriodStartAsync(order, request.PaymentStatus, cancellationToken), request.FailureReason, request.ProviderMessage, await LicensePeriodEndAsync(order, request.PaymentStatus, cancellationToken), request.PaymentMethodType, request.CardType, await AdditionPeriodEndAsync(order, request.PaymentStatus, cancellationToken));
 
         // Escritura condicional: si el webhook y la conciliacion aplican el mismo pago a la vez, solo uno gana, y
         // solo ese publica el aprovisionamiento. Nunca UpdateAsync: el documento entero pisaria los pasos que
@@ -194,6 +194,23 @@ public class UpdateStateOrderCommandHandler(
         var subscription = Domain.ServiceDomain.SubscriptionTimeline.From(await orderRepository.FindPaidByTenantAsync(order.TenantDetail.Id, cancellationToken));
 
         return subscription?.CurrentAt(now).PeriodEnd;
+    }
+
+    /// <summary>
+    /// El fin del paquete al que suma una orden de un consumible (pendings/744): lo añadido vence con él.
+    /// </summary>
+    private async Task<Instant?> AdditionPeriodEndAsync(OrderAggregate order, PaymentStatus status, CancellationToken cancellationToken)
+    {
+        var addition = order.Type == OrderType.Package ? (order.Packages ?? []).FirstOrDefault(x => x.AddsToReplaced == true && x.ReplacesLineId is not null) : null;
+
+        if (status != PaymentStatus.Succeeded || addition is null)
+        {
+            return null;
+        }
+
+        var paid = Domain.ServiceDomain.PackageTerm.PaidLines(await orderRepository.FindPaidWithPackagesByTenantAsync(order.TenantDetail.Id, cancellationToken) ?? []);
+
+        return paid.Where(x => x.Line.LineId == addition.ReplacesLineId).Select(x => x.Line.PeriodEnd).FirstOrDefault();
     }
 
     private Task SettleAsync(OrderAggregate order, CancellationToken cancellationToken)

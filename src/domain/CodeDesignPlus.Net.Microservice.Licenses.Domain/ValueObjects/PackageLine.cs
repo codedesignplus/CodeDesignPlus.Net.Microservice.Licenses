@@ -34,6 +34,13 @@ public sealed record PackageLine(Guid LineId, Guid PackageId, string Name, Packa
     public Instant? PeriodEnd { get; private set; }
 
     /// <summary>
+    /// Si esta línea se sumó a la que reemplaza (pendings/744): lleva los atributos y lo elegido del total, pero solo cobró
+    /// lo añadido, y la reemplazada sigue pagada y sin crédito. Nulo vale no. Miembro suelto: las órdenes ya guardadas no lo
+    /// traen (regla 31).
+    /// </summary>
+    public bool? AddsToReplaced { get; init; }
+
+    /// <summary>
     /// Crea la línea, aún sin periodo.
     /// </summary>
     /// <returns>La línea.</returns>

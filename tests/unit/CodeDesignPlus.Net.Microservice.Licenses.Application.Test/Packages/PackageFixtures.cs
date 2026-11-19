@@ -64,8 +64,8 @@ internal static class PackageFixtures
     /// A documents quota sold by the month and delivered for the year (pendings/744): the customer says how many a month
     /// and gets twelve times that, each delivered document at the price of the tier the monthly figure falls in.
     /// </summary>
-    public static PackageComponent DocumentsComponent(long? multiplier = 12, long min = 1, long max = 3333, long defaultValue = 50, string? enableKey = null, List<PackageTier>? tiers = null, long unitPriceMinor = 0) =>
-        new("documents", PackageComponentKind.Volume, AttributeCombination.Sum, min, max, 1, defaultValue, Cop(unitPriceMinor), null, enableKey, false, tiers ?? DocumentTiers()) { Multiplier = multiplier };
+    public static PackageComponent DocumentsComponent(long? multiplier = 12, long min = 1, long max = 3333, long defaultValue = 50, string? enableKey = null, List<PackageTier>? tiers = null, long unitPriceMinor = 0, bool? consumable = null) =>
+        new("documents", PackageComponentKind.Volume, AttributeCombination.Sum, min, max, 1, defaultValue, Cop(unitPriceMinor), null, enableKey, false, tiers ?? DocumentTiers()) { Multiplier = multiplier, Consumable = consumable };
 
     /// <summary>
     /// A configurable package with the given components and no base nor minimum price.
@@ -74,7 +74,7 @@ internal static class PackageFixtures
         "Documentos", "Cupo de documentos", "Cupo anual de documentos", Icon.Create("document", "#16a34a"), true, false, true, [], PackageKind.Configurable, "COP",
         Cop(0), Cop(0), TaxTreatment.Taxed, 1900, null, "Cupo de documentos", [], [.. components]);
 
-    public static PackageAggregate Documents(long? multiplier = 12, string? enableKey = null) => PackageAggregate.Create(DocumentsId, Configurable(DocumentsComponent(multiplier, enableKey: enableKey)), Guid.NewGuid());
+    public static PackageAggregate Documents(long? multiplier = 12, string? enableKey = null, bool? consumable = null) => PackageAggregate.Create(DocumentsId, Configurable(DocumentsComponent(multiplier, enableKey: enableKey, consumable: consumable)), Guid.NewGuid());
 
     /// <summary>
     /// La copia de una licencia anual, con o sin atributos de reuniones.

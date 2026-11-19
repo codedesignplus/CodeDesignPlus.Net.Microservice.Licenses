@@ -85,6 +85,12 @@ public class PackageQuoteDto
     public Guid? ReplacesLineId { get; set; }
 
     /// <summary>
+    /// Si se suma a un paquete consumible que la copropiedad ya tiene (pendings/744): <see cref="Lines"/> y los importes
+    /// son solo lo añadido, sin crédito; <see cref="Selections"/> y <see cref="Attributes"/>, el total con que queda.
+    /// </summary>
+    public bool IsAddition { get; set; }
+
+    /// <summary>
     /// Lo no usado de la línea reemplazada, con su IVA.
     /// </summary>
     public long Credit { get; set; }
@@ -140,6 +146,7 @@ public class PackageQuoteDto
         Tax = quote.Tax.Amount,
         Total = quote.Total.Amount,
         Attributes = [.. quote.Attributes.Select(PackageAttributeDto.From)],
+        IsAddition = quote.IsAddition,
         AmountDue = quote.Total.Amount
     };
 }
@@ -160,7 +167,7 @@ public class PackageQuoteLineDto
     public string Value { get; set; } = string.Empty;
 
     /// <summary>
-    /// Las unidades por las que se multiplicó.
+    /// Las unidades por las que se multiplicó; al sumar a un consumible, solo las añadidas.
     /// </summary>
     public long Units { get; set; }
 
@@ -276,6 +283,11 @@ public class PackageLineDto
     public bool IsActive { get; set; }
 
     /// <summary>
+    /// Si la línea se sumó a la que reemplaza (pendings/744): sus importes son solo lo añadido; sus atributos, el total.
+    /// </summary>
+    public bool IsAddition { get; set; }
+
+    /// <summary>
     /// La línea para la pantalla.
     /// </summary>
     /// <param name="line">La línea.</param>
@@ -302,6 +314,7 @@ public class PackageLineDto
         PeriodStart = line.PeriodStart,
         PeriodEnd = line.PeriodEnd,
         ReplacesLineId = line.ReplacesLineId,
-        IsActive = isActive
+        IsActive = isActive,
+        IsAddition = line.AddsToReplaced == true
     };
 }

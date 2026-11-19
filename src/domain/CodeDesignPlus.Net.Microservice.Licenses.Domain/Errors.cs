@@ -154,4 +154,7 @@ public class Errors : IErrorCodes
     public static readonly Error OnlyAValidatedDocumentKeepsFiles = new("275");
     public static readonly Error PackageComponentVolumeTiersAreInvalid = new("276");
     public static readonly Error PackageComponentMultiplierIsInvalid = new("277");
+    public static readonly Error PackageConsumableComponentIsInvalid = new("278");
+    public static readonly Error PackageMixesConsumableComponents = new("279");
+    public static readonly Error PackageAdditionIsInvalid = new("280");
 }

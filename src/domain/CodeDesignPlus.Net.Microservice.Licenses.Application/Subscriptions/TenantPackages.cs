@@ -97,23 +97,28 @@ public sealed record TenantPackages(SubscriptionTimeline Subscription, List<(Ord
         var quote = PackagePricing.Quote(package, selections);
         var existing = Current(now).Where(x => x.Line.PackageId == package.Id).Cast<(OrderAggregate Order, PackageLine Line)?>().FirstOrDefault();
         var credited = new List<CreditedPeriod>();
+        var end = PackageTerm.End(now, current.License.BillingType, current.PeriodEnd);
 
         if (existing is not null)
         {
             // Ampliar, nunca reducir a mitad de periodo: reducir o quitar se hace al renovar (decisión del usuario).
             ApplicationGuard.IsFalse(AttributeCombiner.IsUpgrade(existing.Value.Line.Attributes, quote.Attributes), Errors.PackageIsNotAnUpgrade);
 
-            var credit = Proration.CreditLine(existing.Value.Order.Id, existing.Value.Line, Subscription.Zone, now);
-
-            if (credit is not null)
+            if (package.IsConsumable)
             {
-                credited.Add(credit);
+                // Un cupo se gasta, no transcurre (pendings/744): se cobra solo lo añadido, sin crédito por tiempo, y lo
+                // añadido vence con el paquete que ya tiene.
+                quote = PackagePricing.QuoteAddition(package, selections, existing.Value.Line.Attributes);
+                end = existing.Value.Line.PeriodEnd!.Value;
+            }
+            else
+            {
+                credited.AddRange(CreditsOf(existing.Value.Order, existing.Value.Line, now));
             }
         }
 
         var creditTotal = credited.Aggregate(Money.Zero(quote.Total.Currency), (sum, x) => sum + x.Total);
         var charge = SubscriptionCharge.Compute(quote.Total, creditTotal, creditBalance);
-        var end = PackageTerm.End(now, current.License.BillingType, current.PeriodEnd);
 
         return new PackageAddOnQuote(quote, existing?.Line.LineId, credited, charge, now, end);
     }
@@ -196,18 +201,40 @@ public sealed record TenantPackages(SubscriptionTimeline Subscription, List<(Ord
             }
 
             var quote = PackagePricing.Quote(package, line.Selections);
-            var credit = Proration.CreditLine(order.Id, line, Subscription.Zone, now);
 
             quotes.Add(quote);
             lines.Add(quote.ToLine(Guid.NewGuid(), line.LineId));
+            credited.AddRange(CreditsOf(order, line, now));
+        }
+
+        return (quotes, lines, credited);
+    }
+
+    /// <summary>
+    /// Lo no usado de una línea que se va a reemplazar cobrando el paquete entero. Si la línea se sumó a otra
+    /// (<see cref="PackageLine.AddsToReplaced"/>, pendings/744) solo cobró lo añadido, así que se acredita también lo de
+    /// las líneas a las que se fue sumando, cada una contra su orden: entre todas son lo que se pagó por lo que hoy entrega.
+    /// </summary>
+    private List<CreditedPeriod> CreditsOf(OrderAggregate order, PackageLine line, Instant now)
+    {
+        var credited = new List<CreditedPeriod>();
+        (OrderAggregate Order, PackageLine Line)? step = (order, line);
+
+        while (step is not null)
+        {
+            var credit = Proration.CreditLine(step.Value.Order.Id, step.Value.Line, Subscription.Zone, now);
 
             if (credit is not null)
             {
                 credited.Add(credit);
             }
+
+            var previous = step.Value.Line.AddsToReplaced == true ? step.Value.Line.ReplacesLineId : null;
+
+            step = previous is null ? null : Lines.Where(x => x.Line.LineId == previous).Cast<(OrderAggregate Order, PackageLine Line)?>().FirstOrDefault();
         }
 
-        return (quotes, lines, credited);
+        return credited;
     }
 }
 

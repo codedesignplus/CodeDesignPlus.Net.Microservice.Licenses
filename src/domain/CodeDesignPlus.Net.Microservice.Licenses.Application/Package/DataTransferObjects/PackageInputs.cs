@@ -50,6 +50,12 @@ public sealed record PackageComponentInput(string Key, PackageComponentKind Kind
     public long? Multiplier { get; init; }
 
     /// <summary>
+    /// Si lo que entrega una cantidad por tramos de volumen se gasta: ampliarlo es comprar más unidades (pendings/744).
+    /// Opcional: sin él vale no.
+    /// </summary>
+    public bool? Consumable { get; init; }
+
+    /// <summary>
     /// El componente del dominio con los precios en unidades mínimas.
     /// </summary>
     /// <param name="currency">La moneda del paquete.</param>
@@ -69,7 +75,8 @@ public sealed record PackageComponentInput(string Key, PackageComponentKind Kind
         Required,
         [.. (Tiers ?? []).Select(x => new PackageTier(x.Value, new MoneyInput(x.Price, currency).ToMoney(decimalDigits)))])
     {
-        Multiplier = Multiplier
+        Multiplier = Multiplier,
+        Consumable = Consumable
     };
 }
 

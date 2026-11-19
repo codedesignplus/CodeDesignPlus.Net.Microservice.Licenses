@@ -112,6 +112,11 @@ public class PackageDto : IDtoBase
     public PackagePriceDto Price { get; set; } = new();
 
     /// <summary>
+    /// Si es un consumible: quien ya lo tiene lo amplía sumándole unidades y paga solo lo añadido (pendings/744).
+    /// </summary>
+    public bool IsConsumable { get; set; }
+
+    /// <summary>
     /// El paquete del catálogo para la pantalla.
     /// </summary>
     /// <param name="package">El paquete.</param>
@@ -137,7 +142,8 @@ public class PackageDto : IDtoBase
         InvoiceConcept = package.InvoiceConcept,
         Attributes = [.. package.Attributes.Select(PackageAttributeDto.From)],
         Components = [.. package.Components.Select(PackageComponentDto.From)],
-        Price = DefaultPrice(package)
+        Price = DefaultPrice(package),
+        IsConsumable = package.IsConsumable
     };
 
     private static PackagePriceDto DefaultPrice(PackageAggregate package)
@@ -257,6 +263,11 @@ public class PackageComponentDto
     public long Multiplier { get; set; } = 1;
 
     /// <summary>
+    /// Si lo que entrega se gasta: ampliarlo es comprar más unidades, sin crédito por tiempo (pendings/744).
+    /// </summary>
+    public bool Consumable { get; set; }
+
+    /// <summary>
     /// El componente para la pantalla.
     /// </summary>
     /// <param name="component">El componente.</param>
@@ -275,7 +286,8 @@ public class PackageComponentDto
         EnableKey = component.EnableKey,
         Required = component.Required,
         Tiers = [.. (component.Tiers ?? []).Select(x => new PackageTierDto { Value = x.Value, Price = x.Price.Amount })],
-        Multiplier = component.Multiplier ?? 1
+        Multiplier = component.Multiplier ?? 1,
+        Consumable = component.Consumable == true
     };
 }
 

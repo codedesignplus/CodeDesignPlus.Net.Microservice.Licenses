@@ -34,6 +34,15 @@ public sealed record PackageComponent(string Key, PackageComponentKind Kind, Att
     public long? Multiplier { get; init; }
 
     /// <summary>
+    /// Si lo que entrega una cantidad por tramos de volumen se gasta en vez de transcurrir (un cupo): ampliarlo es comprar
+    /// más unidades, sin crédito por el tiempo no usado (pendings/744). Nulo vale no.
+    /// </summary>
+    /// <remarks>
+    /// Miembro suelto, como <see cref="Multiplier"/>: los paquetes ya guardados no lo traen (regla 31).
+    /// </remarks>
+    public bool? Consumable { get; init; }
+
+    /// <summary>
     /// Las unidades del atributo que entrega lo elegido: lo elegido por el multiplicador.
     /// </summary>
     /// <param name="value">Lo elegido.</param>

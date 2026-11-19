@@ -139,6 +139,9 @@
     "264": "Solo se factura una orden pagada.",
     "275": "Solo un documento electrónico validado guarda sus archivos.",
     "276": "Los tramos de volumen de '{0}' no sirven: hace falta al menos uno, cada uno desde una cantidad distinta y mayor que cero, el primero desde la menor cantidad que se puede elegir, ninguno por encima del máximo, y el componente sin precio unitario propio.",
-    "277": "El multiplicador de '{0}' no sirve: es un entero mayor que cero y solo lo lleva una cantidad por tramos de volumen."
+    "277": "El multiplicador de '{0}' no sirve: es un entero mayor que cero y solo lo lleva una cantidad por tramos de volumen.",
+    "278": "'{0}' no puede ser consumible: solo lo es una cantidad por tramos de volumen cuyo atributo se suma.",
+    "279": "Un paquete con un componente consumible solo lleva componentes consumibles: '{0}' no lo es.",
+    "280": "No se puede sumar a '{0}': la cantidad nueva debe ser igual o mayor que la que ya tienes, y al menos una debe ser mayor."
   }
 }
