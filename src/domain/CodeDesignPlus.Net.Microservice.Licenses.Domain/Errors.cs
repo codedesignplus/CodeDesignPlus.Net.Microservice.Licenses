@@ -152,4 +152,6 @@ public class Errors : IErrorCodes
     public static readonly Error ElectronicDocumentIdIsRequired = new("263");
     public static readonly Error OnlyAPaidOrderIsInvoiced = new("264");
     public static readonly Error OnlyAValidatedDocumentKeepsFiles = new("275");
+    public static readonly Error PackageComponentVolumeTiersAreInvalid = new("276");
+    public static readonly Error PackageComponentMultiplierIsInvalid = new("277");
 }

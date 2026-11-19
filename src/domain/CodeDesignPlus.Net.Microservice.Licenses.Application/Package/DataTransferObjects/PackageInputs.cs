@@ -22,15 +22,15 @@ public sealed record PackageAttributeInput(string Key, string Value, AttributeCo
 /// <summary>
 /// Escritura de un tramo: el precio en unidad mayor (regla 04).
 /// </summary>
-/// <param name="Value">El valor del tramo.</param>
-/// <param name="Price">El precio en unidad mayor.</param>
+/// <param name="Value">El valor del tramo, o la cantidad desde la que aplica un tramo de volumen.</param>
+/// <param name="Price">El precio en unidad mayor; en un tramo de volumen, el de cada unidad entregada.</param>
 public sealed record PackageTierInput(long Value, decimal Price);
 
 /// <summary>
 /// Escritura de un componente de un paquete configurable: los precios en unidad mayor (regla 04).
 /// </summary>
 /// <param name="Key">La clave del atributo.</param>
-/// <param name="Kind">Cantidad, tramos o sí/no.</param>
+/// <param name="Kind">Cantidad, tramos, sí/no o cantidad por tramos de volumen.</param>
 /// <param name="Combine">Cómo se combina.</param>
 /// <param name="Min">El mínimo de una cantidad.</param>
 /// <param name="Max">El máximo de una cantidad.</param>
@@ -43,6 +43,12 @@ public sealed record PackageTierInput(long Value, decimal Price);
 /// <param name="Tiers">Los tramos.</param>
 public sealed record PackageComponentInput(string Key, PackageComponentKind Kind, AttributeCombination Combine, long Min, long Max, long Step, long Default, decimal UnitPrice, string? PerUnitOf, string? EnableKey, bool Required, List<PackageTierInput>? Tiers)
 {
+    /// <summary>
+    /// Cuántas unidades del atributo entrega, y cobra, cada unidad elegida en una cantidad por tramos de volumen
+    /// (pendings/744). Opcional: sin él vale 1.
+    /// </summary>
+    public long? Multiplier { get; init; }
+
     /// <summary>
     /// El componente del dominio con los precios en unidades mínimas.
     /// </summary>
@@ -61,7 +67,10 @@ public sealed record PackageComponentInput(string Key, PackageComponentKind Kind
         PerUnitOf,
         EnableKey,
         Required,
-        [.. (Tiers ?? []).Select(x => new PackageTier(x.Value, new MoneyInput(x.Price, currency).ToMoney(decimalDigits)))]);
+        [.. (Tiers ?? []).Select(x => new PackageTier(x.Value, new MoneyInput(x.Price, currency).ToMoney(decimalDigits)))])
+    {
+        Multiplier = Multiplier
+    };
 }
 
 /// <summary>

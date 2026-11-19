@@ -1,0 +1,19 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using Xunit;
+global using Microsoft.Extensions.Configuration;
+global using Microsoft.Extensions.DependencyInjection;
+global using CodeDesignPlus.Net.Mongo.Extensions;
+global using CodeDesignPlus.Net.ValueObjects.Financial;
+global using MongoDB.Bson;
+global using MongoDB.Driver;
+
+global using CodeDesignPlus.Net.Microservice.Licenses.Domain;
+global using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
+global using CodeDesignPlus.Net.Microservice.Licenses.Domain.Repositories;
+global using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
+global using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+global using CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Test.Helpers;

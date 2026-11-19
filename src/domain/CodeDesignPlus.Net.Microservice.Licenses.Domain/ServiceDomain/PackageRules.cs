@@ -68,15 +68,16 @@ public static class PackageRules
             switch (component.Kind)
             {
                 case PackageComponentKind.Quantity:
-                    DomainGuard.IsTrue(component.Combination == AttributeCombination.Or, Errors.PackageAttributeValueIsInvalid.With(key));
-                    DomainGuard.IsTrue(component.Min < 0 || component.Max < component.Min || component.Step <= 0 || component.Default < component.Min || component.Default > component.Max || (component.Default - component.Min) % component.Step != 0, Errors.PackageComponentRangeIsInvalid.With(key));
-                    DomainGuard.IsFalse(string.IsNullOrWhiteSpace(component.PerUnitOf), Errors.PackageComponentPerUnitOfIsInvalid.With(key));
-                    DomainGuard.IsTrue((component.Tiers ?? []).Count > 0 || component.Required, Errors.PackageSelectionIsInvalid.With(key));
+                    EnsureRange(component, key);
+                    DomainGuard.IsTrue((component.Tiers ?? []).Count > 0, Errors.PackageSelectionIsInvalid.With(key));
+                    EnsureNoMultiplier(component, key);
 
-                    if (!string.IsNullOrWhiteSpace(component.EnableKey))
-                    {
-                        EnsureKey(component.EnableKey);
-                    }
+                    break;
+
+                case PackageComponentKind.Volume:
+                    EnsureRange(component, key);
+                    EnsureVolumeTiers(component, key);
+                    DomainGuard.IsTrue(component.Multiplier is { } multiplier && (multiplier < 1 || component.Max > long.MaxValue / multiplier), Errors.PackageComponentMultiplierIsInvalid.With(key));
 
                     break;
 
@@ -87,6 +88,7 @@ public static class PackageRules
                     DomainGuard.IsTrue(tiers.Count == 0 || tiers.Any(x => x is null || x.Value <= 0) || tiers.Select(x => x.Value).Distinct().Count() != tiers.Count || tiers.All(x => x.Value != component.Default), Errors.PackageComponentTiersAreInvalid.With(key));
                     DomainGuard.IsFalse(string.IsNullOrWhiteSpace(component.EnableKey), Errors.PackageSelectionIsInvalid.With(key));
                     EnsurePerUnitOf(component, key, quantities);
+                    EnsureNoMultiplier(component, key);
 
                     break;
 
@@ -95,12 +97,58 @@ public static class PackageRules
                     DomainGuard.IsTrue(component.Default is not (0 or 1) || (component.Required && component.Default != 1), Errors.PackageSelectionIsInvalid.With(key));
                     DomainGuard.IsTrue((component.Tiers ?? []).Count > 0 || !string.IsNullOrWhiteSpace(component.EnableKey), Errors.PackageSelectionIsInvalid.With(key));
                     EnsurePerUnitOf(component, key, quantities);
+                    EnsureNoMultiplier(component, key);
 
                     break;
             }
         }
 
         EnsureUnique(components.SelectMany(x => string.IsNullOrWhiteSpace(x.EnableKey) ? new[] { x.Key.Trim() } : [x.Key.Trim(), x.EnableKey.Trim()]));
+    }
+
+    /// <summary>
+    /// Lo que comparten la cantidad y la cantidad por tramos de volumen: un entero que se suma o del que se toma el mayor,
+    /// con su rango y su paso, que no se cobra por unidades de otro componente ni va «siempre encendido».
+    /// </summary>
+    private static void EnsureRange(PackageComponent component, string key)
+    {
+        DomainGuard.IsTrue(component.Combination == AttributeCombination.Or, Errors.PackageAttributeValueIsInvalid.With(key));
+        DomainGuard.IsTrue(component.Min < 0 || component.Max < component.Min || component.Step <= 0 || component.Default < component.Min || component.Default > component.Max || (component.Default - component.Min) % component.Step != 0, Errors.PackageComponentRangeIsInvalid.With(key));
+        DomainGuard.IsFalse(string.IsNullOrWhiteSpace(component.PerUnitOf), Errors.PackageComponentPerUnitOfIsInvalid.With(key));
+        DomainGuard.IsTrue(component.Required, Errors.PackageSelectionIsInvalid.With(key));
+
+        if (!string.IsNullOrWhiteSpace(component.EnableKey))
+        {
+            EnsureKey(component.EnableKey);
+        }
+    }
+
+    /// <summary>
+    /// Los tramos de volumen tienen que poner precio a toda cantidad que se pueda elegir (pendings/744): al menos uno, cada
+    /// uno desde una cantidad distinta y mayor que cero, el primero desde la menor cantidad elegible o antes, y ninguno más
+    /// allá del máximo. El precio sale solo de ellos: el componente no lleva precio unitario propio.
+    /// </summary>
+    private static void EnsureVolumeTiers(PackageComponent component, string key)
+    {
+        var tiers = component.Tiers ?? [];
+        var error = Errors.PackageComponentVolumeTiersAreInvalid.With(key);
+
+        DomainGuard.IsTrue(tiers.Count == 0 || tiers.Any(x => x is null || x.Value <= 0), error);
+        DomainGuard.IsTrue(tiers.Select(x => x.Value).Distinct().Count() != tiers.Count, error);
+
+        // La menor cantidad que se cobra: cero no entrega nada y no necesita tramo.
+        var smallest = component.Min > 0 ? component.Min : component.Step;
+
+        DomainGuard.IsTrue(tiers.Min(x => x.Value) > smallest || tiers.Max(x => x.Value) > component.Max, error);
+        DomainGuard.IsTrue(component.UnitPrice.Amount != 0, error);
+    }
+
+    /// <summary>
+    /// Solo una cantidad por tramos de volumen entrega un múltiplo de lo elegido; en los demás, 1 es lo mismo que nada.
+    /// </summary>
+    private static void EnsureNoMultiplier(PackageComponent component, string key)
+    {
+        DomainGuard.IsTrue(component.Multiplier is not (null or 1), Errors.PackageComponentMultiplierIsInvalid.With(key));
     }
 
     private static void EnsurePerUnitOf(PackageComponent component, string key, HashSet<string> quantities)

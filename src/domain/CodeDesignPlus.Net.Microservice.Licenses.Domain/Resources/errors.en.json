@@ -137,6 +137,8 @@
     "262": "The same package appears twice in the order.",
     "263": "The electronic document of the order needs its id.",
     "264": "Only a paid order is invoiced.",
-    "275": "Only a validated electronic document keeps its files."
+    "275": "Only a validated electronic document keeps its files.",
+    "276": "The volume tiers of '{0}' are not valid: at least one is needed, each starting at a different quantity greater than zero, the first one at the smallest quantity that can be chosen, none above the maximum, and the component without a unit price of its own.",
+    "277": "The multiplier of '{0}' is not valid: it is an integer greater than zero and only a quantity priced by volume tiers carries one."
   }
 }

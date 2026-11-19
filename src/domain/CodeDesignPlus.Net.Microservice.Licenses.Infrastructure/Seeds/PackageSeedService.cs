@@ -148,7 +148,7 @@ public sealed record PackageSeed(Guid Id, string Name, string ShortDescription, 
         TaxLegalBasis,
         InvoiceConcept,
         [.. (Attributes ?? []).Select(x => new PackageAttribute(x.Key, x.Value, x.Combine))],
-        [.. (Components ?? []).Select(x => new PackageComponent(x.Key, x.Kind, x.Combine, x.Min, x.Max, x.Step, x.Default, Money.FromLong(x.UnitPriceMinor, Currency), x.PerUnitOf, x.EnableKey, x.Required, [.. (x.Tiers ?? []).Select(t => new PackageTier(t.Value, Money.FromLong(t.PriceMinor, Currency)))]))]);
+        [.. (Components ?? []).Select(x => new PackageComponent(x.Key, x.Kind, x.Combine, x.Min, x.Max, x.Step, x.Default, Money.FromLong(x.UnitPriceMinor, Currency), x.PerUnitOf, x.EnableKey, x.Required, [.. (x.Tiers ?? []).Select(t => new PackageTier(t.Value, Money.FromLong(t.PriceMinor, Currency)))]) { Multiplier = x.Multiplier })]);
 }
 
 /// <summary>
@@ -159,7 +159,13 @@ public sealed record PackageAttributeSeed(string Key, string Value, AttributeCom
 /// <summary>
 /// Un componente de un paquete configurable del fichero.
 /// </summary>
-public sealed record PackageComponentSeed(string Key, PackageComponentKind Kind, AttributeCombination Combine, long Min, long Max, long Step, long Default, long UnitPriceMinor, string? PerUnitOf, string? EnableKey, bool Required, List<PackageTierSeed>? Tiers);
+public sealed record PackageComponentSeed(string Key, PackageComponentKind Kind, AttributeCombination Combine, long Min, long Max, long Step, long Default, long UnitPriceMinor, string? PerUnitOf, string? EnableKey, bool Required, List<PackageTierSeed>? Tiers)
+{
+    /// <summary>
+    /// El multiplicador de una cantidad por tramos de volumen (pendings/744); sin él vale 1.
+    /// </summary>
+    public long? Multiplier { get; init; }
+}
 
 /// <summary>
 /// Un tramo del fichero.

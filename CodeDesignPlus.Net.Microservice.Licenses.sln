@@ -52,6 +52,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeDesignPlus.Net.Microser
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeDesignPlus.Net.Microservice.Licenses.gRpc.Test", "tests\integration\CodeDesignPlus.Net.Microservice.Licenses.gRpc.Test\CodeDesignPlus.Net.Microservice.Licenses.gRpc.Test.csproj", "{35A116FD-F574-4156-B157-8D00ED79AC9E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Test", "tests\integration\CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Test\CodeDesignPlus.Net.Microservice.Licenses.Infrastructure.Test.csproj", "{6C02D021-721D-4667-9481-9323BC072D2D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -254,6 +256,18 @@ Global
 		{35A116FD-F574-4156-B157-8D00ED79AC9E}.Release|x64.Build.0 = Release|Any CPU
 		{35A116FD-F574-4156-B157-8D00ED79AC9E}.Release|x86.ActiveCfg = Release|Any CPU
 		{35A116FD-F574-4156-B157-8D00ED79AC9E}.Release|x86.Build.0 = Release|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Debug|x64.Build.0 = Debug|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Debug|x86.Build.0 = Debug|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Release|x64.ActiveCfg = Release|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Release|x64.Build.0 = Release|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Release|x86.ActiveCfg = Release|Any CPU
+		{6C02D021-721D-4667-9481-9323BC072D2D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -280,6 +294,7 @@ Global
 		{190F4D61-6345-4513-AE2E-5C1232AD3E4F} = {EBFDC2CC-2318-45BC-B619-8754439D2541}
 		{0A48CBE1-2890-4CFE-AA5F-4E0C1A17B4A1} = {5769C6DB-68E8-4A8C-B43A-243401CDB4A2}
 		{35A116FD-F574-4156-B157-8D00ED79AC9E} = {C19E3964-BDFB-41E0-B86C-CA90E3E5F335}
+		{6C02D021-721D-4667-9481-9323BC072D2D} = {C19E3964-BDFB-41E0-B86C-CA90E3E5F335}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {91BAB16E-7151-425E-919F-2725C0813642}

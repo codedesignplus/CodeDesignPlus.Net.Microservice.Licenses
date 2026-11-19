@@ -195,7 +195,7 @@ public class PackageComponentDto
     public string Key { get; set; } = string.Empty;
 
     /// <summary>
-    /// Cantidad, tramos o sí/no.
+    /// Cantidad, tramos, sí/no o cantidad por tramos de volumen.
     /// </summary>
     public PackageComponentKind Kind { get; set; }
 
@@ -245,9 +245,16 @@ public class PackageComponentDto
     public bool Required { get; set; }
 
     /// <summary>
-    /// Los tramos.
+    /// Los tramos. En una cantidad por tramos de volumen, cada uno aplica desde su <see cref="PackageTierDto.Value"/> hasta
+    /// donde empieza el siguiente.
     /// </summary>
     public List<PackageTierDto> Tiers { get; set; } = [];
+
+    /// <summary>
+    /// Cuántas unidades del atributo entrega, y cobra, cada unidad elegida en una cantidad por tramos de volumen
+    /// (pendings/744); 1 en los demás.
+    /// </summary>
+    public long Multiplier { get; set; } = 1;
 
     /// <summary>
     /// El componente para la pantalla.
@@ -267,7 +274,8 @@ public class PackageComponentDto
         PerUnitOf = component.PerUnitOf,
         EnableKey = component.EnableKey,
         Required = component.Required,
-        Tiers = [.. (component.Tiers ?? []).Select(x => new PackageTierDto { Value = x.Value, Price = x.Price.Amount })]
+        Tiers = [.. (component.Tiers ?? []).Select(x => new PackageTierDto { Value = x.Value, Price = x.Price.Amount })],
+        Multiplier = component.Multiplier ?? 1
     };
 }
 
@@ -277,12 +285,12 @@ public class PackageComponentDto
 public class PackageTierDto
 {
     /// <summary>
-    /// El valor del tramo.
+    /// El valor del tramo, o la cantidad desde la que aplica un tramo de volumen.
     /// </summary>
     public long Value { get; set; }
 
     /// <summary>
-    /// Su precio en unidades mínimas.
+    /// Su precio en unidades mínimas; en un tramo de volumen, el de cada unidad entregada.
     /// </summary>
     public long Price { get; set; }
 }

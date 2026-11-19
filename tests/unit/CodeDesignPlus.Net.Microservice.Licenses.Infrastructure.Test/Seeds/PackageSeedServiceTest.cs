@@ -47,4 +47,22 @@ public class PackageSeedServiceTest
         // Assert
         Assert.Equal(2, inserted);
     }
+
+    /// <summary>
+    /// Un fichero de siembra puede traer una cantidad por tramos de volumen con su multiplicador (pendings/744): llega al
+    /// paquete tal cual y cotiza lo entregado al precio de su tramo.
+    /// </summary>
+    [Fact]
+    public void ToDefinition_AVolumeQuantityWithItsMultiplier_ReachesThePackage()
+    {
+        // Arrange
+        var component = new PackageComponentSeed("documents", Domain.Enums.PackageComponentKind.Volume, Domain.Enums.AttributeCombination.Sum, 1, 3333, 1, 50, 0, null, null, false, [new PackageTierSeed(1, 15_000), new PackageTierSeed(51, 11_000)]) { Multiplier = 12 };
+        var seed = new PackageSeed(Guid.NewGuid(), "Documentos", "Cupo", "Cupo anual", "document", "#16a34a", false, Domain.Enums.PackageKind.Configurable, "COP", 0, 0, Domain.Enums.TaxTreatment.Taxed, 1900, null, "Cupo de documentos", [], [component]);
+
+        // Act
+        var package = PackageAggregate.Create(seed.Id, seed.ToDefinition(), PackageSeedService.SystemUserId);
+
+        // Assert
+        Assert.Equal(((long?)12, 600 * 15_000L), (package.Components[0].Multiplier, PackagePricing.Quote(package, null).SubTotal.Amount));
+    }
 }

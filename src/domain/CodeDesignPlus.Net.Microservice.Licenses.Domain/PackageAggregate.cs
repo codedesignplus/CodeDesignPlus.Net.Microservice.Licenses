@@ -220,7 +220,7 @@ public class PackageAggregate(Guid id) : AggregateRootBase(id)
         TaxLegalBasis = string.IsNullOrWhiteSpace(definition.TaxLegalBasis) ? null : definition.TaxLegalBasis.Trim();
         InvoiceConcept = definition.InvoiceConcept.Trim();
         Attributes = [.. definition.Attributes.Select(x => x with { Key = x.Key.Trim(), Value = x.Value.Trim() })];
-        Components = [.. definition.Components.Select(x => x with { Key = x.Key.Trim(), PerUnitOf = Blank(x.PerUnitOf), EnableKey = Blank(x.EnableKey), Tiers = [.. (x.Tiers ?? []).OrderBy(t => t.Value)] })];
+        Components = [.. definition.Components.Select(x => x with { Key = x.Key.Trim(), PerUnitOf = Blank(x.PerUnitOf), EnableKey = Blank(x.EnableKey), Tiers = [.. (x.Tiers ?? []).OrderBy(t => t.Value)], Multiplier = x.Kind == PackageComponentKind.Volume ? x.Multiplier : null })];
 
         ApplyOffers(definition.OfferedTo, by, now);
     }

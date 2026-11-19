@@ -17,6 +17,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 /// su precio unitario; un tramo, su precio; un sí encendido, su precio. El tramo y el sí con <c>PerUnitOf</c> se
 /// multiplican por las unidades de esa cantidad. Se suma la base y, si el total queda por debajo del mínimo, se cobra el
 /// mínimo.</item>
+/// <item>Una cantidad por tramos de volumen (pendings/744) entrega lo elegido por su multiplicador y cobra cada unidad
+/// entregada al precio del tramo en que cae lo elegido: toda la cantidad a ese precio, no cada parte al de su tramo. Lo
+/// elegido se guarda como se eligió; el atributo lleva lo entregado.</item>
 /// <item>El impuesto se calcula sobre la base con la tarifa del paquete.</item>
 /// </list>
 /// </remarks>
@@ -66,9 +69,9 @@ public static class PackagePricing
             var amount = component.Kind == PackageComponentKind.Toggle && value == 0 ? Money.Zero(package.Currency) : unitPrice * units;
 
             lines.Add(new PackageQuoteLine(component.Key, Text(component, value), units, unitPrice, amount));
-            attributes.Add(new PackageAttribute(component.Key, Text(component, value), component.Combination));
+            attributes.Add(new PackageAttribute(component.Key, Granted(component, value), component.Combination));
 
-            if (component.Kind == PackageComponentKind.Quantity && component.EnableKey is not null)
+            if (component.Kind is PackageComponentKind.Quantity or PackageComponentKind.Volume && component.EnableKey is not null)
             {
                 attributes.Add(new PackageAttribute(component.EnableKey, Bool(value > 0), AttributeCombination.Or));
             }
@@ -106,7 +109,7 @@ public static class PackagePricing
 
         DomainGuard.IsFalse(long.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var value), Errors.PackageSelectionIsInvalid.With(component.Key));
 
-        if (component.Kind == PackageComponentKind.Quantity)
+        if (component.Kind is PackageComponentKind.Quantity or PackageComponentKind.Volume)
         {
             DomainGuard.IsTrue(value < component.Min || value > component.Max || (value - component.Min) % component.Step != 0, Errors.PackageSelectionIsInvalid.With(component.Key));
         }
@@ -121,12 +124,24 @@ public static class PackagePricing
     private static long UnitsOf(PackageComponent component, Dictionary<string, long> values) => component.Kind switch
     {
         PackageComponentKind.Quantity => values[component.Key],
+        PackageComponentKind.Volume => component.DeliveredUnits(values[component.Key]),
         _ => component.PerUnitOf is null ? 1 : values[component.PerUnitOf]
     };
 
-    private static Money UnitPriceOf(PackageComponent component, long value) => component.Kind == PackageComponentKind.Tiered
-        ? component.Tiers.First(x => x.Value == value).Price
-        : component.UnitPrice;
+    private static Money UnitPriceOf(PackageComponent component, long value) => component.Kind switch
+    {
+        PackageComponentKind.Tiered => component.Tiers.First(x => x.Value == value).Price,
+        // Por debajo del primer tramo solo queda el cero, que no entrega nada: su precio es el del componente, cero.
+        PackageComponentKind.Volume => component.VolumeTierOf(value)?.Price ?? component.UnitPrice,
+        _ => component.UnitPrice
+    };
+
+    /// <summary>
+    /// El valor del atributo: lo elegido, o lo entregado en una cantidad por tramos de volumen.
+    /// </summary>
+    private static string Granted(PackageComponent component, long value) => component.Kind == PackageComponentKind.Volume
+        ? component.DeliveredUnits(value).ToString(CultureInfo.InvariantCulture)
+        : Text(component, value);
 
     private static string Text(PackageComponent component, long value) => component.Kind == PackageComponentKind.Toggle ? Bool(value == 1) : value.ToString(CultureInfo.InvariantCulture);
 

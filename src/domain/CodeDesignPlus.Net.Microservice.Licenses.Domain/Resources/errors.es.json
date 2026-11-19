@@ -137,6 +137,8 @@
     "262": "El mismo paquete aparece dos veces en la orden.",
     "263": "El documento electrónico de la orden necesita su identificador.",
     "264": "Solo se factura una orden pagada.",
-    "275": "Solo un documento electrónico validado guarda sus archivos."
+    "275": "Solo un documento electrónico validado guarda sus archivos.",
+    "276": "Los tramos de volumen de '{0}' no sirven: hace falta al menos uno, cada uno desde una cantidad distinta y mayor que cero, el primero desde la menor cantidad que se puede elegir, ninguno por encima del máximo, y el componente sin precio unitario propio.",
+    "277": "El multiplicador de '{0}' no sirve: es un entero mayor que cero y solo lo lleva una cantidad por tramos de volumen."
   }
 }
