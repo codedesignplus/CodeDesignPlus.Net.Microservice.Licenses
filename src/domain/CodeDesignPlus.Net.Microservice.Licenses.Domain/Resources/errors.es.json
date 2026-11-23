@@ -142,6 +142,10 @@
     "277": "El multiplicador de '{0}' no sirve: es un entero mayor que cero y solo lo lleva una cantidad por tramos de volumen.",
     "278": "'{0}' no puede ser consumible: solo lo es una cantidad por tramos de volumen cuyo atributo se suma.",
     "279": "Un paquete con un componente consumible solo lleva componentes consumibles: '{0}' no lo es.",
-    "280": "No se puede sumar a '{0}': la cantidad nueva debe ser igual o mayor que la que ya tienes, y al menos una debe ser mayor."
+    "280": "No se puede sumar a '{0}': la cantidad nueva debe ser igual o mayor que la que ya tienes, y al menos una debe ser mayor.",
+    "281": "Este tipo de documento se escribe con guion y dígito de verificación. Si {0} es el número sin el dígito, escríbelo así: {0}-{1}.",
+    "282": "El dígito de verificación no corresponde: el de {0} es {1}, no {2}. Escríbelo así: {0}-{1}.",
+    "283": "Este tipo de documento se escribe solo con dígitos, seguidos de un guion y el dígito de verificación, sin puntos ni espacios.",
+    "284": "Este tipo de documento se escribe con guion y dígito de verificación. Si {0} ya incluye el dígito, escríbelo así: {1}-{2}. Si no lo incluye, así: {0}-{3}."
   }
 }

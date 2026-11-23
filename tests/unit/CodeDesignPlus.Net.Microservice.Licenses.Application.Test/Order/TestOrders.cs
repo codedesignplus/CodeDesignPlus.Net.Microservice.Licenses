@@ -68,10 +68,13 @@ internal static class TestOrders
     private static Buyer BuildBuyer() =>
         Buyer.CreateMinimal(BuyerId, "Buyer", "+573001234567", "buyer@example.com");
 
-    internal static TenantSnapshot BuildTenant() => TenantSnapshot.Create(
-        TenantId, "Conjunto Prueba", null,
-        TypeDocument.Create("NIT", "Número de Identificación Tributaria"),
-        "900123456", "+573001234567", "admin@example.com", BuildLocation());
+    internal static TenantSnapshot BuildTenant() => BuildTenant(TypeDocument.Create("NIT", "Número de Identificación Tributaria"), "900123456");
+
+    /// <summary>
+    /// The tenant of the order with the document it was bought with.
+    /// </summary>
+    internal static TenantSnapshot BuildTenant(TypeDocument typeDocument, string numberDocument) => TenantSnapshot.Create(
+        TenantId, "Conjunto Prueba", null, typeDocument, numberDocument, "+573001234567", "admin@example.com", BuildLocation());
 
     private static Location BuildLocation()
     {

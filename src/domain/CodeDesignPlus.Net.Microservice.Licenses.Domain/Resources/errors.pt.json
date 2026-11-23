@@ -142,6 +142,10 @@
     "277": "O multiplicador de '{0}' não é válido: é um inteiro maior que zero e só uma quantidade por faixas de volume o leva.",
     "278": "'{0}' não pode ser consumível: só o é uma quantidade por faixas de volume cujo atributo se soma.",
     "279": "Um pacote com um componente consumível só leva componentes consumíveis: '{0}' não o é.",
-    "280": "Não é possível somar a '{0}': a nova quantidade deve ser igual ou maior que a que você já tem, e ao menos uma deve ser maior."
+    "280": "Não é possível somar a '{0}': a nova quantidade deve ser igual ou maior que a que você já tem, e ao menos uma deve ser maior.",
+    "281": "Este tipo de documento é escrito com hífen e dígito verificador. Se {0} é o número sem o dígito, escreva assim: {0}-{1}.",
+    "282": "O dígito verificador não corresponde: o de {0} é {1}, não {2}. Escreva assim: {0}-{1}.",
+    "283": "Este tipo de documento é escrito apenas com dígitos, seguidos de um hífen e do dígito verificador, sem pontos nem espaços.",
+    "284": "Este tipo de documento é escrito com hífen e dígito verificador. Se {0} já inclui o dígito, escreva assim: {1}-{2}. Se não inclui, assim: {0}-{3}."
   }
 }

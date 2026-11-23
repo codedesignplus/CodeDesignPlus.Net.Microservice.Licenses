@@ -37,7 +37,8 @@ public class PayOrderCommandHandlerTest
             tenantGrpcMock.Object,
             ordersMock.Object,
             Microsoft.Extensions.Options.Options.Create(new OnlinePaymentOptions { ReturnUrl = ReturnUrl }),
-            Mock.Of<IPackageRepository>());
+            Mock.Of<IPackageRepository>(),
+            Microsoft.Extensions.Options.Options.Create(new TenantDocumentOptions()));
     }
 
     /// <summary>

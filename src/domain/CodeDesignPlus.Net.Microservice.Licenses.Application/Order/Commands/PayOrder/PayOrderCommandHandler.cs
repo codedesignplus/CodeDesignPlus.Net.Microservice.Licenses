@@ -18,7 +18,8 @@ public class PayOrderCommandHandler(
     ITenantGrpc tenantGrpc,
     IOrderRepository orders,
     IOptions<OnlinePaymentOptions> onlinePayment,
-    IPackageRepository packages
+    IPackageRepository packages,
+    IOptions<TenantDocumentOptions> tenantDocument
 ) : IRequestHandler<PayOrderCommand, PaymentResponse>
 {
     public const string MODULE = "Licenses";
@@ -38,6 +39,11 @@ public class PayOrderCommandHandler(
 
             return ResponseOf(stored);
         }
+
+        // El documento de la copropiedad es con el que va a facturar: si su tipo lleva dígito de verificación, viene con guion
+        // y con su dígito. Se rechaza aquí, antes de crear la orden y de iniciar el cobro: ms-tenants exige lo mismo al
+        // crearla, y no puede quedar un pago hecho de una copropiedad que luego no se puede crear (pendings/744).
+        tenantDocument.Value.ToRules().Ensure(request.TenantDetail?.TypeDocument?.Code, request.TenantDetail?.NumberDocument);
 
         var licenseAggregate = await repository.FindAsync<LicenseAggregate>(request.License.Id, cancellationToken);
         ApplicationGuard.IsNull(licenseAggregate, Errors.LicenseNotFound);

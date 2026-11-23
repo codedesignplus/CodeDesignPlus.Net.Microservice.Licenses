@@ -142,6 +142,10 @@
     "277": "Le multiplicateur de '{0}' n'est pas valide : c'est un entier supérieur à zéro et seule une quantité par tranches de volume en porte un.",
     "278": "'{0}' ne peut pas être consommable : seule une quantité par tranches de volume dont l'attribut s'additionne peut l'être.",
     "279": "Un forfait avec un composant consommable ne porte que des composants consommables : '{0}' ne l'est pas.",
-    "280": "Impossible d'ajouter à '{0}' : la nouvelle quantité doit être égale ou supérieure à celle que tu as déjà, et au moins une doit être supérieure."
+    "280": "Impossible d'ajouter à '{0}' : la nouvelle quantité doit être égale ou supérieure à celle que tu as déjà, et au moins une doit être supérieure.",
+    "281": "Ce type de document s'écrit avec un tiret et un chiffre de vérification. Si {0} est le numéro sans le chiffre, écrivez-le ainsi : {0}-{1}.",
+    "282": "Le chiffre de vérification ne correspond pas : celui de {0} est {1}, et non {2}. Écrivez-le ainsi : {0}-{1}.",
+    "283": "Ce type de document s'écrit uniquement avec des chiffres, suivis d'un tiret et du chiffre de vérification, sans points ni espaces.",
+    "284": "Ce type de document s'écrit avec un tiret et un chiffre de vérification. Si {0} inclut déjà le chiffre, écrivez-le ainsi : {1}-{2}. Sinon, ainsi : {0}-{3}."
   }
 }

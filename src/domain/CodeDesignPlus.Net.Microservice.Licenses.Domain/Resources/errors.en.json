@@ -142,6 +142,10 @@
     "277": "The multiplier of '{0}' is not valid: it is an integer greater than zero and only a quantity priced by volume tiers carries one.",
     "278": "'{0}' cannot be consumable: only a quantity priced by volume tiers whose attribute is summed can be.",
     "279": "A package with a consumable component only carries consumable components: '{0}' is not one.",
-    "280": "Nothing can be added to '{0}': the new quantity must be equal to or greater than the one you already have, and at least one must be greater."
+    "280": "Nothing can be added to '{0}': the new quantity must be equal to or greater than the one you already have, and at least one must be greater.",
+    "281": "This document type is written with a hyphen and a check digit. If {0} is the number without the digit, write it like this: {0}-{1}.",
+    "282": "The check digit does not match: the one for {0} is {1}, not {2}. Write it like this: {0}-{1}.",
+    "283": "This document type is written with digits only, followed by a hyphen and the check digit, with no dots or spaces.",
+    "284": "This document type is written with a hyphen and a check digit. If {0} already includes the digit, write it like this: {1}-{2}. If it does not, like this: {0}-{3}."
   }
 }

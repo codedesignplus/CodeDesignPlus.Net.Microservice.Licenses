@@ -157,4 +157,25 @@ public class Errors : IErrorCodes
     public static readonly Error PackageConsumableComponentIsInvalid = new("278");
     public static readonly Error PackageMixesConsumableComponents = new("279");
     public static readonly Error PackageAdditionIsInvalid = new("280");
+
+    /// <summary>
+    /// El tipo de documento lleva dígito de verificación y el número vino sin guion. Argumentos: el número y su dígito.
+    /// </summary>
+    public static readonly Error DocumentCheckDigitIsMissing = new("281");
+
+    /// <summary>
+    /// El dígito de verificación no es el del número. Argumentos: el número, el dígito que le corresponde y el escrito.
+    /// </summary>
+    public static readonly Error DocumentCheckDigitDoesNotMatch = new("282");
+
+    /// <summary>
+    /// El número de un documento con dígito de verificación no es «solo dígitos, guion y un dígito».
+    /// </summary>
+    public static readonly Error DocumentNumberFormatIsInvalid = new("283");
+
+    /// <summary>
+    /// El número vino sin guion y su último dígito es el de verificación de los anteriores: puede traerlo pegado o no.
+    /// Argumentos: lo escrito, lo escrito sin el último dígito, ese último dígito y el dígito de todo lo escrito.
+    /// </summary>
+    public static readonly Error DocumentCheckDigitMayBeAttached = new("284");
 }

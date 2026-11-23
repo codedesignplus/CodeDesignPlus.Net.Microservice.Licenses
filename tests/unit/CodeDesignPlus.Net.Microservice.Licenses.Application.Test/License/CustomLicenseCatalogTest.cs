@@ -304,7 +304,8 @@ public class CustomLicenseCatalogTest
             Mock.Of<ITenantGrpc>(),
             orders.Object,
             Microsoft.Extensions.Options.Options.Create(new OnlinePaymentOptions { ReturnUrl = "https://www.kappali.test/purchase/payment-return" }),
-            Mock.Of<IPackageRepository>());
+            Mock.Of<IPackageRepository>(),
+            Microsoft.Extensions.Options.Options.Create(new TenantDocumentOptions()));
     }
 
     private static CodeDesignPlus.Net.Microservice.Licenses.Application.Order.DataTransferObjects.BuyerDto Buyer() => new()
