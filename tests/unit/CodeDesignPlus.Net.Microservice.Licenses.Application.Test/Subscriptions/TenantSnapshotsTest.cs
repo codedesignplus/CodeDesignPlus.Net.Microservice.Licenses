@@ -218,38 +218,182 @@ public class TenantSnapshotsTest
             (exception.Code, exception.Error!.Value.GetMessage("es")));
     }
 
-    [Fact]
-    public async Task TakeAsync_NameTheOrderDoesNotAccept_SaysWhereToReviewTheData()
+    [Theory]
+    [InlineData("")]
+    [InlineData("Conjunto Residencial Las Acacias de la Sabana Propiedad Horizontal Etapa Primera Etapa Segunda Etapa Tercera y Zonas Comunes Generales")]
+    public async Task TakeAsync_NameTheOrderDoesNotAccept_SaysWhichDataToCorrectAndWhere(string name)
     {
         // Arrange
         var answer = SubscriptionFixtures.AnswerOf(Current());
-        answer.Name = string.Empty;
+        answer.Name = name;
 
         // Act
         var exception = await FailsWithAsync(answer);
 
         // Assert
         Assert.Equal(
-            (Errors.TenantDataIsNotValid.GetCode(), "Tu copropiedad tiene un dato incompleto o no válido: el nombre, el documento, el sitio web o la ubicación. Revísalos en Organización y vuelve a intentarlo."),
+            (Errors.TenantNameIsNotValid.GetCode(), $"El nombre de tu copropiedad, '{name}', no es válido: está vacío o es demasiado largo. Corrígelo en Organización y vuelve a intentarlo."),
             (exception.Code, exception.Error!.Value.GetMessage("es")));
     }
 
     [Fact]
-    public async Task TakeAsync_TenantWithoutLocation_SaysWhereToReviewTheData()
+    public async Task TakeAsync_WebTheOrderDoesNotAccept_SaysWhichDataToCorrectAndWhere()
     {
         // Arrange
         var answer = SubscriptionFixtures.AnswerOf(Current());
-        answer.Location = null;
+        answer.Domain = "acacias sin dominio";
 
         // Act
         var exception = await FailsWithAsync(answer);
 
         // Assert
-        Assert.Equal(Errors.TenantDataIsNotValid.GetCode(), exception.Code);
+        Assert.Equal(
+            (Errors.TenantWebIsNotValid.GetCode(), "El sitio web de tu copropiedad, 'acacias sin dominio', no es válido. Corrígelo en Organización y vuelve a intentarlo."),
+            (exception.Code, exception.Error!.Value.GetMessage("es")));
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task TakeAsync_TenantWithoutDocument_SaysToCompleteIt(bool withoutType, bool withoutNumber)
+    {
+        // Arrange
+        var answer = SubscriptionFixtures.AnswerOf(Current());
+        answer.TypeDocument = withoutType ? null : answer.TypeDocument;
+        answer.NumberDocument = withoutNumber ? string.Empty : answer.NumberDocument;
+
+        // Act
+        var exception = await FailsWithAsync(answer);
+
+        // Assert
+        Assert.Equal(
+            (Errors.TenantDocumentIsMissing.GetCode(), "A tu copropiedad le falta el tipo o el número de documento. Complétalo en Organización y vuelve a intentarlo."),
+            (exception.Code, exception.Error!.Value.GetMessage("es")));
+    }
+
+    [Theory]
+    [InlineData("", "110111")]
+    [InlineData("Carrera 7 # 71-21", "")]
+    public async Task TakeAsync_TenantWithoutAddressOrPostalCode_SaysToCompleteThem(string address, string postalCode)
+    {
+        // Arrange
+        var answer = SubscriptionFixtures.AnswerOf(Current());
+        answer.Location.Address = address;
+        answer.Location.PostalCode = postalCode;
+
+        // Act
+        var exception = await FailsWithAsync(answer);
+
+        // Assert
+        Assert.Equal(
+            (Errors.TenantAddressIsMissing.GetCode(), "A tu copropiedad le falta la dirección o el código postal. Complétalos en Organización y vuelve a intentarlo."),
+            (exception.Code, exception.Error!.Value.GetMessage("es")));
     }
 
     /// <summary>
-    /// The four new errors are written in the four languages (rule 35), with their values in place.
+    /// The failure of production on 2026-11-23: ms-tenants answered the currency of the country without its id, because its
+    /// mapping skipped it. The data of the copropiedad were right, so the error does not send it to review them: it says
+    /// the problem is of the platform and which part of the answer failed.
+    /// </summary>
+    [Fact]
+    public async Task TakeAsync_CurrencyWithoutItsId_SaysTheProblemIsOfThePlatformAndWhichPartFailed()
+    {
+        // Arrange
+        var answer = SubscriptionFixtures.AnswerAsMsTenantsSendsIt();
+        answer.Location.Country.Currency.Id = string.Empty;
+
+        // Act
+        var exception = await FailsWithAsync(answer);
+
+        // Assert
+        Assert.Equal(
+            (Errors.TenantCouldNotBeRead.GetCode(), "No pudimos preparar la orden por un problema de la plataforma, no de los datos de tu copropiedad. No tienes que corregir nada: avisa a soporte con este detalle: location.country.currency: CurrencyId is empty"),
+            (exception.Code, exception.Error!.Value.GetMessage("es")));
+    }
+
+    /// <summary>
+    /// What comes from the catalogs of the platform is not corrected by the copropiedad: whichever part is missing or
+    /// broken, the error names it and never says «Organización».
+    /// </summary>
+    [Theory]
+    [InlineData("location", "location is missing")]
+    [InlineData("country", "location.country is missing")]
+    [InlineData("currency", "location.country.currency is missing")]
+    [InlineData("state", "location.state is missing")]
+    [InlineData("city", "location.city is missing")]
+    [InlineData("country.id", "location.country: ")]
+    [InlineData("country.timezone", "location.country: ")]
+    [InlineData("currency.code", "location.country.currency: ")]
+    [InlineData("state.id", "location.state: ")]
+    [InlineData("city.id", "location.city: ")]
+    [InlineData("locality.name", "location.locality: ")]
+    public async Task TakeAsync_PartOfTheLocationThatComesFromTheCatalogsBroken_SaysTheProblemIsOfThePlatform(string broken, string detail)
+    {
+        // Arrange
+        var answer = SubscriptionFixtures.AnswerAsMsTenantsSendsIt();
+        var location = answer.Location;
+
+        switch (broken)
+        {
+            case "location": answer.Location = null; break;
+            case "country": location.Country = null; break;
+            case "currency": location.Country.Currency = null; break;
+            case "state": location.State = null; break;
+            case "city": location.City = null; break;
+            case "country.id": location.Country.Id = string.Empty; break;
+            case "country.timezone": location.Country.Timezone = string.Empty; break;
+            case "currency.code": location.Country.Currency.Code = string.Empty; break;
+            case "state.id": location.State.Id = string.Empty; break;
+            case "city.id": location.City.Id = "not-a-guid"; break;
+            default: location.Locality.Name = string.Empty; break;
+        }
+
+        // Act
+        var exception = await FailsWithAsync(answer);
+        var message = exception.Error!.Value.GetMessage("es");
+
+        // Assert
+        Assert.Equal(
+            (Errors.TenantCouldNotBeRead.GetCode(), true, false),
+            (exception.Code, message.Contains("avisa a soporte con este detalle: " + detail, StringComparison.Ordinal), message.Contains("Organización", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// The answer with the shape ms-tenants gives it (its mapping from TenantDto): the website as a Uri prints it, the
+    /// phone code and the time zones of the catalogs, the license with its modules. Every field the order keeps is read.
+    /// </summary>
+    [Fact]
+    public async Task TakeAsync_AnswerAsMsTenantsSendsIt_BuildsTheWholeTenant()
+    {
+        // Arrange
+        var answer = SubscriptionFixtures.AnswerAsMsTenantsSendsIt();
+        grpc.Has(answer);
+
+        // Act
+        var tenant = await Snapshots().TakeAsync(TestOrders.TenantId, CancellationToken.None);
+
+        // Assert
+        var location = tenant.Location;
+
+        Assert.Equal(
+            ("Conjunto Las Acacias", "31", "NIT", "901777333-0", "https://acacias.example.com/", "+573009876543", "administracion@acacias.example.com"),
+            (tenant.Name, tenant.TypeDocument.Code, tenant.TypeDocument.Name, tenant.NumberDocument, tenant.Web, tenant.Phone, tenant.Email));
+        Assert.Equal(
+            (Guid.Parse(answer.Location.Country.Currency.Id), "COP", "Peso Colombiano", "$", (short)2, (short)170),
+            (location.Country.Currency.CurrencyId, location.Country.Currency.Code, location.Country.Currency.Name, location.Country.Currency.Symbol, location.Country.Currency.DecimalDigits, location.Country.Currency.NumericCode));
+        Assert.Equal(
+            (Guid.Parse(answer.Location.Country.Id), "Colombia", "CO", "COL", (ushort)170, "+57", "America/Bogota"),
+            (location.Country.Id, location.Country.Name, location.Country.Alpha2, location.Country.Alpha3, location.Country.Code, location.Country.PhoneCode, location.Country.Timezone));
+        Assert.Equal(
+            (Guid.Parse(answer.Location.State.Id), "Bogotá, D.C.", "11", Guid.Parse(answer.Location.City.Id), "Bogotá, D.C.", "America/Bogota"),
+            (location.State.Id, location.State.Name, location.State.Code, location.City.Id, location.City.Name, location.City.Timezone));
+        Assert.Equal(
+            (Guid.Parse(answer.Location.Locality.Id), "Chapinero", null, "Carrera 7 # 71-21", "110111"),
+            (location.Locality!.Id, location.Locality.Name, location.Neighborhood, location.Address, location.PostalCode));
+    }
+
+    /// <summary>
+    /// The new errors are written in the four languages (rule 35), with their values in place.
     /// </summary>
     [Theory]
     [InlineData("es")]
@@ -262,14 +406,35 @@ public class TenantSnapshotsTest
         string[] messages =
         [
             Errors.TenantOfTheOrderNotFound.GetMessage(language),
-            Errors.TenantPhoneIsNotValid.With("300 123").GetMessage(language),
-            Errors.TenantEmailIsNotValid.With("a@b").GetMessage(language),
-            Errors.TenantDataIsNotValid.GetMessage(language)
+            Errors.TenantPhoneIsNotValid.With("some-value").GetMessage(language),
+            Errors.TenantEmailIsNotValid.With("some-value").GetMessage(language),
+            Errors.TenantNameIsNotValid.With("some-value").GetMessage(language),
+            Errors.TenantWebIsNotValid.With("some-value").GetMessage(language),
+            Errors.TenantCouldNotBeRead.With("some-value").GetMessage(language),
+            Errors.TenantDocumentIsMissing.GetMessage(language),
+            Errors.TenantAddressIsMissing.GetMessage(language)
         ];
 
         // Assert
         Assert.Equal(
-            (4, true, true, false),
-            (new System.Collections.Generic.HashSet<string>(messages).Count, messages[1].Contains("300 123", StringComparison.Ordinal), messages[2].Contains("a@b", StringComparison.Ordinal), Array.Exists(messages, x => x.Length < 20 || x.Contains("{0}", StringComparison.Ordinal))));
+            (8, 5, false),
+            (new System.Collections.Generic.HashSet<string>(messages).Count, Array.FindAll(messages, x => x.Contains("some-value", StringComparison.Ordinal)).Length, Array.Exists(messages, x => x.Length < 20 || x.Contains("{0}", StringComparison.Ordinal))));
+    }
+
+    /// <summary>
+    /// Only what the copropiedad writes sends it to «Organización»; the failure of the platform does not, in any language.
+    /// </summary>
+    [Theory]
+    [InlineData("es", "Organización")]
+    [InlineData("en", "Organization")]
+    [InlineData("fr", "Organisation")]
+    [InlineData("pt", "Organização")]
+    public void Errors_ProblemOfThePlatform_DoesNotSendToCorrectTheData(string language, string screen)
+    {
+        // Act
+        var message = Errors.TenantCouldNotBeRead.With("location.country.currency: CurrencyId is empty").GetMessage(language);
+
+        // Assert
+        Assert.Equal((false, true), (message.Contains(screen, StringComparison.Ordinal), message.EndsWith("location.country.currency: CurrencyId is empty", StringComparison.Ordinal)));
     }
 }

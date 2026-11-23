@@ -38,6 +38,10 @@
     "285": "We could not find your organization's data. Try again in a few minutes.",
     "286": "Your organization's phone, '{0}', is not valid: digits only, between 7 and 15, and it may start with +. Correct it in Organization and try again.",
     "287": "Your organization's email, '{0}', is not valid. Correct it in Organization and try again.",
-    "288": "Your organization has incomplete or invalid data: the name, the document, the website or the location. Review them in Organization and try again."
+    "288": "Your organization's name, '{0}', is not valid: it is empty or too long. Correct it in Organization and try again.",
+    "289": "Your organization's website, '{0}', is not valid. Correct it in Organization and try again.",
+    "290": "Your organization is missing its document type or number. Complete it in Organization and try again.",
+    "291": "Your organization is missing its address or its postal code. Complete them in Organization and try again.",
+    "292": "We could not prepare the order because of a problem of the platform, not of your organization's data. You do not have to correct anything: tell support with this detail: {0}"
   }
 }

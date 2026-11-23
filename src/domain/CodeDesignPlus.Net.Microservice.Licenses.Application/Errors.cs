@@ -57,5 +57,11 @@ public class Errors: IErrorCodes
     public static readonly Error TenantOfTheOrderNotFound = new("285");
     public static readonly Error TenantPhoneIsNotValid = new("286");
     public static readonly Error TenantEmailIsNotValid = new("287");
-    public static readonly Error TenantDataIsNotValid = new("288");
+    public static readonly Error TenantNameIsNotValid = new("288");
+    public static readonly Error TenantWebIsNotValid = new("289");
+    public static readonly Error TenantDocumentIsMissing = new("290");
+    public static readonly Error TenantAddressIsMissing = new("291");
+
+    // Not something the tenant can correct: the answer of ms-tenants could not be read (pendings/744).
+    public static readonly Error TenantCouldNotBeRead = new("292");
 }

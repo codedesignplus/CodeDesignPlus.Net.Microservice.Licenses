@@ -38,6 +38,10 @@
     "285": "Nous n'avons pas trouvé les données de votre copropriété. Réessayez dans quelques minutes.",
     "286": "Le téléphone de votre copropriété, '{0}', n'est pas valide : uniquement des chiffres, entre 7 et 15, et il peut commencer par +. Corrigez-le dans Organisation et réessayez.",
     "287": "L'e-mail de votre copropriété, '{0}', n'est pas valide. Corrigez-le dans Organisation et réessayez.",
-    "288": "Votre copropriété a une donnée incomplète ou non valide : le nom, le document, le site web ou la localisation. Vérifiez-les dans Organisation et réessayez."
+    "288": "Le nom de votre copropriété, '{0}', n'est pas valide : il est vide ou trop long. Corrigez-le dans Organisation et réessayez.",
+    "289": "Le site web de votre copropriété, '{0}', n'est pas valide. Corrigez-le dans Organisation et réessayez.",
+    "290": "Il manque à votre copropriété le type ou le numéro de document. Complétez-le dans Organisation et réessayez.",
+    "291": "Il manque à votre copropriété l'adresse ou le code postal. Complétez-les dans Organisation et réessayez.",
+    "292": "Nous n'avons pas pu préparer la commande à cause d'un problème de la plateforme, et non des données de votre copropriété. Vous n'avez rien à corriger : prévenez le support avec ce détail : {0}"
   }
 }

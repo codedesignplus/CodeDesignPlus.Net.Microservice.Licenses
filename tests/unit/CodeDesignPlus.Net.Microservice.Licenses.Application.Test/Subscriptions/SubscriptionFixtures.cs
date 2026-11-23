@@ -110,6 +110,52 @@ internal static class SubscriptionFixtures
     }
 
     /// <summary>
+    /// The answer of ms-tenants for the tenant of the tests, written field by field as its mapping from TenantDto leaves it
+    /// (CodeDesignPlus.Net.Microservice.Tenants, gRpc/Core/Mapster/MapsterConfig.cs): every id as the text of a Guid, the
+    /// website as a Uri prints it (with its final slash), the time zone of the city in its wrapper, no neighborhood, and
+    /// the license with its modules. It is not built from the value object of this service on purpose: built from it, the
+    /// tests could not see a field ms-tenants leaves empty, and on 2026-11-23 that was the id of the currency.
+    /// </summary>
+    public static TenantContracts.GetTenantResponse AnswerAsMsTenantsSendsIt()
+    {
+        var license = new TenantContracts.License { Id = "44000000-0000-4000-8000-000000000109", Name = "Esencial", StartDate = "2026-10-23T15:00:00Z", EndDate = "2026-11-23T15:00:00Z" };
+
+        license.Modules.Add(new TenantContracts.LicenseModule { Id = "33000000-0000-4000-8000-000000000108", Name = "Organización" });
+
+        return new TenantContracts.GetTenantResponse
+        {
+            Id = TestOrders.TenantId.ToString(),
+            Name = "Conjunto Las Acacias",
+            TypeDocument = new TenantContracts.TypeDocument { Code = "31", Name = "NIT" },
+            NumberDocument = "901777333-0",
+            Domain = "https://acacias.example.com/",
+            Phone = "+573009876543",
+            Email = "administracion@acacias.example.com",
+            License = license,
+            Location = new TenantContracts.Location
+            {
+                Country = new TenantContracts.Country
+                {
+                    Id = "66000000-0000-4000-8000-00000000010b",
+                    Name = "Colombia",
+                    Alpha2 = "CO",
+                    Alpha3 = "COL",
+                    Code = 170,
+                    PhoneCode = "+57",
+                    Timezone = "America/Bogota",
+                    Currency = new TenantContracts.Currency { Id = "1e8f4d27-0000-4000-8000-00000000010a", Code = "COP", Name = "Peso Colombiano", Symbol = "$", DecimalDigits = 2, NumericCode = 170 }
+                },
+                State = new TenantContracts.State { Id = "77000000-0000-4000-8000-00000000010c", Name = "Bogotá, D.C.", Code = "11" },
+                City = new TenantContracts.City { Id = "88000000-0000-4000-8000-00000000010d", Name = "Bogotá, D.C.", Timezone = "America/Bogota" },
+                Locality = new TenantContracts.Locality { Id = "99000000-0000-4000-8000-00000000010e", Name = "Chapinero" },
+                Address = "Carrera 7 # 71-21",
+                PostalCode = "110111"
+            },
+            IsActive = true
+        };
+    }
+
+    /// <summary>
     /// Makes ms-tenants answer with that tenant when it is asked for its id, and only for its id.
     /// </summary>
     public static void Has(this Mock<ITenantGrpc> grpc, TenantContracts.GetTenantResponse answer)

@@ -38,6 +38,10 @@
     "285": "Não encontramos os dados do seu condomínio. Tente novamente em alguns minutos.",
     "286": "O telefone do seu condomínio, '{0}', não é válido: apenas dígitos, entre 7 e 15, e pode começar por +. Corrija-o em Organização e tente novamente.",
     "287": "O e-mail do seu condomínio, '{0}', não é válido. Corrija-o em Organização e tente novamente.",
-    "288": "O seu condomínio tem um dado incompleto ou inválido: o nome, o documento, o site ou a localização. Reveja-os em Organização e tente novamente."
+    "288": "O nome do seu condomínio, '{0}', não é válido: está vazio ou é longo demais. Corrija-o em Organização e tente novamente.",
+    "289": "O site do seu condomínio, '{0}', não é válido. Corrija-o em Organização e tente novamente.",
+    "290": "Falta ao seu condomínio o tipo ou o número do documento. Complete-o em Organização e tente novamente.",
+    "291": "Falta ao seu condomínio o endereço ou o código postal. Complete-os em Organização e tente novamente.",
+    "292": "Não conseguimos preparar o pedido por um problema da plataforma, não dos dados do seu condomínio. Você não precisa corrigir nada: avise o suporte com este detalhe: {0}"
   }
 }
