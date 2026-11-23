@@ -22,7 +22,8 @@ public class ChangeSubscriptionCommandHandler(
     ICreditBalanceRepository creditBalances,
     ISubscriptionCheckout checkout,
     IUserContext user,
-    IPackageRepository packages
+    IPackageRepository packages,
+    ITenantSnapshots tenants
 ) : IRequestHandler<ChangeSubscriptionCommand, PaymentResponse>
 {
     public async Task<PaymentResponse> Handle(ChangeSubscriptionCommand request, CancellationToken cancellationToken)
@@ -48,7 +49,13 @@ public class ChangeSubscriptionCommandHandler(
         var subscription = state!.Subscription;
 
         var awaiting = await orders.FindAwaitingSubscriptionPaymentAsync(tenant, cancellationToken);
-        var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Change && x.License.Id == request.LicenseId);
+
+        // La copropiedad como está hoy en ms-tenants, no la copia de la orden anterior: con ella salen la factura, el recibo
+        // y los correos (pendings/744).
+        var tenantDetail = await tenants.TakeAsync(tenant, cancellationToken);
+
+        // Una orden que espera su pago con los datos de antes no se reutiliza: se crea otra, que la reemplaza.
+        var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Change && x.License.Id == request.LicenseId && x.TenantDetail == tenantDetail);
 
         if (pending is not null)
         {
@@ -75,7 +82,7 @@ public class ChangeSubscriptionCommandHandler(
             Guid.NewGuid(),
             SubscriptionSnapshots.Of(target, quote!.Price),
             SubscriptionSnapshots.Payer(current.Buyer, user.IdUser),
-            current.TenantDetail,
+            tenantDetail,
             current.License.Id,
             quote.CreditedPeriods,
             quote.Charge,

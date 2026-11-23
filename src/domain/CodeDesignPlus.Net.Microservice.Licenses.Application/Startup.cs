@@ -48,6 +48,9 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application
                 .ValidateOnStart();
 
             services.AddScoped<Order.Services.ISubscriptionCheckout, Order.Services.SubscriptionCheckout>();
+
+            // La copropiedad como está hoy en ms-tenants, para las órdenes que no son la compra inicial (pendings/744).
+            services.AddScoped<Subscriptions.ITenantSnapshots, Subscriptions.TenantSnapshots>();
             services.AddScoped<Order.Services.ISubscriptionSettlement, Order.Services.SubscriptionSettlement>();
 
             // El correo de la compra espera a la factura electrónica (pendings/661, paso 4).

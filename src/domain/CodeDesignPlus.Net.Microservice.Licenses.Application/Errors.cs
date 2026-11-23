@@ -52,4 +52,10 @@ public class Errors: IErrorCodes
     public static readonly Error PackagesRenewOnlyWithAnnualLicense = new("272");
     public static readonly Error OfferAlreadyTaken = new("273");
     public static readonly Error OfferHasAPaymentInProgress = new("274");
+
+    // The tenant as ms-tenants has it today, copied into a renewal, a change or a package purchase (pendings/744).
+    public static readonly Error TenantOfTheOrderNotFound = new("285");
+    public static readonly Error TenantPhoneIsNotValid = new("286");
+    public static readonly Error TenantEmailIsNotValid = new("287");
+    public static readonly Error TenantDataIsNotValid = new("288");
 }

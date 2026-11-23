@@ -55,9 +55,9 @@ public class PlatformInvoiceTest
     /// <summary>
     /// A purchase paid with the instrument given.
     /// </summary>
-    internal static OrderAggregate PaidPurchase(string? method = "CARD", string? cardType = "CREDIT", Guid? id = null)
+    internal static OrderAggregate PaidPurchase(string? method = "CARD", string? cardType = "CREDIT", Guid? id = null, TenantSnapshot? tenant = null)
     {
-        var order = OrderAggregate.Create(id ?? Guid.NewGuid(), Guid.NewGuid(), TaxedLicense(), SubscriptionFixtures.Buyer(), TenantWithNit(), TestOrders.BuyerId);
+        var order = OrderAggregate.Create(id ?? Guid.NewGuid(), Guid.NewGuid(), TaxedLicense(), SubscriptionFixtures.Buyer(), tenant ?? TenantWithNit(), TestOrders.BuyerId);
 
         order.SetPaymentStatus(PaymentStatus.Succeeded, TestOrders.BuyerId, PaidAt, paymentMethodType: method, cardType: cardType);
         order.GetAndClearEvents();
@@ -69,12 +69,12 @@ public class PlatformInvoiceTest
     /// A paid change to «Élite» that credits 29 of the 30 days of <paramref name="corrected"/>, with its VAT, plus some
     /// balance in favour.
     /// </summary>
-    internal static OrderAggregate PaidChange(OrderAggregate corrected, long balance = 0, bool publish = false)
+    internal static OrderAggregate PaidChange(OrderAggregate corrected, long balance = 0, bool publish = false, TenantSnapshot? tenant = null)
     {
         var license = TaxedLicense("Élite");
         var credited = new List<CreditedPeriod> { CreditedPeriod.Create(corrected.Id, PaidAt, PaidAt.Plus(Duration.FromDays(29)), 29, 30, Money.FromLong(12_000_000L, "COP"), Money.FromLong(11_600_000L, "COP"), Money.FromLong(2_204_000L, "COP"), 1900) };
         var charge = SubscriptionCharge.Compute(license.Total, Money.FromLong(13_804_000L, "COP"), Money.FromLong(balance, "COP"));
-        var order = OrderAggregate.CreateChange(Guid.NewGuid(), Guid.NewGuid(), license, SubscriptionFixtures.Buyer(), TenantWithNit(), corrected.License.Id, credited, charge, TestOrders.BuyerId);
+        var order = OrderAggregate.CreateChange(Guid.NewGuid(), Guid.NewGuid(), license, SubscriptionFixtures.Buyer(), tenant ?? TenantWithNit(), corrected.License.Id, credited, charge, TestOrders.BuyerId);
 
         order.SetPaymentStatus(PaymentStatus.Succeeded, TestOrders.BuyerId, paymentMethodType: "PSE");
 

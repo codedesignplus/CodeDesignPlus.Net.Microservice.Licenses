@@ -34,6 +34,10 @@
     "271": "Esse pacote não está à venda.",
     "272": "Os pacotes são renovados junto com uma licença anual; com licença mensal cada pacote dura doze meses e é comprado de novo.",
     "273": "Não é possível retirar a oferta a {0}: ele já adotou esta licença.",
-    "274": "Não é possível retirar a oferta a {0}: ele tem um pagamento em andamento para mudar para esta licença. Espere até que o pagamento seja aprovado ou recusado."
+    "274": "Não é possível retirar a oferta a {0}: ele tem um pagamento em andamento para mudar para esta licença. Espere até que o pagamento seja aprovado ou recusado.",
+    "285": "Não encontramos os dados do seu condomínio. Tente novamente em alguns minutos.",
+    "286": "O telefone do seu condomínio, '{0}', não é válido: apenas dígitos, entre 7 e 15, e pode começar por +. Corrija-o em Organização e tente novamente.",
+    "287": "O e-mail do seu condomínio, '{0}', não é válido. Corrija-o em Organização e tente novamente.",
+    "288": "O seu condomínio tem um dado incompleto ou inválido: o nome, o documento, o site ou a localização. Reveja-os em Organização e tente novamente."
   }
 }

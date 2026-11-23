@@ -11,6 +11,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order.Services;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -31,6 +32,11 @@ public class IssueOrderInvoiceCommandHandlerTest
     private readonly List<string> calls = [];
     private PlatformInvoicingOptions settings = PlatformInvoiceTest.Options();
 
+    /// <summary>
+    /// The deployed rule: the tax id carries a check digit, computed with the weights of the tax authority.
+    /// </summary>
+    private readonly TenantDocumentOptions tenantDocument = new() { CheckDigitDocumentTypes = ["NIT"], CheckDigitWeights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71] };
+
     public IssueOrderInvoiceCommandHandlerTest()
     {
         invoicing
@@ -47,6 +53,7 @@ public class IssueOrderInvoiceCommandHandlerTest
     private IssueOrderInvoiceCommandHandler Handler() => new(
         orders.Object, invoicing.Object, inbox.Object, Microsoft.Extensions.Options.Options.Create(settings),
         Microsoft.Extensions.Options.Options.Create(new PlatformNoticeOptions { PlatformAdministratorRole = Administrators }),
+        Microsoft.Extensions.Options.Options.Create(tenantDocument),
         Mock.Of<ILogger<IssueOrderInvoiceCommandHandler>>());
 
     private void Stored(params OrderAggregate[] stored)
@@ -240,5 +247,173 @@ public class IssueOrderInvoiceCommandHandlerTest
 
         // Act & Assert
         await Assert.ThrowsAsync<Grpc.Core.RpcException>(() => Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The order carries a tax id without its check digit (Kappali pendings/744): the invoice is not asked of
+    /// ms-electronicinvoicing, which would issue it with the digit empty. It stays for review with the reason.
+    /// </summary>
+    [Theory]
+    [InlineData("901777333")]
+    [InlineData("901777333-5")]
+    [InlineData("9017773330")]
+    [InlineData("901.777.333-0")]
+    public async Task Handle_BuyerTaxIdNotWrittenWithItsCheckDigit_LeavesTheInvoiceForReviewAndAsksForNothing(string numberDocument)
+    {
+        // Arrange
+        var order = PlatformInvoiceTest.PaidPurchase(tenant: PlatformInvoiceTest.TenantWithNit(numberDocument));
+        Stored(order);
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(
+            (ElectronicDocumentState.NeedsReview, PlatformInvoice.InvoiceIdOf(order.Id), "request"),
+            (order.Invoice!.State, order.Invoice.DocumentId, string.Join(',', calls)));
+    }
+
+    /// <summary>
+    /// The reason kept on the order says which document it is and what is wrong with it, in the language the platform
+    /// administrator reads.
+    /// </summary>
+    [Fact]
+    public async Task Handle_BuyerTaxIdWithoutCheckDigit_KeepsTheReasonOnTheOrder()
+    {
+        // Arrange
+        var order = PlatformInvoiceTest.PaidPurchase(tenant: PlatformInvoiceTest.TenantWithNit("901777333"));
+        Stored(order);
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(
+            "El documento de la copropiedad, «901777333», no sirve para facturar. Este tipo de documento se escribe con guion y dígito de verificación. Si 901777333 es el número sin el dígito, escríbelo así: 901777333-0.",
+            Assert.Single(order.Invoice!.Reasons));
+    }
+
+    [Fact]
+    public async Task Handle_BuyerTaxIdWithoutCheckDigit_TellsThePlatformAdministratorWhy()
+    {
+        // Arrange
+        var order = PlatformInvoiceTest.PaidPurchase(tenant: PlatformInvoiceTest.TenantWithNit("901777333-5"));
+        Stored(order);
+        NotificationRequest? notice = null;
+        inbox.Setup(x => x.NotifyAsync(It.IsAny<NotificationRequest>(), It.IsAny<CancellationToken>())).Callback<NotificationRequest, CancellationToken>((request, _) => notice = request);
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(
+            (PlatformNotificationKinds.LicenseInvoiceRejected, true, "Factura electrónica pendiente de revisión", "La orden de Conjunto Las Acacias se pagó, pero su factura electrónica no se expidió. El documento de la copropiedad, «901777333-5», no sirve para facturar. El dígito de verificación no corresponde: el de 901777333 es 0, no 5. Escríbelo así: 901777333-0. Pide a la copropiedad que corrija su documento en Organización y expide la factura a mano."),
+            (notice!.Kind, notice.Audience.Values.Contains(Administrators.ToString()), notice.Title, notice.Body));
+    }
+
+    /// <summary>
+    /// The credit notes carry the same buyer: none is sent either, and the previous invoice still waiting for the tax
+    /// authority does not make the message fail, because nothing is going to be asked.
+    /// </summary>
+    [Fact]
+    public async Task Handle_ChangeWithBuyerTaxIdWithoutCheckDigit_LeavesItsCreditNotesForReviewToo()
+    {
+        // Arrange
+        var previous = PlatformInvoiceTest.PaidPurchase();
+        Requested(previous);
+        var order = PlatformInvoiceTest.PaidChange(previous, tenant: PlatformInvoiceTest.TenantWithNit("901777333"));
+        Stored(previous, order);
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(
+            (ElectronicDocumentState.NeedsReview, ElectronicDocumentState.NeedsReview, previous.Id, "request"),
+            (order.Invoice!.State, order.CreditNotes!.Single().State, order.CreditNotes!.Single().CorrectedOrderId, string.Join(',', calls)));
+    }
+
+    /// <summary>
+    /// A redelivery finds the invoice already left for review: it asks for nothing and does not tell again.
+    /// </summary>
+    [Fact]
+    public async Task Handle_InvoiceAlreadyLeftForReview_AsksForNothingAndDoesNotTellAgain()
+    {
+        // Arrange
+        var order = PlatformInvoiceTest.PaidPurchase(tenant: PlatformInvoiceTest.TenantWithNit("901777333"));
+        Stored(order);
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+        calls.Clear();
+        inbox.Invocations.Clear();
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal((0, 0), (calls.Count, inbox.Invocations.Count));
+    }
+
+    /// <summary>
+    /// The tax id as ms-tenants has it, with its dash and its digit: the invoice goes with the number and the check digit
+    /// apart, which is how the tax authority wants the buyer.
+    /// </summary>
+    [Fact]
+    public async Task Handle_BuyerTaxIdWithItsCheckDigit_AsksForTheInvoiceWithTheDigitApart()
+    {
+        // Arrange
+        var order = PlatformInvoiceTest.PaidPurchase(tenant: PlatformInvoiceTest.TenantWithNit("901777333-0"));
+        Stored(order);
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        var buyer = issued.Single().Content.Buyer;
+
+        Assert.Equal(("901777333", "0", ElectronicDocumentState.Requested), (buyer.IdentificationNumber, buyer.CheckDigit, order.Invoice!.State));
+    }
+
+    /// <summary>
+    /// A document type without check digit is invoiced as it comes: the rule is only for the types the configuration names.
+    /// </summary>
+    [Fact]
+    public async Task Handle_BuyerDocumentOfATypeWithoutCheckDigit_AsksForTheInvoice()
+    {
+        // Arrange
+        var order = PlatformInvoiceTest.PaidPurchase(tenant: PlatformInvoiceTest.TenantWithNit("1023456781", "CC"));
+        Stored(order);
+
+        // Act
+        await Handler().Handle(new IssueOrderInvoiceCommand(order.Id), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(("1023456781", false), (issued.Single().Content.Buyer.IdentificationNumber, issued.Single().Content.Buyer.HasCheckDigit));
+    }
+
+    /// <summary>
+    /// The invoice is issued by the worker, so the worker has to know which types carry a check digit: without the section
+    /// the rule checks nothing and a tax id without its digit would go out. The same deployed value as the API and
+    /// ms-tenants.
+    /// </summary>
+    [Fact]
+    public void Appsettings_WorkerTenantDocument_IsTheSharedDeployedValue()
+    {
+        // Arrange
+        var directory = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory is not null && !System.IO.File.Exists(System.IO.Path.Combine(directory.FullName, "CodeDesignPlus.Net.Microservice.Licenses.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().AddJsonFile(System.IO.Path.Combine(directory!.FullName, "src", "entrypoints", "CodeDesignPlus.Net.Microservice.Licenses.AsyncWorker", "appsettings.json")).Build();
+
+        // Act
+        var options = Microsoft.Extensions.Configuration.ConfigurationBinder.Get<TenantDocumentOptions>(configuration.GetSection(TenantDocumentOptions.Section));
+
+        // Assert
+        Assert.Equal(
+            ("31", "3,7,13,17,19,23,29,37,41,43,47,53,59,67,71"),
+            (string.Join(',', options!.CheckDigitDocumentTypes), string.Join(',', options.CheckDigitWeights)));
     }
 }

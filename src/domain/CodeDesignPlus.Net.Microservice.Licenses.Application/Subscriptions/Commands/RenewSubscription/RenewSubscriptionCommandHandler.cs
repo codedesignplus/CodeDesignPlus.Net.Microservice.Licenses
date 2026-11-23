@@ -21,7 +21,8 @@ public class RenewSubscriptionCommandHandler(
     ICreditBalanceRepository creditBalances,
     ISubscriptionCheckout checkout,
     IUserContext user,
-    IPackageRepository packages
+    IPackageRepository packages,
+    ITenantSnapshots tenants
 ) : IRequestHandler<RenewSubscriptionCommand, PaymentResponse>
 {
     public async Task<PaymentResponse> Handle(RenewSubscriptionCommand request, CancellationToken cancellationToken)
@@ -51,7 +52,12 @@ public class RenewSubscriptionCommandHandler(
         // Los paquetes que se renuevan con la licencia anual, al precio vigente (pendings/739).
         var renewed = await state.RenewalQuotesAsync(packages, request.Packages, now, cancellationToken);
 
-        var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Renewal && x.License.Id == current.License.Id && RenewalQuote.SamePackages(x, renewed));
+        // La copropiedad como está hoy en ms-tenants, no la copia de la orden anterior: con ella salen la factura, el recibo
+        // y los correos (pendings/744).
+        var tenantDetail = await tenants.TakeAsync(tenant, cancellationToken);
+
+        // Una orden que espera su pago con los datos de antes no se reutiliza: se crea otra, que la reemplaza.
+        var pending = awaiting.FirstOrDefault(x => x.Type == OrderType.Renewal && x.License.Id == current.License.Id && RenewalQuote.SamePackages(x, renewed) && x.TenantDetail == tenantDetail);
 
         if (pending is not null)
         {
@@ -80,7 +86,7 @@ public class RenewSubscriptionCommandHandler(
             Guid.NewGuid(),
             SubscriptionSnapshots.Renewal(current.License, price, catalog.InvoiceConcept),
             SubscriptionSnapshots.Payer(current.Buyer, user.IdUser),
-            current.TenantDetail,
+            tenantDetail,
             charge,
             user.IdUser,
             lines);

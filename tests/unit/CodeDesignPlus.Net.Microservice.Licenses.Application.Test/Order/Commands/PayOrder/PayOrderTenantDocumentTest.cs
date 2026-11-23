@@ -25,8 +25,8 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order.Comman
 
 /// <summary>
 /// La compra que crea una copropiedad no acepta su documento, si el tipo lleva dígito de verificación, sin guion o con otro
-/// dígito, y lo rechaza antes de crear la orden y de iniciar el cobro (pendings/744). Lo que copia la copropiedad de una
-/// orden anterior (renovación, cambio de licencia, paquetes) no lo vuelve a validar.
+/// dígito, y lo rechaza antes de crear la orden y de iniciar el cobro (pendings/744). La renovación, el cambio de licencia
+/// y la compra de paquetes toman la copropiedad de ms-tenants y no validan su documento: no se quedan sin renovar por él.
 /// </summary>
 public class PayOrderTenantDocumentTest
 {
@@ -212,8 +212,8 @@ public class PayOrderTenantDocumentTest
     }
 
     /// <summary>
-    /// La renovación copia la copropiedad de la orden anterior, no escribe su documento: con uno guardado antes de la regla
-    /// la orden se crea igual.
+    /// La renovación no escribe el documento de la copropiedad, lo toma como está: con uno guardado antes de la regla la
+    /// orden se crea igual.
     /// </summary>
     [Fact]
     public void CreateRenewal_TenantStoredBeforeTheRule_CreatesTheOrder()
@@ -230,14 +230,14 @@ public class PayOrderTenantDocumentTest
     }
 
     /// <summary>
-    /// Decisión del plan: renovar, cambiar de licencia y comprar paquetes no validan el documento copiado, así que no
-    /// reciben las reglas. Si alguno las pide, es que empezó a validarlo y hay que revisar la decisión.
+    /// Decisión del plan: renovar, cambiar de licencia y comprar paquetes no validan el documento de la copropiedad, así
+    /// que no reciben las reglas. Si alguno las pide, es que empezó a validarlo y hay que revisar la decisión.
     /// </summary>
     [Theory]
     [InlineData(typeof(RenewSubscriptionCommandHandler))]
     [InlineData(typeof(ChangeSubscriptionCommandHandler))]
     [InlineData(typeof(PurchasePackageCommandHandler))]
-    public void Constructor_HandlersThatCopyTheTenant_DoNotTakeTheDocumentRules(Type handler)
+    public void Constructor_HandlersOfAnExistingTenant_DoNotTakeTheDocumentRules(Type handler)
     {
         // Act
         var parameters = handler.GetConstructors().SelectMany(x => x.GetParameters()).Select(x => x.ParameterType);

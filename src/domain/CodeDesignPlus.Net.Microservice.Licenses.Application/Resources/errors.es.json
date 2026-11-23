@@ -34,6 +34,10 @@
     "271": "Ese paquete no está a la venta.",
     "272": "Los paquetes se renuevan junto con una licencia anual; con licencia mensual cada paquete dura doce meses y se vuelve a comprar.",
     "273": "No puedes retirar la oferta a {0}: ya tomó esta licencia.",
-    "274": "No puedes retirar la oferta a {0}: tiene un pago en curso para cambiarse a esta licencia. Espera a que el pago se apruebe o se rechace."
+    "274": "No puedes retirar la oferta a {0}: tiene un pago en curso para cambiarse a esta licencia. Espera a que el pago se apruebe o se rechace.",
+    "285": "No encontramos los datos de tu copropiedad. Vuelve a intentarlo en unos minutos.",
+    "286": "El teléfono de tu copropiedad, '{0}', no es válido: va solo con dígitos, entre 7 y 15, y puede empezar por +. Corrígelo en Organización y vuelve a intentarlo.",
+    "287": "El correo de tu copropiedad, '{0}', no es válido. Corrígelo en Organización y vuelve a intentarlo.",
+    "288": "Tu copropiedad tiene un dato incompleto o no válido: el nombre, el documento, el sitio web o la ubicación. Revísalos en Organización y vuelve a intentarlo."
   }
 }

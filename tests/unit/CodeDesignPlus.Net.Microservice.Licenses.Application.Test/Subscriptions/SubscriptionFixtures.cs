@@ -1,11 +1,15 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.Subscriptions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Order;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Entities;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using TenantContracts = CodeDesignPlus.Net.gRpc.Clients.Services.Tenant;
+using TenantSnapshot = CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects.Tenant;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Test.Subscriptions;
 
@@ -53,4 +57,75 @@ internal static class SubscriptionFixtures
     public static CodeDesignPlus.Net.ValueObjects.User.Buyer Buyer() => CodeDesignPlus.Net.ValueObjects.User.Buyer.CreateMinimal(TestOrders.BuyerId, "Buyer", "+573001234567", "buyer@example.com");
 
     public static List<OrderAggregate> Paid(params OrderAggregate[] orders) => [.. orders];
+
+    /// <summary>
+    /// The tenant as ms-tenants answers it over gRPC.
+    /// </summary>
+    public static TenantContracts.GetTenantResponse AnswerOf(TenantSnapshot tenant)
+    {
+        var location = tenant.Location;
+        var currency = location.Country.Currency;
+
+        var answer = new TenantContracts.Location
+        {
+            Country = new TenantContracts.Country
+            {
+                Id = location.Country.Id.ToString(),
+                Name = location.Country.Name,
+                Alpha2 = location.Country.Alpha2,
+                Alpha3 = location.Country.Alpha3,
+                Code = location.Country.Code,
+                PhoneCode = location.Country.PhoneCode,
+                Timezone = location.Country.Timezone,
+                Currency = new TenantContracts.Currency { Id = currency.CurrencyId.ToString(), Code = currency.Code, Name = currency.Name, Symbol = currency.Symbol, DecimalDigits = currency.DecimalDigits, NumericCode = currency.NumericCode }
+            },
+            State = new TenantContracts.State { Id = location.State.Id.ToString(), Name = location.State.Name, Code = location.State.Code },
+            City = new TenantContracts.City { Id = location.City.Id.ToString(), Name = location.City.Name, Timezone = location.City.Timezone },
+            Address = location.Address,
+            PostalCode = location.PostalCode
+        };
+
+        if (location.Locality is { } locality)
+        {
+            answer.Locality = new TenantContracts.Locality { Id = locality.Id.ToString(), Name = locality.Name };
+        }
+
+        if (location.Neighborhood is { } neighborhood)
+        {
+            answer.Neighborhood = new TenantContracts.Neighborhood { Id = neighborhood.Id.ToString(), Name = neighborhood.Name };
+        }
+
+        return new TenantContracts.GetTenantResponse
+        {
+            Id = tenant.Id.ToString(),
+            Name = tenant.Name,
+            TypeDocument = new TenantContracts.TypeDocument { Code = tenant.TypeDocument.Code, Name = tenant.TypeDocument.Name },
+            NumberDocument = tenant.NumberDocument,
+            Domain = tenant.Web ?? string.Empty,
+            Phone = tenant.Phone,
+            Email = tenant.Email,
+            Location = answer,
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Makes ms-tenants answer with that tenant when it is asked for its id, and only for its id.
+    /// </summary>
+    public static void Has(this Mock<ITenantGrpc> grpc, TenantContracts.GetTenantResponse answer)
+    {
+        grpc.Setup(x => x.GetTenantByIdAsync(It.Is<TenantContracts.GetTenantRequest>(r => r.Id == answer.Id), It.IsAny<CancellationToken>())).ReturnsAsync(answer);
+    }
+
+    /// <summary>
+    /// The real reader of the tenant over an ms-tenants that has that one.
+    /// </summary>
+    public static ITenantSnapshots TenantsWith(TenantSnapshot tenant)
+    {
+        var grpc = new Mock<ITenantGrpc>();
+
+        grpc.Has(AnswerOf(tenant));
+
+        return new TenantSnapshots(grpc.Object);
+    }
 }

@@ -34,6 +34,10 @@
     "271": "Ce forfait n'est pas en vente.",
     "272": "Les forfaits se renouvellent avec une licence annuelle ; avec une licence mensuelle, chaque forfait dure douze mois et se rachète.",
     "273": "Tu ne peux pas retirer l'offre à {0} : elle a déjà pris cette licence.",
-    "274": "Tu ne peux pas retirer l'offre à {0} : elle a un paiement en cours pour passer à cette licence. Attends que le paiement soit approuvé ou refusé."
+    "274": "Tu ne peux pas retirer l'offre à {0} : elle a un paiement en cours pour passer à cette licence. Attends que le paiement soit approuvé ou refusé.",
+    "285": "Nous n'avons pas trouvé les données de votre copropriété. Réessayez dans quelques minutes.",
+    "286": "Le téléphone de votre copropriété, '{0}', n'est pas valide : uniquement des chiffres, entre 7 et 15, et il peut commencer par +. Corrigez-le dans Organisation et réessayez.",
+    "287": "L'e-mail de votre copropriété, '{0}', n'est pas valide. Corrigez-le dans Organisation et réessayez.",
+    "288": "Votre copropriété a une donnée incomplète ou non valide : le nom, le document, le site web ou la localisation. Vérifiez-les dans Organisation et réessayez."
   }
 }

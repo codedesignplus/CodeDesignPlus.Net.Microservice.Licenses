@@ -16,7 +16,8 @@ public class PurchasePackageCommandHandler(
     IPackageRepository packages,
     ICreditBalanceRepository creditBalances,
     ISubscriptionCheckout checkout,
-    IUserContext user
+    IUserContext user,
+    ITenantSnapshots tenants
 ) : IRequestHandler<PurchasePackageCommand, PaymentResponse>
 {
     /// <inheritdoc/>
@@ -52,12 +53,16 @@ public class PurchasePackageCommandHandler(
 
         var quote = state.QuoteAddOn(package!, request.Selections, available, now);
 
+        // La copropiedad como está hoy en ms-tenants, no la copia de la orden anterior: con ella salen la factura, el recibo
+        // y los correos (pendings/744).
+        var tenantDetail = await tenants.TakeAsync(tenant, cancellationToken);
+
         var order = OrderAggregate.CreatePackagePurchase(
             request.Id,
             Guid.NewGuid(),
             state.ReferenceLicense(now),
             SubscriptionSnapshots.Payer(current.Buyer, user.IdUser),
-            current.TenantDetail,
+            tenantDetail,
             quote.Quote.ToLine(Guid.NewGuid(), quote.ReplacesLineId),
             quote.CreditedPeriods,
             quote.Charge,

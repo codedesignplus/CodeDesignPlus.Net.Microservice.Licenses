@@ -1,3 +1,4 @@
+using CodeDesignPlus.Net.Exceptions;
 using CodeDesignPlus.Net.gRpc.Clients.Abstractions;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Options;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Services;
@@ -27,14 +28,21 @@ namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Order.Commands.Is
 /// rejected, the note is not sent: it stays for review and the platform administrator is told. The invoice of the order is
 /// issued anyway: the sale happened.
 /// </para>
+/// <para>
+/// The buyer's document is checked before asking for anything (Kappali pendings/744). A renewal is never refused for it,
+/// so an order can be paid by a copropiedad whose document type carries a check digit and comes without it or with a wrong
+/// one. Nothing is guessed: neither the invoice nor its credit notes are sent, they stay for review with the reason and the
+/// platform administrator is told. Issuing them once the document is corrected is done by hand.
+/// </para>
 /// </remarks>
 /// <param name="orders">The repository of orders.</param>
 /// <param name="invoicing">The client of ms-electronicinvoicing.</param>
 /// <param name="inbox">The inbox, to tell the platform administrator.</param>
 /// <param name="options">How the platform invoices.</param>
 /// <param name="notices">To whom the platform notices go.</param>
+/// <param name="tenantDocument">Which document types carry a check digit and how it is computed.</param>
 /// <param name="logger">The logger.</param>
-public class IssueOrderInvoiceCommandHandler(IOrderRepository orders, IElectronicInvoicingGrpc invoicing, IInboxGrpc inbox, IOptions<PlatformInvoicingOptions> options, IOptions<PlatformNoticeOptions> notices, ILogger<IssueOrderInvoiceCommandHandler> logger) : IRequestHandler<IssueOrderInvoiceCommand>
+public class IssueOrderInvoiceCommandHandler(IOrderRepository orders, IElectronicInvoicingGrpc invoicing, IInboxGrpc inbox, IOptions<PlatformInvoicingOptions> options, IOptions<PlatformNoticeOptions> notices, IOptions<TenantDocumentOptions> tenantDocument, ILogger<IssueOrderInvoiceCommandHandler> logger) : IRequestHandler<IssueOrderInvoiceCommand>
 {
     /// <inheritdoc/>
     public async Task Handle(IssueOrderInvoiceCommand request, CancellationToken cancellationToken)
@@ -132,13 +140,33 @@ public class IssueOrderInvoiceCommandHandler(IOrderRepository orders, IElectroni
     {
         var now = SystemClock.Instance.GetCurrentInstant();
         var notes = new List<OrderElectronicDocument>();
+        var invoiceId = PlatformInvoice.InvoiceIdOf(order.Id);
+        var invoiceReference = PlatformInvoice.InvoiceReferenceOf(settings, order.Id);
+
+        // Every document of the order carries the same buyer: with a document that is not valid none of them is sent.
+        if (BuyerDocumentProblemOf(order) is { } problem)
+        {
+            notes.AddRange(PlatformInvoice.CorrectedOrderIdsOf(order).Select(id => OrderElectronicDocument.ForReview(PlatformInvoice.CreditNoteIdOf(order.Id, id), PlatformInvoice.CreditNoteReferenceOf(settings, order.Id, id), id, problem, now)));
+
+            order.RequestElectronicDocuments(OrderElectronicDocument.ForReview(invoiceId, invoiceReference, null, problem, now), notes);
+
+            if (!await orders.RequestElectronicDocumentsAsync(order, cancellationToken))
+            {
+                // Another delivery wrote them first: carry on with what it wrote.
+                return await orders.FindAsync<OrderAggregate>(order.Id, cancellationToken) ?? order;
+            }
+
+            await NotifyInvoiceReviewAsync(order, order.Invoice!, cancellationToken);
+
+            return order;
+        }
 
         foreach (var id in PlatformInvoice.CorrectedOrderIdsOf(order))
         {
             notes.Add(NoteFor(order, id, corrected.GetValueOrDefault(id), settings, now));
         }
 
-        order.RequestElectronicDocuments(OrderElectronicDocument.Requested(PlatformInvoice.InvoiceIdOf(order.Id), PlatformInvoice.InvoiceReferenceOf(settings, order.Id), null, now), notes);
+        order.RequestElectronicDocuments(OrderElectronicDocument.Requested(invoiceId, invoiceReference, null, now), notes);
 
         if (!await orders.RequestElectronicDocumentsAsync(order, cancellationToken))
         {
@@ -154,6 +182,26 @@ public class IssueOrderInvoiceCommandHandler(IOrderRepository orders, IElectroni
         return order;
     }
 
+    /// <summary>
+    /// What is wrong with the document of the copropiedad the order carries, in the words the platform administrator reads;
+    /// null when it can be invoiced.
+    /// </summary>
+    private string? BuyerDocumentProblemOf(OrderAggregate order)
+    {
+        var tenant = order.TenantDetail;
+
+        try
+        {
+            tenantDocument.Value.ToRules().Ensure(tenant.TypeDocument?.Code, tenant.NumberDocument);
+
+            return null;
+        }
+        catch (CodeDesignPlusException exception)
+        {
+            return ElectronicInvoiceText.BuyerDocumentIsNotValid(tenant.NumberDocument, exception.Error?.GetMessage(ElectronicInvoiceText.Language) ?? exception.Message);
+        }
+    }
+
     private static OrderElectronicDocument NoteFor(OrderAggregate order, Guid correctedOrderId, OrderAggregate? corrected, PlatformInvoicingOptions settings, Instant now)
     {
         var id = PlatformInvoice.CreditNoteIdOf(order.Id, correctedOrderId);
@@ -167,6 +215,25 @@ public class IssueOrderInvoiceCommandHandler(IOrderRepository orders, IElectroni
             ElectronicDocumentState.Rejected => OrderElectronicDocument.ForReview(id, reference, correctedOrderId, ElectronicInvoiceText.InvoiceRejected(correctedOrderId), now),
             _ => OrderElectronicDocument.ForReview(id, reference, correctedOrderId, ElectronicInvoiceText.WithoutInvoice(correctedOrderId), now),
         };
+    }
+
+    private async Task NotifyInvoiceReviewAsync(OrderAggregate order, OrderElectronicDocument invoice, CancellationToken cancellationToken)
+    {
+        var role = notices.Value.PlatformAdministratorRole;
+        var reason = invoice.Reasons.FirstOrDefault() ?? string.Empty;
+
+        logger.LogWarning("Invoice {DocumentId} of order {OrderId} was not sent: {Reason}", invoice.DocumentId, order.Id, reason);
+
+        if (role == Guid.Empty)
+        {
+            logger.LogError("'{Section}:{Option}' is not configured: the invoice {DocumentId} waiting for review is not notified.", PlatformNoticeOptions.Section, nameof(PlatformNoticeOptions.PlatformAdministratorRole), invoice.DocumentId);
+
+            return;
+        }
+
+        var payload = new { orderId = order.Id, documentId = invoice.DocumentId, tenantId = order.TenantDetail.Id, tenantName = order.TenantDetail.Name, reasons = invoice.Reasons };
+
+        await inbox.NotifyRolesAsync([role.ToString()], PlatformNotificationKinds.LicenseInvoiceRejected, ElectronicInvoiceText.InvoiceReviewTitle, ElectronicInvoiceText.InvoiceReview(order.TenantDetail.Name, reason), OrderNotAppliedText.Module, order.Id.ToString(), payload, Guid.Empty, Guid.Empty, invoice.UpdatedAt.ToDateTimeOffset(), NotificationIds.For(invoice.DocumentId, PlatformNotificationKinds.LicenseInvoiceRejected), cancellationToken);
     }
 
     private async Task NotifyReviewAsync(OrderAggregate order, OrderElectronicDocument note, CancellationToken cancellationToken)

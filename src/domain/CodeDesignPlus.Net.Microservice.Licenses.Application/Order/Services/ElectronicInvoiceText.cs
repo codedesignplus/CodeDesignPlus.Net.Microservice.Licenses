@@ -60,6 +60,34 @@ public static class ElectronicInvoiceText
     /// <param name="tenantName">The copropiedad.</param>
     /// <param name="reason">Why it was not sent.</param>
     /// <returns>The text.</returns>
+    /// <summary>
+    /// The title of the notice of an invoice that was not sent because the buyer's document is not valid (pendings/744).
+    /// </summary>
+    public const string InvoiceReviewTitle = "Factura electrónica pendiente de revisión";
+
+    /// <summary>
+    /// The language of these texts and of the reasons kept on the order: the one the platform administrator reads.
+    /// </summary>
+    public const string Language = "es";
+
+    /// <summary>
+    /// Why the documents of an order are not sent: the document of the copropiedad cannot go on an invoice as it is.
+    /// </summary>
+    /// <param name="numberDocument">The document as the order carries it.</param>
+    /// <param name="detail">What is wrong with it, as the check digit rule says it.</param>
+    /// <returns>The reason.</returns>
+    public static string BuyerDocumentIsNotValid(string numberDocument, string detail) =>
+        $"El documento de la copropiedad, «{numberDocument}», no sirve para facturar. {detail}";
+
+    /// <summary>
+    /// The notice of an invoice that was not sent because the buyer's document is not valid.
+    /// </summary>
+    /// <param name="tenantName">The copropiedad.</param>
+    /// <param name="reason">Why it was not sent.</param>
+    /// <returns>The text.</returns>
+    public static string InvoiceReview(string tenantName, string reason) =>
+        $"La orden de {tenantName} se pagó, pero su factura electrónica no se expidió. {reason} Pide a la copropiedad que corrija su documento en Organización y expide la factura a mano.";
+
     public static string Review(string tenantName, string reason) => $"La orden de {tenantName} acredita días no prestados, pero la nota crédito no se emitió. {reason}";
 
     /// <summary>

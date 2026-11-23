@@ -41,7 +41,7 @@ public class ChangeSubscriptionTest
         checkout.Setup(x => x.StartAsync(It.IsAny<OrderAggregate>(), It.IsAny<IReadOnlyCollection<OrderAggregate>>(), It.IsAny<CancellationToken>())).ReturnsAsync(new PaymentResponse());
     }
 
-    private ChangeSubscriptionCommandHandler Handler() => new(orders.Object, licenses.Object, creditBalances.Object, checkout.Object, user.Object, Mock.Of<IPackageRepository>());
+    private ChangeSubscriptionCommandHandler Handler() => new(orders.Object, licenses.Object, creditBalances.Object, checkout.Object, user.Object, Mock.Of<IPackageRepository>(), SubscriptionFixtures.TenantsWith(TestOrders.BuildTenant()));
 
     /// <summary>
     /// Una licencia sin nada más que la actual no se ofrece ni se acepta: no se baja ni se cambia de lado.

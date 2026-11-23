@@ -54,15 +54,16 @@ public sealed record OrderElectronicDocument(Guid DocumentId, string Reference, 
     }
 
     /// <summary>
-    /// A credit note that is not sent because a person has to look at it first.
+    /// A document that is not sent because a person has to look at it first: a credit note whose invoice is not there to
+    /// be corrected, or an invoice and its notes when the buyer's document is not valid (Kappali pendings/744).
     /// </summary>
-    /// <param name="documentId">The id derived from the order and the order it corrects.</param>
+    /// <param name="documentId">The id derived from the order and, in a credit note, the order it corrects.</param>
     /// <param name="reference">The reference it would have carried.</param>
-    /// <param name="correctedOrderId">The order whose invoice it would correct.</param>
+    /// <param name="correctedOrderId">In a credit note, the order whose invoice it would correct.</param>
     /// <param name="reason">Why it was not sent.</param>
     /// <param name="now">When it was decided.</param>
-    /// <returns>The note, waiting for review.</returns>
-    public static OrderElectronicDocument ForReview(Guid documentId, string reference, Guid correctedOrderId, string reason, Instant now)
+    /// <returns>The document, waiting for review.</returns>
+    public static OrderElectronicDocument ForReview(Guid documentId, string reference, Guid? correctedOrderId, string reason, Instant now)
     {
         DomainGuard.GuidIsEmpty(documentId, Errors.ElectronicDocumentIdIsRequired);
 
