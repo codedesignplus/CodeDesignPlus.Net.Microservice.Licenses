@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
+using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferObjects;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 
@@ -19,6 +21,7 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     /// <returns>Collection of Licenses.</returns>
     [HttpGet]
     [AllowAnonymous]
+    [ProducesResponseType<Pagination<LicenseDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLicenses([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetAllLicenseQuery(criteria, ForSaleOnly: true), cancellationToken);
@@ -34,6 +37,7 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Collection of Licenses.</returns>
     [HttpGet("all")]
+    [ProducesResponseType<Pagination<LicenseDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllLicenses([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetAllLicenseQuery(criteria, ForSaleOnly: false), cancellationToken);
@@ -49,6 +53,7 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     /// <returns>The License.</returns>
     [HttpGet("{id}")]
     [AllowAnonymous]
+    [ProducesResponseType<LicenseDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLicenseById(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetLicenseByIdQuery(id, ForSaleOnly: true), cancellationToken);
@@ -63,6 +68,7 @@ public class LicenseController(IMediator mediator, IMapper mapper) : ControllerB
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The License.</returns>
     [HttpGet("all/{id}")]
+    [ProducesResponseType<LicenseDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAnyLicenseById(Guid id, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetLicenseByIdQuery(id, ForSaleOnly: false), cancellationToken);

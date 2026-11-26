@@ -7,6 +7,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.Queries.GetAv
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.Queries.GetPackageById;
 using CodeDesignPlus.Net.Microservice.Licenses.Application.Package.Queries.QuotePackage;
 using Microsoft.AspNetCore.Authorization;
+using CodeDesignPlus.Net.Core.Abstractions.Models.Pager;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Rest.Controllers;
 
@@ -29,6 +30,7 @@ public class PackageController(IMediator mediator, IMapper mapper, IUserContext 
     /// <returns>The packages.</returns>
     [HttpGet]
     [AllowAnonymous]
+    [ProducesResponseType<Pagination<PackageDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPackages([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
     {
         return Ok(await mediator.Send(new GetAllPackagesQuery(criteria, ForSaleOnly: true), cancellationToken));
@@ -41,6 +43,7 @@ public class PackageController(IMediator mediator, IMapper mapper, IUserContext 
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The packages.</returns>
     [HttpGet("all")]
+    [ProducesResponseType<Pagination<PackageDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllPackages([FromQuery] C.Criteria criteria, CancellationToken cancellationToken)
     {
         return Ok(await mediator.Send(new GetAllPackagesQuery(criteria, ForSaleOnly: false), cancellationToken));
@@ -52,6 +55,7 @@ public class PackageController(IMediator mediator, IMapper mapper, IUserContext 
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The packages, cheapest first.</returns>
     [HttpGet("available")]
+    [ProducesResponseType<List<PackageDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAvailablePackages(CancellationToken cancellationToken)
     {
         return Ok(await mediator.Send(new GetAvailablePackagesQuery(userContext.Tenant), cancellationToken));
@@ -65,6 +69,7 @@ public class PackageController(IMediator mediator, IMapper mapper, IUserContext 
     /// <returns>The package.</returns>
     [HttpGet("{id}")]
     [AllowAnonymous]
+    [ProducesResponseType<PackageDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPackageById(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await mediator.Send(new GetPackageByIdQuery(id, ForSaleOnly: true), cancellationToken));
@@ -77,6 +82,7 @@ public class PackageController(IMediator mediator, IMapper mapper, IUserContext 
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The package.</returns>
     [HttpGet("all/{id}")]
+    [ProducesResponseType<PackageDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAnyPackageById(Guid id, CancellationToken cancellationToken)
     {
         return Ok(await mediator.Send(new GetPackageByIdQuery(id, ForSaleOnly: false), cancellationToken));
