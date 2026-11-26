@@ -2,6 +2,7 @@ using CodeDesignPlus.Net.Microservice.Licenses.Application.License.DataTransferO
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.Core.Abstractions.Attributes;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 
@@ -213,21 +214,25 @@ public class PackageComponentDto
     /// <summary>
     /// El mínimo de una cantidad.
     /// </summary>
+    [NotMoney]
     public long Min { get; set; }
 
     /// <summary>
     /// El máximo de una cantidad.
     /// </summary>
+    [NotMoney]
     public long Max { get; set; }
 
     /// <summary>
     /// El paso de una cantidad.
     /// </summary>
+    [NotMoney]
     public long Step { get; set; }
 
     /// <summary>
     /// El valor por defecto.
     /// </summary>
+    [NotMoney]
     public long Default { get; set; }
 
     /// <summary>
@@ -260,6 +265,7 @@ public class PackageComponentDto
     /// Cuántas unidades del atributo entrega, y cobra, cada unidad elegida en una cantidad por tramos de volumen
     /// (pendings/744); 1 en los demás.
     /// </summary>
+    [NotMoney]
     public long Multiplier { get; set; } = 1;
 
     /// <summary>

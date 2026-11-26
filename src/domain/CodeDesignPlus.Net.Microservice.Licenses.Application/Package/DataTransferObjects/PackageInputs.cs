@@ -1,6 +1,7 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
 using CodeDesignPlus.Net.ValueObjects.Financial;
+using CodeDesignPlus.Net.Core.Abstractions.Attributes;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 
@@ -41,12 +42,13 @@ public sealed record PackageTierInput(long Value, decimal Price);
 /// <param name="EnableKey">El sí/no que enciende una cantidad mayor que cero.</param>
 /// <param name="Required">Si el sí/no va siempre encendido.</param>
 /// <param name="Tiers">Los tramos.</param>
-public sealed record PackageComponentInput(string Key, PackageComponentKind Kind, AttributeCombination Combine, long Min, long Max, long Step, long Default, decimal UnitPrice, string? PerUnitOf, string? EnableKey, bool Required, List<PackageTierInput>? Tiers)
+public sealed record PackageComponentInput(string Key, PackageComponentKind Kind, AttributeCombination Combine, [property: NotMoney] long Min, [property: NotMoney] long Max, [property: NotMoney] long Step, [property: NotMoney] long Default, decimal UnitPrice, string? PerUnitOf, string? EnableKey, bool Required, List<PackageTierInput>? Tiers)
 {
     /// <summary>
     /// Cuántas unidades del atributo entrega, y cobra, cada unidad elegida en una cantidad por tramos de volumen
     /// (pendings/744). Opcional: sin él vale 1.
     /// </summary>
+    [NotMoney]
     public long? Multiplier { get; init; }
 
     /// <summary>

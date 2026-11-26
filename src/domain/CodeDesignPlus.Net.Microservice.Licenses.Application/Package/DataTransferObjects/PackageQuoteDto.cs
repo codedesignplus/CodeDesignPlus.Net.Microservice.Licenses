@@ -1,6 +1,7 @@
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.Enums;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ServiceDomain;
 using CodeDesignPlus.Net.Microservice.Licenses.Domain.ValueObjects;
+using CodeDesignPlus.Net.Core.Abstractions.Attributes;
 
 namespace CodeDesignPlus.Net.Microservice.Licenses.Application.Package.DataTransferObjects;
 
@@ -169,6 +170,7 @@ public class PackageQuoteLineDto
     /// <summary>
     /// Las unidades por las que se multiplicó; al sumar a un consumible, solo las añadidas.
     /// </summary>
+    [NotMoney]
     public long Units { get; set; }
 
     /// <summary>
